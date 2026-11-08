@@ -3,3 +3,6 @@
 GITHUB_CLIENT_SECRET=paste-the-client-secret
 # Any long random string, e.g. the output of: openssl rand -hex 32
 SESSION_SECRET=paste-a-random-string
+# Optional: messages and the team inbox. Same Neon connection string as the site.
+# DATABASE_URL=postgres://...
+# FORWARD_TO=you@example.com

@@ -10,7 +10,7 @@ import Check from "../../../../packages/ui/Check.astro";
 import Explain from "../components/Explain.astro";
 import { project, checks, passing, modules, modulesDone, audit, connections, lesson } from "../data/sample";
 
-type PageId = "overview" | "lessons" | "readiness" | "security" | "connect";
+type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox";
 interface Props { title: string; page: PageId }
 const { title, page } = Astro.props;
 
@@ -20,13 +20,18 @@ const icons: Record<PageId, string> = {
   readiness: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
   security: "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z",
   connect: "M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5",
+  messages: "M4 5h16v11H9l-5 4z",
+  inbox: "M3 13h5l1.5 3h5l1.5-3h5M5.5 5h13L21 13v6H3v-6z",
 };
-const nav: { id: PageId; href: string; label: string; badge?: string }[] = [
+// admin: only the team sees it (the worker removes [data-admin-only] for everyone else).
+const nav: { id: PageId; href: string; label: string; badge?: string; admin?: boolean }[] = [
   { id: "overview", href: "/", label: "Overview" },
   { id: "lessons", href: "/lessons", label: "Lessons" },
   { id: "readiness", href: "/readiness", label: "Readiness" },
   { id: "security", href: "/security", label: "Security", badge: "1" },
   { id: "connect", href: "/connect", label: "Connect AI tool" },
+  { id: "messages", href: "/messages", label: "Messages" },
+  { id: "inbox", href: "/inbox", label: "Team inbox", admin: true },
 ];
 const levels = [
   { value: "simple", label: "Simple", hint: "Plain words. Best if you're new." },
@@ -74,7 +79,7 @@ const sections = [
           <nav id="app-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+10px)] z-30 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[24px] border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/20">
             <p class="px-3.5 pb-1.5 pt-1 text-[14px] text-muted">{project.name}</p>
             {nav.map((n) => (
-              <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
+              <a href={n.href} data-admin-only={n.admin ? "" : undefined} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
                 {n.label}
                 {n.badge && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
               </a>
@@ -94,6 +99,7 @@ const sections = [
         {nav.map((n) => (
           <a
             href={n.href}
+            data-admin-only={n.admin ? "" : undefined}
             title={n.label}
             aria-current={n.id === page ? "page" : undefined}
             class="relative grid size-11 place-items-center rounded-xl text-white/55 no-underline hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
@@ -172,7 +178,7 @@ const sections = [
         <!-- Open tabs (JS keeps the list; without JS only the current page shows) -->
         <div class="hidden h-11 flex-none items-stretch overflow-x-auto border-b border-line bg-canvas lg:flex" role="navigation" aria-label="Open pages" data-editor-tabs data-page={page}>
           {nav.map((n) => (
-            <div data-tab={n.id} hidden={n.id !== page} data-current={n.id === page ? "" : undefined} class="group flex flex-none items-center border-r border-line text-[14px] data-[current]:bg-surface">
+            <div data-tab={n.id} data-admin-only={n.admin ? "" : undefined} hidden={n.id !== page} data-current={n.id === page ? "" : undefined} class="group flex flex-none items-center border-r border-line text-[14px] data-[current]:bg-surface">
               <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex h-full items-center gap-2 pl-4 pr-1 text-muted no-underline aria-[current=page]:font-semibold aria-[current=page]:text-ink">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
                 {n.label}

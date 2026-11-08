@@ -3,16 +3,17 @@
 You have one of the 10 seats in the free launchwright pilot. Over the next weeks you'll take your own app to production and understand every step.
 
 YOUR NEXT STEP
-Reply to this email with two or three times that work for you this week. We'll set up your first project together on a 30-minute call.
+Sign in with GitHub and connect the AI tool you already use: https://platform.launchwright.app
+You set up your own project, and launchwright explains every step as you go.
 
-HAVE THESE READY FOR THE CALL
+WHAT YOU'LL NEED
 - A GitHub account
 - The AI tool you use, like Claude Code, Cursor, or Codex
 - Your project, or just the idea. It doesn't have to work yet.
 
 Free, no card needed. The pilot costs nothing. You'll connect your own free-tier accounts (like Cloudflare and Neon), and your AI tool never sees your keys.
 
-Welcome aboard. Talk soon.
+Welcome aboard. Questions? Just reply to this email.
 The launchwright team
 
 --

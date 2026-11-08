@@ -1,0 +1,40 @@
+---
+// Team inbox. The worker returns 404 here for anyone not in ADMIN_GITHUB_IDS.
+import App from "../layouts/App.astro";
+---
+<App title="Team inbox" page="inbox">
+  <script src="../scripts/inbox.ts"></script>
+  <div class="flex flex-col gap-5">
+    <div>
+      <p class="label">Team inbox</p>
+      <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">Messages from learners</h1>
+      <p class="mt-1 max-w-[70ch] text-muted">Platform messages and email to hello@launchwright.app, in one place. Replies go out from hello@ and also show on the learner's Messages page.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-[18rem_minmax(0,1fr)]">
+      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-[22px] border border-line bg-canvas p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
+        <p data-threads-empty hidden class="px-3 py-4 text-muted">No messages yet.</p>
+        <ul data-threads aria-busy="true" class="flex flex-col gap-0.5"></ul>
+      </nav>
+
+      <section aria-label="Conversation" class="flex min-w-0 flex-col gap-4">
+        <p data-pane-empty class="rounded-[22px] border border-dashed border-line px-5 py-6 text-muted">Pick a conversation.</p>
+        <div data-pane hidden class="flex flex-col gap-4">
+          <div>
+            <h2 data-pane-title class="text-xl font-bold tracking-[-0.01em]"></h2>
+            <p data-pane-who class="text-[15px] text-muted"></p>
+          </div>
+          <ol data-pane-messages aria-live="polite" class="flex flex-col gap-4"></ol>
+          <form data-reply-form class="flex flex-col gap-3 rounded-[22px] border border-line bg-surface-2 p-4">
+            <label for="reply-body" class="text-[15px] font-medium">Reply</label>
+            <textarea id="reply-body" name="body" rows="4" maxlength="5000" required class="input min-h-28 resize-y"></textarea>
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="submit" class="btn btn-sm">Send reply</button>
+              <p data-reply-status role="status" class="text-[15px] text-muted"></p>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</App>

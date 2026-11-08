@@ -75,8 +75,10 @@ jobs:
         env:
           GITHUB_CLIENT_SECRET: ${{ secrets.PLATFORM_GITHUB_CLIENT_SECRET }}
           SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
+          DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
+          FORWARD_TO: ${{ secrets.PLATFORM_FORWARD_TO }}
         run: |
-          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Upload preview versions (production is untouched)
         id: up
@@ -133,8 +135,10 @@ jobs:
         env:
           GITHUB_CLIENT_SECRET: ${{ secrets.PLATFORM_GITHUB_CLIENT_SECRET }}
           SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
+          DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
+          FORWARD_TO: ${{ secrets.PLATFORM_FORWARD_TO }}
         run: |
-          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Deploy site
         working-directory: apps/site
