@@ -10,3 +10,4 @@ playwright-report/
 *.tgz
 dist/
 .astro/
+.claude/worktrees/

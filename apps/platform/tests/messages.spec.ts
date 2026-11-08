@@ -10,14 +10,21 @@ test.describe("learner", () => {
   test("messages page explains when messaging isn't set up", async ({ page }) => {
     await page.goto("/messages");
     await expect(page.getByText("Messages aren't set up yet")).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Your message" })).toBeVisible();
+    const box = page.getByRole("textbox", { name: "Your message" });
+    await expect(box).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
+    await box.fill("hello");
+    await expect(page.getByRole("button", { name: "Send" })).toBeEnabled();
   });
 
   test("the team inbox doesn't exist for learners", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator('a[href="/messages"]').first()).toBeAttached();
     await expect(page.locator('a[href="/inbox"]')).toHaveCount(0);
+    await expect(page.locator('a[href="/applicants"]')).toHaveCount(0);
     expect((await page.goto("/inbox"))?.status()).toBe(404);
+    expect((await page.goto("/applicants"))?.status()).toBe(404);
+    expect((await page.request.get("/api/admin/applicants")).status()).toBe(404);
     expect((await page.request.get("/api/admin/threads")).status()).toBe(404);
   });
 
@@ -34,6 +41,14 @@ test.describe("admin", () => {
     await expect(async () => expect((await page.goto("/inbox"))?.status()).toBe(200)).toPass();
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Messages from learners");
     await expect(page.locator('a[href="/inbox"]').first()).toBeAttached();
+  });
+
+  test("the team gets operations in the nav instead of Messages", async ({ page }) => {
+    await page.goto("/applicants");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Pilot applicants");
+    await expect(page.locator('a[href="/applicants"]').first()).toBeAttached();
+    await expect(page.locator('a[href="/messages"]')).toHaveCount(0);
+    await expect(page.getByText("Applications aren't", { exact: false }).or(page.getByText("DATABASE_URL isn't set"))).toBeVisible();
   });
 });
 

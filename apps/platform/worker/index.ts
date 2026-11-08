@@ -1,5 +1,6 @@
 // platform.launchwright.app: GitHub sign-in in front of the static dashboard.
 import { SESSION_COOKIE, SESSION_DAYS, cookie, readCookie, sign, verify, type User } from "./session";
+import { handleApplicantsApi } from "./applicants";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 
 interface Env extends MessagesEnv {
@@ -81,6 +82,7 @@ function personalize(res: Response, user: User, admin: boolean) {
     .on("[data-user-name]", { element: (e) => void e.setInnerContent(user.name) })
     .on("[data-user-first]", { element: (e) => void e.setInnerContent(first) })
     .on("[data-admin-only]", { element: (e) => void (admin ? e.removeAttribute("data-admin-only") : e.remove()) })
+    .on("[data-learner-only]", { element: (e) => void (admin ? e.remove() : e.removeAttribute("data-learner-only")) })
     .on("[data-user-login]", { element: (e) => void e.setInnerContent(`@${user.login}`) })
     .on("[data-user-avatar]", {
       element: (e) => {
@@ -115,10 +117,10 @@ export default {
     if (!user && api) return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: { "content-type": "application/json", "cache-control": "no-store" } });
     if (!user) return redirect(`/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
 
-    if (api) return (await handleMessagesApi(req, url, env, user, ctx)) ?? new Response("Not found", { status: 404 });
+    if (api) return (await handleApplicantsApi(req, url, env, user)) ?? (await handleMessagesApi(req, url, env, user, ctx)) ?? new Response("Not found", { status: 404 });
     const admin = isAdmin(user, env);
-    // The team inbox doesn't exist for anyone else.
-    if (/^\/inbox(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+    // Team pages don't exist for anyone else.
+    if (/^\/(inbox|applicants)(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
 
     const res = await env.ASSETS.fetch(req);
     if (!(res.headers.get("content-type") ?? "").includes("text/html")) return res;

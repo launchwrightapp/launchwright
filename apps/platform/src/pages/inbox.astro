@@ -1,6 +1,7 @@
 ---
 // Team inbox. The worker returns 404 here for anyone not in ADMIN_GITHUB_IDS.
 import App from "../layouts/App.astro";
+import Composer from "../components/Composer.astro";
 ---
 <App title="Team inbox" page="inbox">
   <script src="../scripts/inbox.ts"></script>
@@ -12,7 +13,7 @@ import App from "../layouts/App.astro";
     </div>
 
     <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-[18rem_minmax(0,1fr)]">
-      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-[22px] border border-line bg-canvas p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
+      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-[22px] border border-line bg-surface p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
         <p data-threads-empty hidden class="px-3 py-4 text-muted">No messages yet.</p>
         <ul data-threads aria-busy="true" class="flex flex-col gap-0.5"></ul>
       </nav>
@@ -25,14 +26,7 @@ import App from "../layouts/App.astro";
             <p data-pane-who class="text-[15px] text-muted"></p>
           </div>
           <ol data-pane-messages aria-live="polite" class="flex flex-col gap-4"></ol>
-          <form data-reply-form class="flex flex-col gap-3 rounded-[22px] border border-line bg-surface-2 p-4">
-            <label for="reply-body" class="text-[15px] font-medium">Reply</label>
-            <textarea id="reply-body" name="body" rows="4" maxlength="5000" required class="input min-h-28 resize-y"></textarea>
-            <div class="flex flex-wrap items-center gap-3">
-              <button type="submit" class="btn btn-sm">Send reply</button>
-              <p data-reply-status role="status" class="text-[15px] text-muted"></p>
-            </div>
-          </form>
+          <Composer data-reply-form="" id="reply-body" label="Reply" placeholder="Write a reply. It's emailed from hello@launchwright.app" />
         </div>
       </section>
     </div>
