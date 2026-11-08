@@ -18,6 +18,8 @@
     { "pattern": "launchwright.app", "custom_domain": true },
     { "pattern": "www.launchwright.app", "custom_domain": true }
   ],
-  "observability": { "enabled": true }
-  // Secrets (not in this file): DATABASE_URL via `npx wrangler secret put DATABASE_URL`
+  "observability": { "enabled": true },
+  // Pilot emails (acknowledgement on signup, acceptance from the admin command).
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@launchwright.app"] }]
+  // Secrets (not in this file): DATABASE_URL and ADMIN_TOKEN via `npx wrangler versions secret put <NAME>`
 }

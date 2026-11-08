@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "launchwright-platform",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   // Builds the Astro app into dist/ before dev, deploy, and preview uploads.
   "build": { "command": "npm run build" },
@@ -8,7 +9,11 @@
   // Preview URLs (per PR) live on workers.dev.
   "workers_dev": false,
   "preview_urls": true,
-  "assets": { "directory": "./dist" },
+  // The worker runs first so every page checks sign-in (worker/index.ts).
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
+  "vars": { "GITHUB_CLIENT_ID": "Iv23lixXjMCTRCvuULLf" },
   "routes": [{ "pattern": "platform.launchwright.app", "custom_domain": true }],
   "observability": { "enabled": true }
+  // Secrets (not in this file): GITHUB_CLIENT_SECRET and SESSION_SECRET via
+  // `npx wrangler versions secret put <NAME>`. Locally: .dev.vars (see .dev.vars.example).
 }

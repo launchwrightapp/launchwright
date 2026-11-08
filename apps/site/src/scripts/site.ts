@@ -1,3 +1,5 @@
+import "../../../../packages/ui/dropdown";
+
 // Walkthrough tabs. Without JS every step stays visible, one after another.
 function initTabs(list: HTMLElement) {
   const tabs = [...list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
@@ -51,17 +53,6 @@ function initScrollspy(nav: HTMLElement) {
   update();
 }
 document.querySelectorAll<HTMLElement>("[data-scrollspy]").forEach(initScrollspy);
-
-// Mobile menu: close after picking a link, on Escape, or on a tap outside.
-const menu = document.querySelector<HTMLDetailsElement>("[data-mobile-menu]");
-if (menu) {
-  const close = () => menu.removeAttribute("open");
-  menu.querySelectorAll("nav a").forEach((a) => a.addEventListener("click", close));
-  document.addEventListener("click", (e) => { if (!menu.contains(e.target as Node)) close(); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && menu.open) { close(); menu.querySelector("summary")?.focus(); }
-  });
-}
 
 // Header: slides away while you're on the footer, and comes back as soon as you scroll up.
 const header = document.querySelector<HTMLElement>("[data-autohide]");

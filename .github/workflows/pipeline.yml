@@ -43,6 +43,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck -w apps/site
+      - run: npm run typecheck -w apps/platform
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e -w apps/site
       - run: npm run test:e2e -w apps/platform
@@ -70,16 +71,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Write dashboard secrets file (from repo secrets; never printed)
+        env:
+          GITHUB_CLIENT_SECRET: ${{ secrets.PLATFORM_GITHUB_CLIENT_SECRET }}
+          SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
+        run: |
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+            require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Upload preview versions (production is untouched)
         id: up
         run: |
           alias="pr-${{ github.event.number }}"
           upload() {
-            (cd "apps/$1" && npx wrangler versions upload --preview-alias "$alias" 2>&1) \
+            (cd "apps/$1" && npx wrangler versions upload --preview-alias "$alias" ${2:+--secrets-file "$2"} 2>&1) \
               | tee /dev/stderr | grep -oE "https://$alias-[^ ]+\.workers\.dev" | head -1
           }
           site=$(upload site)
-          platform=$(upload platform)
+          platform=$(upload platform "$RUNNER_TEMP/platform-secrets.json")
           if [ -z "$site" ] || [ -z "$platform" ]; then
             echo "::error::Preview upload did not return a URL (check CLOUDFLARE_API_TOKEN)"
             exit 1
@@ -121,11 +129,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Write dashboard secrets file (from repo secrets; never printed)
+        env:
+          GITHUB_CLIENT_SECRET: ${{ secrets.PLATFORM_GITHUB_CLIENT_SECRET }}
+          SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
+        run: |
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET"]) if (process.env[k]) s[k] = process.env[k];
+            require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Deploy site
         working-directory: apps/site
         run: npx wrangler deploy --message "${GITHUB_SHA::7}"
       - name: Deploy platform
-        run: npm run deploy -w apps/platform -- --message "${GITHUB_SHA::7}"
+        run: npm run deploy -w apps/platform -- --message "${GITHUB_SHA::7}" --secrets-file "$RUNNER_TEMP/platform-secrets.json"
       - name: Smoke test production
         run: |
           BASE_URL=https://launchwright.app npm run test:e2e -w apps/site

@@ -4,11 +4,12 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8791",
+    "dev": "wrangler dev --port 8791 --var PUBLIC_ORIGIN:http://localhost:8791",
     "dev:ui": "astro dev",
     "build": "astro build",
     "deploy": "wrangler deploy",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "astro sync && tsc --noEmit -p ."
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",

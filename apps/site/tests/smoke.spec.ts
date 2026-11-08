@@ -209,7 +209,7 @@ test("header hides on the footer and returns when scrolling up", async ({ page }
 test("mobile menu opens, links to sections, and closes", async ({ page, isMobile }) => {
   test.skip(!isMobile, "The menu button is for small screens");
   await page.goto("/");
-  const toggle = page.getByRole("banner").locator("summary[aria-label='Menu']");
+  const toggle = page.getByRole("banner").getByRole("button", { name: "Menu" });
   await expect(toggle).toBeVisible();
   await toggle.click();
   const menu = page.getByRole("navigation", { name: "Menu" });
@@ -217,4 +217,16 @@ test("mobile menu opens, links to sections, and closes", async ({ page, isMobile
   await menu.getByRole("link", { name: "Security" }).click();
   await expect(menu).toBeHidden();
   await expect(page).toHaveURL(/#trust$/);
+  await toggle.click();
+  await expect(menu).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(toggle).toBeFocused();
+});
+
+test("admin routes are hidden without the admin token", async ({ request }) => {
+  for (const [method, path] of [["GET", "/api/admin/applicants"], ["POST", "/api/admin/accept"]] as const) {
+    const res = await request.fetch(path, { method, headers: { authorization: "Bearer wrong" }, data: method === "POST" ? { email: "a@b.co" } : undefined });
+    expect(res.status()).toBe(404);
+  }
 });
