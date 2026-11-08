@@ -80,7 +80,10 @@ jobs:
           npm run sync -w apps/platform
           site=$(upload site)
           platform=$(upload platform)
-          test -n "$site" && test -n "$platform"
+          if [ -z "$site" ] || [ -z "$platform" ]; then
+            echo "::error::Preview upload did not return a URL (check CLOUDFLARE_API_TOKEN)"
+            exit 1
+          fi
           echo "site=$site" >> "$GITHUB_OUTPUT"
           echo "platform=$platform" >> "$GITHUB_OUTPUT"
       - name: E2E on preview
