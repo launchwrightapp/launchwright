@@ -9,7 +9,7 @@
     "build": "astro build",
     "deploy": "wrangler deploy",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "astro sync && tsc --noEmit -p ."
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",

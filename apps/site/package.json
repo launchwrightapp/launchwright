@@ -8,7 +8,7 @@
     "dev:ui": "astro dev",
     "build": "astro build",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit -p .",
+    "typecheck": "astro sync && tsc --noEmit -p .",
     "test:e2e": "playwright test",
     "pilot": "node scripts/pilot.mjs"
   },
