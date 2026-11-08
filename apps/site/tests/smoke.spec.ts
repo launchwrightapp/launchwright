@@ -53,7 +53,7 @@ test.describe("waitlist API", () => {
 
   test("rejects oversized bodies", async ({ request }) => {
     const res = await request.post("/api/waitlist", {
-      data: { email: "a@example.com", consent: true, building: "x".repeat(5000) },
+      data: { email: "a@example.com", consent: true, building: "x".repeat(9000) },
     });
     expect(res.status()).toBe(400);
   });
@@ -72,11 +72,20 @@ test.describe("waitlist API", () => {
   });
 });
 
-test("form shows an error for a bad email without submitting", async ({ page }) => {
+test("home form checks the email before continuing", async ({ page }) => {
   await page.goto("/#pilot");
-  await page.getByRole("textbox", { name: "Email" }).fill("nope");
-  await page.getByRole("button", { name: "Join the free pilot" }).click();
+  await page.locator("#waitlist").getByRole("textbox", { name: "Email" }).fill("nope");
+  await page.locator("#waitlist").getByRole("button", { name: "Continue" }).click();
   await expect(page.locator("#waitlist-status")).toHaveText("Please check your email address.");
+  await expect(page).not.toHaveURL(/\/pilot/);
+});
+
+test("home form continues to the questionnaire with the email filled in", async ({ page }) => {
+  await page.goto("/#pilot");
+  await page.locator("#waitlist").getByRole("textbox", { name: "Email" }).fill("juan@example.com");
+  await page.locator("#waitlist").getByRole("button", { name: "Continue" }).click();
+  await expect(page).toHaveURL(/\/pilot\?email=juan%40example\.com/);
+  await expect(page.getByRole("textbox", { name: "Email" })).toHaveValue("juan@example.com");
 });
 
 test("theme switch toggles and remembers the choice", async ({ page }) => {
@@ -165,8 +174,9 @@ for (const [path, heading] of [["/privacy", "Privacy policy"], ["/terms", "Terms
 }
 
 test("consent text links to the privacy policy", async ({ page }) => {
-  await page.goto("/#pilot");
-  await expect(page.locator("#waitlist").getByRole("link", { name: "privacy policy" })).toHaveAttribute("href", "/privacy");
+  await page.goto("/pilot");
+  // The consent box is on the last step, so it's hidden until then: check the markup.
+  await expect(page.locator("#pilot-form a", { hasText: "privacy policy" })).toHaveAttribute("href", "/privacy");
 });
 
 test("the offer and the signup form are in one section, before the FAQ", async ({ page }) => {
