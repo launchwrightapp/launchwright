@@ -1,0 +1,88 @@
+---
+// App shell: a dark top bar (logo, pill nav, Explain switch, theme, user)
+// over a full-width rounded sheet that holds the page.
+import Base from "../../../../packages/ui/Base.astro";
+import ThemeToggle from "../../../../packages/ui/ThemeToggle.astro";
+import Dropdown from "../../../../packages/ui/Dropdown.astro";
+import { project, checks, passing, modules, modulesDone } from "../data/sample";
+
+interface Props { title: string; page: "overview" | "lessons" | "readiness" | "security" | "connect" }
+const { title, page } = Astro.props;
+
+const icons: Record<string, string> = {
+  overview: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  lessons: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7",
+  readiness: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
+  security: "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z",
+  connect: "M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5",
+};
+const nav = [
+  { id: "overview", href: "/", label: "Overview" },
+  { id: "lessons", href: "/lessons", label: "Lessons", meta: `${modulesDone}/${modules.length}` },
+  { id: "readiness", href: "/readiness", label: "Readiness", meta: `${passing}/${checks.length}` },
+  { id: "security", href: "/security", label: "Security", badge: "1" },
+  { id: "connect", href: "/connect", label: "Connect AI tool" },
+] as const;
+const levels = [
+  { value: "simple", label: "Simple", hint: "Plain words. Best if you're new." },
+  { value: "tech", label: "Technical", hint: "Exact commands, status codes, and config." },
+];
+---
+<Base title={`${title} · Launchwright`} noindex>
+  <script src="../scripts/app.ts"></script>
+  <div class="min-h-svh bg-night">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-30 flex min-h-[72px] items-center gap-4 bg-night px-4 text-white md:px-6 xl:px-8">
+      <a href="/" class="flex flex-none items-center gap-3 no-underline" aria-label="Launchwright home">
+        <span class="logo text-white">launchwright</span>
+      </a>
+      <span class="hidden truncate text-[15px] text-white/60 2xl:inline">/ {project.name}</span>
+
+      <nav aria-label="Dashboard" class="mx-auto hidden items-center gap-0.5 lg:flex">
+        {nav.map((n) => (
+          <a
+            href={n.href}
+            aria-current={n.id === page ? "page" : undefined}
+            class="flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[15px] font-medium text-white/65 no-underline transition hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/12 aria-[current=page]:text-white"
+          >
+            <svg class="size-5 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
+            {n.label}
+            {"badge" in n && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night" aria-label="1 approval waiting">{n.badge}</span>}
+          </a>
+        ))}
+      </nav>
+
+      <div class="ml-auto flex flex-none items-center gap-2 lg:ml-0">
+        <Dropdown id="level" name="level" label="Explain" options={levels} value="simple" tone="dark" hideLabelBelow="sm" searchPlaceholder="Search levels" />
+        <ThemeToggle tone="dark" compact />
+        <div class="hidden items-center gap-3 pl-2 2xl:flex">
+          <span class="grid size-11 place-items-center rounded-full bg-lime text-[15px] font-semibold text-night" role="img" aria-label={project.user.name}>{project.user.initials}</span>
+          <span class="leading-tight">
+            <span class="block font-semibold">{project.user.name}</span>
+            <span class="block text-[15px] text-white/60">Free pilot</span>
+          </span>
+        </div>
+        <div class="relative lg:hidden" data-popover>
+          <button type="button" data-popover-trigger aria-expanded="false" aria-controls="app-menu" aria-label="Menu" class="group grid size-11 cursor-pointer place-items-center rounded-full border border-white/15 bg-white/5 text-white">
+            <svg class="size-5 group-aria-expanded:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            <svg class="hidden size-5 group-aria-expanded:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+          <nav id="app-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] z-30 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 text-ink shadow-2xl shadow-black/20">
+            <p class="px-4 pb-2 pt-1 text-[15px] text-muted">{project.name}</p>
+            {nav.map((n) => (
+              <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex min-h-12 items-center justify-between rounded-2xl px-4 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
+                {n.label}
+                {"badge" in n && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- The sheet -->
+    <main class="min-h-[calc(100svh-72px)] rounded-t-[28px] bg-surface px-4 pb-8 pt-5 md:rounded-t-[36px] md:px-6 md:pt-6 xl:px-8 dark:border-t dark:border-line">
+      <slot />
+    </main>
+  </div>
+</Base>

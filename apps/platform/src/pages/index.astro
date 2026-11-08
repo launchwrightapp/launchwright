@@ -1,161 +1,230 @@
 ---
-// Dashboard mockup (v0.1). All data below is sample data.
-import Base from "../../../../packages/ui/Base.astro";
-import Logo from "../../../../packages/ui/Logo.astro";
-import ThemeToggle from "../../../../packages/ui/ThemeToggle.astro";
+import App from "../layouts/App.astro";
+import Explain from "../components/Explain.astro";
+import CopyBox from "../components/CopyBox.astro";
+import Check from "../../../../packages/ui/Check.astro";
+import { project, checks, passing, modules, modulesDone, conceptsCovered, audit, connections, approval, activityRanges, checkShort } from "../data/sample";
 
-const checks: { name: string; status: "pass" | "fail" | "pending"; hint?: string; code?: string }[] = [
-  { name: "No secrets in repo", status: "pass" },
-  { name: "Environment config", status: "pass" },
-  { name: "CI pipeline with tests", status: "pass" },
-  { name: "Playwright E2E on preview deploy", status: "pass" },
-  { name: "Auth on API routes", status: "fail", code: "/api/bookings" },
-  { name: "Database migrations", status: "pass" },
-  { name: "HTTPS and security headers", status: "pass" },
-  { name: "Uptime check", status: "pending", hint: "Not set up yet" },
-];
-const statusTag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-warn", "Needs attention"], pending: ["tag tag-line", "Not checked"] } as const;
+const next = checks.find((c) => c.status === "fail")!;
+const left = checks.length - passing;
 
-const audit = [
-  { time: "14:02", tool: "deploy", client: "Claude Code", result: "Waiting for approval", tag: "tag tag-warn" },
-  { time: "13:48", tool: "check_readiness", client: "Claude Code", result: "6 of 8 checks passing" },
-  { time: "13:40", tool: "set_secret", client: "Cursor", result: "RESEND_API_KEY set (value hidden)" },
-  { time: "12:15", tool: "get_logs", client: "Claude Code", result: "3 errors, 1 explained" },
-  { time: "11:57", tool: "setup_ci", client: "Claude Code", result: "Done", tag: "tag tag-ok" },
-];
-
-const connections = [
-  { name: "GitHub", detail: "juan/barbershop-booking", on: true },
-  { name: "Cloudflare", detail: "Workers · 1 project", on: true },
-  { name: "Neon", detail: "main + 2 preview branches", on: true },
-  { name: "Supabase", detail: "Optional", on: false },
-];
-
-const meter = (on: number, warn = 0) => Array.from({ length: 8 }, (_, i) => (i < on ? "bg-ink" : i < on + warn ? "bg-orange" : "bg-line"));
+// Chart geometry (SVG units; scales with the card, no inline styles).
+const W = 600, H = 140;
+const bars = (values: number[]) => {
+  const max = Math.max(...values), step = W / values.length, bw = Math.min(40, step * 0.5);
+  const top = values.indexOf(max);
+  return values.map((v, i) => {
+    const h = Math.max(bw, (v / max) * (H - 12));
+    return { x: i * step + (step - bw) / 2, y: H - h, w: bw, h, top: i === top };
+  });
+};
+const statusPill = {
+  warn: "tag tag-warn",
+  ok: "tag tag-ok",
+} as const;
+// Tailwind only generates classes it can see written out in full.
+const cols: Record<number, string> = { 3: "grid-cols-3", 4: "grid-cols-4", 7: "grid-cols-7", 14: "grid-cols-14", 30: "grid-cols-30" };
+const panel = "rounded-[28px] bg-canvas p-2";
+const card = "rounded-[22px] border border-line bg-surface p-5 dark:bg-surface-2";
+const initials: Record<string, string> = { GitHub: "GH", Cloudflare: "CF", Neon: "NE", Supabase: "SB" };
+const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare: "bg-orange text-night", Neon: "bg-lime text-night", Supabase: "bg-surface-3 text-muted" };
 ---
-<Base title="Launchwright Dashboard" noindex>
-  <div class="gutter pb-16">
-    <header class="flex items-center justify-between gap-4 py-5">
-      <div class="flex min-w-0 items-center gap-3">
-        <Logo href="#" />
-        <span class="text-2xl text-line" aria-hidden="true">/</span>
-        <span class="truncate font-medium">barbershop-booking</span>
-        <span class="tag max-sm:hidden">Next.js</span>
-      </div>
-      <div class="flex flex-none items-center gap-2.5">
-        <span class="tag tag-warn max-sm:hidden">Sample data</span>
-        <ThemeToggle />
-        <span class="grid size-[50px] place-items-center rounded-full bg-surface-3 text-[15px] font-semibold" aria-label="Juan D." role="img">JD</span>
-      </div>
-    </header>
-
-    <div class="flex flex-wrap items-end justify-between gap-4 pb-6 pt-7">
+<App title="Overview" page="overview">
+  <div class="flex flex-col gap-4">
+    <!-- Headline: the one number that matters, and the one thing to do next -->
+    <div class="grid grid-cols-1 items-center gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
       <div>
-        <p class="label">Dashboard · v0.1 mockup</p>
-        <h1 class="text-[clamp(2rem,4vw,3rem)] font-bold leading-tight tracking-[-0.02em]">Good afternoon, Juan.</h1>
+        <p class="text-muted">Good afternoon, {project.user.first}.</p>
+        <h1 class="mt-1">
+          <span class="block text-[clamp(3rem,5.5vw,4.75rem)] font-bold leading-[0.95] tracking-[-0.04em]">{passing}<span class="text-muted">/{checks.length}</span></span>
+          <span class="mt-2 block text-base font-normal text-muted">readiness checks passed · {left} left before <span class="text-ink">{project.name}</span> is production-ready</span>
+        </h1>
       </div>
-      <a class="btn btn-outline" href="#">Run readiness check</a>
+      <section class="flex flex-col gap-3 rounded-[24px] bg-blue p-5 text-white" aria-labelledby="next-title">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="tag bg-white/15 text-white">Your next step</span>
+          <span class="text-[15px] text-white/75">Module 06 · ~8 min lesson</span>
+        </div>
+        <h2 id="next-title" class="text-[22px] font-bold leading-tight tracking-[-0.02em]">Add login checks to your API</h2>
+        <p class="text-[15px] text-white/85"><Explain simple={next.simple} tech={next.tech} /></p>
+        <CopyBox tone="dark" label="Paste this into your AI tool" text={next.fix!.prompt} />
+      </section>
     </div>
 
-    <main class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12 [&>*]:min-w-0">
-      <section class="card grid gap-3.5 sm:col-span-2 lg:col-span-4" aria-label="Readiness">
-        <p class="label">Readiness</p>
-        <p class="flex items-baseline gap-2 text-7xl font-bold leading-[0.9] tracking-[-0.04em]">6<small class="text-lg font-medium tracking-normal text-muted">/ 8 checks</small></p>
-        <div class="grid h-2 grid-cols-8 gap-1" role="img" aria-label="6 passing, 1 failing, 1 pending">{meter(6, 1).map((c) => <i class={`rounded-full ${c}`}></i>)}</div>
-        <p class="text-[15px] text-muted">2 checks left before production-ready.</p>
-      </section>
-      <section class="card grid gap-3.5 sm:col-span-2 lg:col-span-4" aria-label="Curriculum progress">
-        <p class="label">Level 1 progress</p>
-        <p class="flex items-baseline gap-2 text-7xl font-bold leading-[0.9] tracking-[-0.04em]">5<small class="text-lg font-medium tracking-normal text-muted">/ 8 modules</small></p>
-        <div class="grid h-2 grid-cols-8 gap-1" role="img" aria-label="5 of 8 modules">{meter(5).map((c) => <i class={`rounded-full ${c}`}></i>)}</div>
-        <p class="text-[15px] text-muted">23 concepts covered through your tool calls.</p>
-      </section>
-      <section class="card grid gap-3.5 sm:col-span-2 lg:col-span-4" aria-label="Production">
-        <p class="label">Production</p>
-        <p class="text-7xl font-bold leading-[0.9] tracking-[-0.04em]">Live</p>
-        <div class="flex h-2 items-center gap-2"><span class="size-2 rounded-full bg-ok ring-4 ring-ok-bg" aria-hidden="true"></span><span class="font-medium">barbershop.juan.dev</span></div>
-        <p class="text-[15px] text-muted">Deployed 2h ago · a41f9c2</p>
-      </section>
-
-      <section class="card p-0 sm:col-span-2 lg:col-span-7" aria-labelledby="checks-title">
-        <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5">
-          <h2 id="checks-title" class="text-xl font-semibold">Readiness checks</h2>
-          <span class="label max-sm:hidden">GitHub Actions · run #48</span>
-        </div>
-        <ul class="divide-y divide-line">
-          {checks.map((c) => (
-            <li class="flex items-start justify-between gap-4 px-7 py-4">
-              <span>
-                {c.name}
-                {c.code && <span class="mt-1 block text-[15px] text-muted"><code>{c.code}</code> has no auth check. Try <code>check_readiness --fix auth</code></span>}
-                {c.hint && <span class="mt-1 block text-[15px] text-muted">{c.hint}</span>}
-              </span>
-              <span class={statusTag[c.status][0]}>{statusTag[c.status][1]}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div class="flex flex-col gap-4 sm:col-span-2 lg:col-span-5">
-        <section class="card p-0" aria-labelledby="approval-title">
-          <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5">
-            <h2 id="approval-title" class="text-xl font-semibold">Needs approval</h2>
-            <span class="tag tag-warn">1 pending</span>
+    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+      <!-- Left group: learning activity -->
+      <section class={panel} aria-labelledby="activity-group">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-3 pb-3 pt-2 md:px-4">
+          <div>
+            <h2 id="activity-group" class="text-[22px] font-bold tracking-[-0.02em]">Activity</h2>
+            <p class="text-muted"><Explain simple="What you and your AI tool did, and what you learned." tech="MCP tool calls and concept coverage for this project." /></p>
           </div>
-          <div class="flex flex-col gap-3 p-7">
-            <p class="text-2xl font-semibold tracking-[-0.01em]">Migration drops a column</p>
-            <p class="text-[15px] text-muted">Requested by <b class="text-ink">Claude Code</b> via <code>deploy</code> · 4 min ago</p>
-            <pre class="term rounded-xl bg-warn-bg px-4 py-3 text-warn">- ALTER TABLE bookings DROP COLUMN phone;</pre>
-            <p class="text-[15px] text-muted">Deletes phone numbers from 132 bookings. Only recoverable from a backup.</p>
-            <div class="mt-1 flex gap-2.5">
-              <button class="btn flex-1" type="button">Approve</button>
-              <button class="btn btn-outline flex-1" type="button">Reject</button>
+          <div role="tablist" aria-label="Time range" data-tabs class="flex rounded-full border border-line bg-surface p-1 dark:bg-surface-2">
+            {activityRanges.map((r, i) => (
+              <button type="button" role="tab" id={`range-${r.id}`} aria-controls={`chart-${r.id}`} aria-selected={i === 0 ? "true" : "false"} class="min-h-9 cursor-pointer rounded-full px-3.5 text-[14px] font-semibold text-muted aria-selected:bg-ink aria-selected:text-on-ink">{r.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+          <!-- Tool calls chart -->
+          <div class={card}>
+            {activityRanges.map((r) => {
+              const total = r.values.reduce((a, b) => a + b, 0);
+              const b = bars(r.values);
+              return (
+                <div id={`chart-${r.id}`} role="tabpanel" aria-labelledby={`range-${r.id}`} class="flex flex-col gap-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums">{total}</p>
+                      <p class="mt-1.5 text-muted">Tool calls · last {r.label}</p>
+                    </div>
+                    <span class="tag tag-line">Sample</span>
+                  </div>
+                  <svg viewBox={`0 0 ${W} ${H}`} class="h-auto w-full" role="img" aria-label={`Tool calls per day over ${r.label}, busiest day ${Math.max(...r.values)} calls`}>
+                    {[0.25, 0.5, 0.75].map((f) => <line x1="0" x2={W} y1={H * f} y2={H * f} class="stroke-line" stroke-dasharray="4 6" />)}
+                    {b.map((bar) => <rect x={bar.x} y={bar.y} width={bar.w} height={bar.h} rx={bar.w / 2} class={bar.top ? "fill-blue" : "fill-ink"} />)}
+                  </svg>
+                  <div class:list={["grid text-center text-[14px] text-muted", cols[r.labels.length]]} aria-hidden="true">
+                    {r.labels.map((l) => <span>{l}</span>)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <!-- Concepts by module -->
+          <div class={card}>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums">{conceptsCovered}</p>
+                <p class="mt-1.5 text-muted">Concepts learned · Level 1</p>
+              </div>
+              <a class="text-[15px] font-medium text-muted hover:text-ink" href="/lessons">Lessons</a>
+            </div>
+            <ul class="mt-4 flex flex-col gap-2.5">
+              {modules.map((m) => (
+                <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.25rem] items-center gap-3">
+                  <span class:list={["truncate text-[15px]", m.status === "next" ? "text-muted" : "text-ink"]}>{m.name}</span>
+                  <span class:list={["grid h-2 gap-1", cols[m.total]]} role="img" aria-label={`${m.concepts} of ${m.total}`}>
+                    {Array.from({ length: m.total }, (_, i) => <i class:list={["rounded-full", i < m.concepts ? (m.status === "current" ? "bg-orange" : "bg-ink") : "bg-line"]}></i>)}
+                  </span>
+                  <span class="text-right text-[14px] tabular-nums text-muted">{m.concepts}/{m.total}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Latest activity -->
+          <div class="rounded-[28px] border border-line bg-surface dark:bg-surface-2 lg:col-span-2">
+            <div class="flex items-center justify-between gap-3 px-5 pb-1 pt-4">
+              <h3 class="text-lg font-semibold">What your AI tool did</h3>
+              <a class="text-[15px] font-medium text-muted hover:text-ink" href="/security">See all</a>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[640px] text-left text-[15px]">
+                <thead class="text-[15px] text-muted">
+                  <tr><th class="px-5 py-2 font-medium ">Result</th><th class="px-3 py-2 font-medium">Tool</th><th class="px-3 py-2 font-medium">AI tool</th><th class="px-3 py-2 font-medium">Status</th><th class="px-5 py-2 text-right font-medium ">Time</th></tr>
+                </thead>
+                <tbody>
+                  {audit.map((r) => (
+                    <tr class="border-t border-line">
+                      <td class="px-5 py-2.5 font-medium">{r.result}</td>
+                      <td class="px-3 py-2.5"><code>{r.tool}</code></td>
+                      <td class="whitespace-nowrap px-3 py-2.5 text-muted">{r.client}</td>
+                      <td class="whitespace-nowrap px-3 py-2.5">
+                        {r.tone === "warn" && <span class={statusPill.warn}>Waiting for you</span>}
+                        {r.tone === "ok" && <span class={statusPill.ok}><Check class="size-3.5" />Done</span>}
+                        {!r.tone && <span class="tag tag-line">Logged</span>}
+                      </td>
+                      <td class="px-5 py-2.5 text-right tabular-nums text-muted ">{r.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </section>
-
-        <section class="card flex flex-1 flex-col gap-2.5 border-transparent bg-blue text-white" aria-labelledby="lesson-title">
-          <p class="text-base font-medium text-white/75">Next lesson</p>
-          <p id="lesson-title" class="text-4xl font-bold leading-tight tracking-[-0.03em]">Auth on API routes</p>
-          <p class="text-[15px]">Why every request to <code class="bg-white/15 text-white">/api/bookings</code> needs to prove who's calling, and how to add it without breaking your app.</p>
-          <div class="mt-auto flex items-center justify-between gap-3 pt-2">
-            <span class="text-[15px] text-white/75">~8 min</span>
-            <a class="btn border-white bg-white text-night" href="#">Start lesson</a>
-          </div>
-        </section>
-      </div>
-
-      <section class="card p-0 sm:col-span-2 lg:col-span-12" aria-labelledby="audit-title">
-        <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5">
-          <h2 id="audit-title" class="text-xl font-semibold">Audit log</h2>
-          <a class="label" href="#">View all</a>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[560px] text-left">
-            <thead class="text-[15px] text-muted"><tr><th class="px-7 py-3 font-medium">Time</th><th class="px-3 py-3 font-medium">Tool</th><th class="px-3 py-3 font-medium">Client</th><th class="px-7 py-3 font-medium">Result</th></tr></thead>
-            <tbody class="divide-y divide-line border-t border-line">
-              {audit.map((r) => (
-                <tr>
-                  <td class="px-7 py-3.5 tabular-nums">{r.time}</td>
-                  <td class="px-3 py-3.5 font-medium">{r.tool}</td>
-                  <td class="px-3 py-3.5">{r.client}</td>
-                  <td class="px-7 py-3.5">{r.tag ? <span class={r.tag}>{r.result}</span> : r.result}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </section>
 
-      {connections.map((c) => (
-        <section class="card flex flex-col gap-2 lg:col-span-3" aria-label={c.name}>
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-xl font-semibold">{c.name}</p>
-            <span class={c.on ? "tag tag-ok" : "tag tag-line"}>{c.on ? "Connected" : "Not connected"}</span>
+      <!-- Right group: the project -->
+      <section class={panel} aria-labelledby="project-group">
+        <div class="px-3 pb-3 pt-2 md:px-4">
+          <h2 id="project-group" class="text-[22px] font-bold tracking-[-0.02em]">Your project</h2>
+          <p class="text-muted">{project.url} · <span class="text-ok">Live</span> · <Explain simple={`updated ${project.deployedAgo}`} tech={`${project.commit} · ${project.deployedAgo}`} /></p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <!-- Readiness at a glance -->
+          <div class={card}>
+            <div class="flex items-start justify-between gap-3">
+              <h3 id="checks-title" class="text-lg font-semibold">Readiness checks</h3>
+              <a class="text-[15px] font-medium text-muted hover:text-ink" href="/readiness">All details</a>
+            </div>
+            <p class="mt-2.5 flex flex-wrap gap-1.5">
+              <span class="tag tag-ok"><Check class="size-3.5" />{passing} passed</span>
+              <span class="tag tag-warn">1 needs attention</span>
+              <span class="tag tag-line">1 not checked</span>
+            </p>
+            <ul class="mt-4 grid grid-cols-8 gap-1 sm:gap-2" aria-labelledby="checks-title">
+              {checks.map((c) => (
+                <li>
+                  <a href={`/readiness#check-${c.id}`} class="group flex flex-col items-center gap-2.5 text-ink no-underline" aria-label={`${c.name}: ${c.status === "pass" ? "passed" : c.status === "fail" ? "needs attention" : "not checked"}`}>
+                    <span class:list={[
+                      "block h-24 w-full max-w-8 rounded-full transition group-hover:opacity-80",
+                      c.status === "pass" && "bg-ink",
+                      c.status === "fail" && "bg-orange",
+                      c.status === "pending" && "border-2 border-dashed border-line",
+                    ]}></span>
+                    <span class="w-full truncate text-center text-[11px] text-muted sm:text-[13px]">{checkShort[c.id]}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
-          <p class="text-muted">{c.detail}</p>
-        </section>
-      ))}
-    </main>
+
+          <!-- Approval -->
+          <div class={card}>
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-lg font-semibold">Needs your approval</h3>
+              <span class="tag tag-warn">1 waiting</span>
+            </div>
+            <p class="mt-3 text-[18px] font-semibold tracking-[-0.01em]">{approval.title}</p>
+            <p class="mt-1 text-[15px] text-muted">Asked by <b class="text-ink">{approval.client}</b> via <code>{approval.tool}</code> · {approval.ago}</p>
+            <pre class="term mt-2.5 rounded-xl bg-warn-bg px-4 py-3 text-warn">{approval.diff}</pre>
+            <p class="mt-2.5 text-[15px] text-muted"><Explain simple={approval.simple} tech={approval.tech} /></p>
+            <div class="mt-3 flex gap-2">
+              <button class="btn btn-sm flex-1" type="button" value="approve" data-decide="decision-status">Approve</button>
+              <button class="btn btn-sm btn-outline flex-1" type="button" value="reject" data-decide="decision-status">Reject</button>
+            </div>
+            <p id="decision-status" class="mt-3 text-[15px] text-muted empty:hidden" role="status"></p>
+          </div>
+
+          <!-- Accounts -->
+          <div class={card}>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold">Your accounts</h3>
+                <p class="text-[15px] text-muted">Your AI tool uses these. It never sees the keys.</p>
+              </div>
+              <a class="text-[15px] font-medium text-muted hover:text-ink" href="/security">Permissions</a>
+            </div>
+            <ul class="mt-3 flex flex-col gap-2.5">
+              {connections.map((c) => (
+                <li class="flex items-center gap-4">
+                  <span class:list={["grid size-10 flex-none place-items-center rounded-full text-[13px] font-bold", badge[c.name]]} aria-hidden="true">{initials[c.name]}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-semibold">{c.name}</span>
+                    <span class="block truncate text-[15px] text-muted">{c.detail}</span>
+                  </span>
+                  <span class={c.on ? "tag tag-ok" : "tag tag-line"}>{c.on ? "Connected" : "Connect"}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="text-[15px] text-muted">{modulesDone} of {modules.length} Level 1 modules done. Every tool call teaches a little. <span class="tag tag-warn ml-1">Sample data</span></p>
   </div>
-</Base>
+</App>

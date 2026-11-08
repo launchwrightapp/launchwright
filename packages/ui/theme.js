@@ -28,3 +28,33 @@
   document.addEventListener("DOMContentLoaded", sync);
   media.addEventListener("change", sync);
 })();
+
+// Explanation level (platform): "simple" for beginners, "tech" for developers.
+// Same pattern as the theme: applied before first paint, remembered per browser.
+// The control is a Dropdown (name="level"); it reports picks with lw:dropdown-change.
+(() => {
+  const KEY = "lw-level";
+  const root = document.documentElement;
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch {}
+  root.dataset.level = saved === "tech" ? "tech" : "simple";
+
+  // Show the saved level in every level dropdown (the HTML ships with "simple").
+  const sync = () => {
+    document.querySelectorAll('[data-dropdown][data-name="level"]').forEach((dd) => {
+      const opt = dd.querySelector(`[role="option"][data-value="${root.dataset.level}"]`);
+      if (!opt) return;
+      dd.querySelectorAll('[role="option"]').forEach((o) => o.setAttribute("aria-selected", String(o === opt)));
+      const text = opt.querySelector("[data-dropdown-label]").textContent;
+      dd.querySelector("[data-dropdown-value]").textContent = text;
+      const t = dd.querySelector("[data-dropdown-trigger]");
+      t.setAttribute("aria-label", t.getAttribute("aria-label").split(":")[0] + ": " + text);
+    });
+  };
+  document.addEventListener("lw:dropdown-change", (e) => {
+    if (e.detail.name !== "level") return;
+    root.dataset.level = e.detail.value === "tech" ? "tech" : "simple";
+    try { localStorage.setItem(KEY, root.dataset.level); } catch {}
+  });
+  document.addEventListener("DOMContentLoaded", sync);
+})();

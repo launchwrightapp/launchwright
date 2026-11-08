@@ -1,0 +1,15 @@
+---
+// A line to copy (a prompt or a command) with a Copy button. Works without JS:
+// the text is selectable; the button only appears once app.ts is running.
+interface Props { label: string; text: string; tone?: "light" | "dark" }
+const { label, text, tone = "light" } = Astro.props;
+const box = tone === "dark" ? "border-white/15 bg-white/10 text-white" : "border-line bg-surface text-ink";
+const btn = tone === "dark" ? "border-white/25 text-white hover:bg-white/10" : "border-line text-ink hover:bg-surface-2";
+---
+<div class="min-w-0">
+  <p class:list={["mb-2 text-[15px] font-medium", tone === "dark" ? "text-white/75" : "text-muted"]}>{label}</p>
+  <div class:list={["flex items-center gap-2 rounded-2xl border py-2 pl-4 pr-2", box]}>
+    <code class="min-w-0 flex-1 [overflow-wrap:anywhere] bg-transparent p-0 py-1 text-[16px]" data-copy-text>{text}</code>
+    <button type="button" data-copy hidden class:list={["inline-flex min-h-10 flex-none cursor-pointer items-center rounded-full border px-4 text-[15px] font-semibold", btn]}>Copy</button>
+  </div>
+</div>
