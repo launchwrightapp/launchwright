@@ -1,6 +1,6 @@
 {
   "name": "launchwright",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Build it right. Launch it right. Learn how real production apps work while you ship your own.",
   "keywords": [
     "launchwright",
@@ -13,10 +13,6 @@
     "production"
   ],
   "homepage": "https://launchwright.app",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/launchwrightapp/launchwright.git"
-  },
   "license": "MIT",
   "author": "Launchwright",
   "type": "module",
