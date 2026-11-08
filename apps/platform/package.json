@@ -12,8 +12,10 @@
     "typecheck": "astro sync && tsc --noEmit -p ."
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.1",
+    "postal-mime": "^4.2.0",
     "tailwindcss": "^4.3.5"
   }
 }

@@ -1,12 +1,12 @@
 // platform.launchwright.app: GitHub sign-in in front of the static dashboard.
 import { SESSION_COOKIE, SESSION_DAYS, cookie, readCookie, sign, verify, type User } from "./session";
+import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 
-interface Env {
+interface Env extends MessagesEnv {
   ASSETS: Fetcher;
   GITHUB_CLIENT_ID: string; // public, in wrangler.jsonc
   GITHUB_CLIENT_SECRET?: string; // secret
   SESSION_SECRET?: string; // secret, 32+ random bytes
-  PUBLIC_ORIGIN?: string; // local dev only: wrangler dev reports the production host
 }
 
 const STATE_COOKIE = "__Host-lw_oauth";
@@ -51,21 +51,36 @@ async function finishLogin(req: Request, url: URL, env: Env) {
     headers: { authorization: `Bearer ${token.access_token}`, accept: "application/vnd.github+json", "user-agent": "launchwright-platform", "x-github-api-version": "2022-11-28" },
   });
   if (!userRes.ok) return fail(url, "github");
-  const gh = (await userRes.json()) as { id: number; login: string; name: string | null; avatar_url: string };
-  const user: User = { id: gh.id, login: gh.login, name: gh.name || gh.login, avatar: gh.avatar_url };
+  const gh = (await userRes.json()) as { id: number; login: string; name: string | null; avatar_url: string; email: string | null };
+  const user: User = { id: gh.id, login: gh.login, name: gh.name || gh.login, avatar: gh.avatar_url, email: await primaryEmail(token.access_token, gh.email) };
 
   const session = await sign(user, env.SESSION_SECRET!);
   return redirect(safeNext(next ? decodeURIComponent(next) : null), {}, [cookie(SESSION_COOKIE, session, SESSION_DAYS * 86400), cookie(STATE_COOKIE, "", 0)]);
 }
 
+// The verified primary email, so team replies reach the learner. Needs the GitHub App's
+// "Email addresses: read" permission; without it we fall back to the public profile email.
+async function primaryEmail(accessToken: string, publicEmail: string | null) {
+  const res = await fetch("https://api.github.com/user/emails", {
+    headers: { authorization: `Bearer ${accessToken}`, accept: "application/vnd.github+json", "user-agent": "launchwright-platform", "x-github-api-version": "2022-11-28" },
+  }).catch(() => null);
+  if (res?.ok) {
+    const list = (await res.json().catch(() => [])) as { email: string; primary: boolean; verified: boolean }[];
+    const hit = Array.isArray(list) ? list.find((e) => e.primary && e.verified) : undefined;
+    if (hit) return hit.email.toLowerCase();
+  }
+  return publicEmail?.toLowerCase() ?? null;
+}
+
 // Fill the signed-in person into the page (name, first name, avatar).
-function personalize(res: Response, user: User) {
+function personalize(res: Response, user: User, admin: boolean) {
   const first = user.name.split(/\s+/)[0];
   const initials = user.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const avatarOk = /^https:\/\/avatars\.githubusercontent\.com\//.test(user.avatar);
   return new HTMLRewriter()
     .on("[data-user-name]", { element: (e) => void e.setInnerContent(user.name) })
     .on("[data-user-first]", { element: (e) => void e.setInnerContent(first) })
+    .on("[data-admin-only]", { element: (e) => void (admin ? e.removeAttribute("data-admin-only") : e.remove()) })
     .on("[data-user-login]", { element: (e) => void e.setInnerContent(`@${user.login}`) })
     .on("[data-user-avatar]", {
       element: (e) => {
@@ -78,7 +93,7 @@ function personalize(res: Response, user: User) {
 }
 
 export default {
-  async fetch(req, env): Promise<Response> {
+  async fetch(req, env, ctx): Promise<Response> {
     const url = new URL(req.url);
     // Fail closed: without secrets nobody can sign in, and nothing private is served.
     if (!env.SESSION_SECRET || !env.GITHUB_CLIENT_SECRET) {
@@ -96,13 +111,24 @@ export default {
     const user = await verify(readCookie(req, SESSION_COOKIE), env.SESSION_SECRET);
     if (url.pathname.replace(/\/$/, "") === "/signin" && user) return redirect("/");
     if (PUBLIC.test(url.pathname)) return env.ASSETS.fetch(req);
+    const api = url.pathname.startsWith("/api/");
+    if (!user && api) return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: { "content-type": "application/json", "cache-control": "no-store" } });
     if (!user) return redirect(`/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
+
+    if (api) return (await handleMessagesApi(req, url, env, user, ctx)) ?? new Response("Not found", { status: 404 });
+    const admin = isAdmin(user, env);
+    // The team inbox doesn't exist for anyone else.
+    if (/^\/inbox(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
 
     const res = await env.ASSETS.fetch(req);
     if (!(res.headers.get("content-type") ?? "").includes("text/html")) return res;
-    const out = personalize(res, user);
+    const out = personalize(res, user, admin);
     const headers = new Headers(out.headers);
     headers.set("cache-control", "private, no-store");
     return new Response(out.body, { status: out.status, headers });
+  },
+  // Email Routing sends hello@launchwright.app here (see messages.ts).
+  async email(message, env) {
+    await handleInboundEmail(message, env);
   },
 } satisfies ExportedHandler<Env>;

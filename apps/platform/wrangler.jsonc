@@ -11,9 +11,14 @@
   "preview_urls": true,
   // The worker runs first so every page checks sign-in (worker/index.ts).
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
-  "vars": { "GITHUB_CLIENT_ID": "Iv23lixXjMCTRCvuULLf" },
+  // ADMIN_GITHUB_IDS: numeric GitHub ids that can open the team inbox (/inbox).
+  "vars": { "GITHUB_CLIENT_ID": "Iv23lixXjMCTRCvuULLf", "ADMIN_GITHUB_IDS": "13403945" },
   "routes": [{ "pattern": "platform.launchwright.app", "custom_domain": true }],
-  "observability": { "enabled": true }
-  // Secrets (not in this file): GITHUB_CLIENT_SECRET and SESSION_SECRET via
+  "observability": { "enabled": true },
+  // Team replies and message notifications go out from hello@. Email Routing also sends
+  // incoming hello@ mail to this worker (the email() handler in worker/index.ts).
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@launchwright.app"] }]
+  // Secrets (not in this file): GITHUB_CLIENT_SECRET, SESSION_SECRET, DATABASE_URL, and
+  // FORWARD_TO (the inbox that gets a copy of every message) via
   // `npx wrangler versions secret put <NAME>`. Locally: .dev.vars (see .dev.vars.example).
 }

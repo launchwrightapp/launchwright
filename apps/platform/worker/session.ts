@@ -1,7 +1,7 @@
 // Signed session cookie: v1.<payload>.<hmac>, both base64url. No server storage.
 // The GitHub token is never kept: we only need to know who you are.
 
-export interface User { id: number; login: string; name: string; avatar: string }
+export interface User { id: number; login: string; name: string; avatar: string; email?: string | null }
 interface Payload extends User { exp: number }
 
 export const SESSION_COOKIE = "__Host-lw_session";
@@ -30,7 +30,7 @@ export async function verify(token: string | undefined, secret: string, now = Da
     if (!ok) return null;
     const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as Payload;
     if (typeof p.exp !== "number" || p.exp * 1000 < now) return null;
-    return { id: p.id, login: p.login, name: p.name, avatar: p.avatar };
+    return { id: p.id, login: p.login, name: p.name, avatar: p.avatar, email: p.email ?? null };
   } catch {
     return null;
   }

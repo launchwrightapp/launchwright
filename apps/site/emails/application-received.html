@@ -1,12 +1,12 @@
 <!doctype html>
 <!--
-  Acknowledgement: sent right after someone applies to the pilot (not wired up yet).
+  Acknowledgement: sent right after someone applies to the pilot.
   Subject:  You applied to the launchwright pilot
   From:     launchwright <hello@launchwright.app>   Reply-To: hello@launchwright.app
-  Fields:   {{name}} (falls back to "there"), {{building}} (optional; drop line 4 if empty)
+  Fields:   {{name}} (falls back to "there"), {{building}} (falls back to a prompt to reply)
   Plain text: application-received.txt
   Email clients ignore <style> and external CSS, so styles are inline and layout is tables.
-  Keep the .html and .txt versions in sync.
+  Keep the .html and .txt versions in sync. Only this first comment is stripped before sending.
 -->
 <html lang="en">
 <head>
@@ -16,108 +16,63 @@
   <meta name="supported-color-schemes" content="light">
   <title>You applied to the launchwright pilot</title>
 </head>
-<body style="margin:0; padding:0; background:#f4f4f1;">
+<body style="margin:0; padding:0; background:#ffffff;">
   <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">We read every application. Here's what happens next.&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f1;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;">
     <tr>
-      <td align="center" style="padding:36px 12px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; font-family:'Inter Tight', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0b0b0b;">
-          <!-- Editor window -->
+      <td align="center" style="padding:48px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; font-family:'Inter Tight', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0b0b0b; text-align:left;">
           <tr>
-            <td style="border:1px solid #e6e5e0; border-radius:18px; background:#ffffff; box-shadow:0 18px 40px -24px rgba(11,11,11,0.35);">
+            <td style="padding:0 0 56px;"><a href="https://launchwright.app" style="color:#0b0b0b; font-size:17px; font-weight:700; letter-spacing:-0.02em; text-decoration:none;">launchwright</a></td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 10px; font-size:15px; line-height:24px; color:#8a8a84;">Hi {{name}},</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 20px;"><h1 style="margin:0; font-size:30px; line-height:1.2; font-weight:700; letter-spacing:-0.03em; color:#0b0b0b;">Thanks for applying. You're on the list.</h1></td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 32px; font-size:16px; line-height:1.65; color:#3d3d3a;">The free pilot has 10 seats. We read every application ourselves, so there's nothing else you need to do right now.</td>
+          </tr>
+          <tr>
+            <td style="padding:20px 0; border-top:1px solid #ececea; border-bottom:1px solid #ececea;">
+              <p style="margin:0 0 6px; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:#8a8a84;">What you're building</p>
+              <p style="margin:0; font-size:16px; line-height:1.6; color:#0b0b0b;">{{building}}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 0 8px; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:#8a8a84;">What happens next</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 32px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <!-- Title bar -->
                 <tr>
-                  <td style="background:#0b0b0b; border-radius:17px 17px 0 0; padding:14px 18px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="padding-right:14px; font-size:0; line-height:0; white-space:nowrap;"><span style="display:inline-block; width:10px; height:10px; border-radius:5px; background:#3a3a37; margin-right:6px;"></span><span style="display:inline-block; width:10px; height:10px; border-radius:5px; background:#3a3a37; margin-right:6px;"></span><span style="display:inline-block; width:10px; height:10px; border-radius:5px; background:#3a3a37;"></span></td>
-                      <td style="white-space:nowrap;"><a href="https://launchwright.app" style="color:#ffffff; font-size:18px; font-weight:700; letter-spacing:-0.02em; text-decoration:none;">launchwright</a><span style="font-size:13px; color:#8a8a84;">&nbsp; / pilot</span></td>
-                    </tr></table>
-                  </td>
+                  <td width="36" valign="top" style="padding:8px 0; font-size:14px; line-height:24px; color:#b9b8b1; font-variant-numeric:tabular-nums;">01</td>
+                  <td valign="top" style="padding:8px 0; font-size:16px; line-height:24px; color:#0b0b0b;">We read your application. Every one, by a person.</td>
                 </tr>
-                <!-- Tab strip -->
                 <tr>
-                  <td style="background:#f4f4f1; border-bottom:1px solid #e6e5e0; padding:0 0 0 0; font-size:0; line-height:0;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="background:#ffffff; border-right:1px solid #e6e5e0; border-top:2px solid #2a17ff; padding:9px 16px 10px; font-size:13px; line-height:18px; font-weight:600; color:#0b0b0b; white-space:nowrap;">application-received<span style="color:#b9b8b1; font-weight:400;">&nbsp;&nbsp;&times;</span></td>
-                    </tr></table>
-                  </td>
+                  <td width="36" valign="top" style="padding:8px 0; font-size:14px; line-height:24px; color:#b9b8b1; font-variant-numeric:tabular-nums;">02</td>
+                  <td valign="top" style="padding:8px 0; font-size:16px; line-height:24px; color:#0b0b0b;">If you're in, we email you a link to get started.</td>
                 </tr>
-                <!-- Editor body -->
                 <tr>
-                  <td>
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:18px 0 6px; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">1</td>
-              <td valign="top" style="padding:18px 0 6px; padding-left:20px; padding-right:28px;"><p style="margin:0; font-size:15px; line-height:26px; color:#62625e;">Hi {{name}},</p></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">2</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><h1 style="margin:0; font-size:30px; line-height:1.15; font-weight:700; letter-spacing:-0.03em; color:#0b0b0b;">Thanks for applying. You're on the list.</h1></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">3</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><p style="margin:0; font-size:17px; line-height:1.6; color:#0b0b0b;">The free pilot has 10 seats. We read every application ourselves, so there's nothing else you need to do right now.</p></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">4</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-left:3px solid #e6e5e0; padding:2px 0 2px 14px;"><p style="margin:0; font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#62625e;">What you're building</p><p style="margin:4px 0 0; font-size:16px; line-height:1.55; color:#0b0b0b;">{{building}}</p></td></tr></table></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">5</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b0b0b; border-radius:14px;">
-                <tr><td style="padding:12px 18px 4px; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8a8a84;">What happens next</td></tr>
-                <tr><td style="padding:2px 16px 14px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td width="22" valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#5fd39a;">&#10003;</td>
-                    <td width="72" valign="top" style="padding:4px 8px 4px 0; font-size:14px; line-height:22px; color:#d6ff3d; white-space:nowrap;">received</td>
-                    <td valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#ffffff;">Your application is saved.</td>
-                  </tr>
-                  <tr>
-                    <td width="22" valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#8a8a84;">&#9675;</td>
-                    <td width="72" valign="top" style="padding:4px 8px 4px 0; font-size:14px; line-height:22px; color:#d6ff3d; white-space:nowrap;">review</td>
-                    <td valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#d9d9d4;">A person reads every one.</td>
-                  </tr>
-                  <tr>
-                    <td width="22" valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#8a8a84;">&#9675;</td>
-                    <td width="72" valign="top" style="padding:4px 8px 4px 0; font-size:14px; line-height:22px; color:#d6ff3d; white-space:nowrap;">invite</td>
-                    <td valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#d9d9d4;">If you're in, we email you to set up your first project together.</td>
-                  </tr>
-                  <tr>
-                    <td width="22" valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#8a8a84;">&#8594;</td>
-                    <td width="72" valign="top" style="padding:4px 8px 4px 0; font-size:14px; line-height:22px; color:#d6ff3d; white-space:nowrap;">starter</td>
-                    <td valign="top" style="padding:4px 0; font-size:14px; line-height:22px; color:#d9d9d4;">Not this round? The free Starter plan stays open after the pilot.</td>
-                  </tr>
-                </table></td></tr>
-              </table></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">6</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#2a17ff; border-radius:14px; padding:20px 22px;"><p style="margin:0 0 6px; font-size:17px; font-weight:700; color:#ffffff;">While you wait, keep building.</p><p style="margin:0 0 14px; font-size:15px; line-height:1.55; color:#e3e0ff;">Launchwright works with the AI tool you already use, like Claude Code, Cursor, or Codex.</p><a href="https://launchwright.app/#how" style="display:inline-block; background:#ffffff; color:#0b0b0b; font-size:14px; font-weight:600; text-decoration:none; border-radius:999px; padding:10px 18px;">See how it works</a></td></tr></table></td>
-            </tr>
-            <tr>
-              <td width="44" valign="top" align="right" style="padding:6px 0 26px; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">7</td>
-              <td valign="top" style="padding:6px 0 26px; padding-left:20px; padding-right:28px;"><p style="margin:6px 0 0; font-size:16px; line-height:1.6;">Questions? Just reply to this email.<br><span style="color:#62625e;">The launchwright team</span></p></td>
-            </tr>
-                    </table>
-                  </td>
-                </tr>
-                <!-- Status bar -->
-                <tr>
-                  <td style="background:#2a17ff; border-radius:0 0 17px 17px; padding:8px 18px; font-size:12px; line-height:18px; color:#ffffff;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="color:#ffffff; white-space:nowrap;"><span style="display:inline-block; width:7px; height:7px; border-radius:4px; background:#d6ff3d;"></span>&nbsp; Application received<span style="color:#c9c3ff;">&nbsp;&nbsp;·&nbsp;&nbsp;Pilot · 10 seats</span></td>
-                      <td align="right" style="white-space:nowrap;"><a href="https://launchwright.app" style="color:#ffffff; text-decoration:none;">launchwright.app</a></td>
-                    </tr></table>
-                  </td>
+                  <td width="36" valign="top" style="padding:8px 0; font-size:14px; line-height:24px; color:#b9b8b1; font-variant-numeric:tabular-nums;">03</td>
+                  <td valign="top" style="padding:8px 0; font-size:16px; line-height:24px; color:#0b0b0b;">Not this round? After the pilot, a free Starter plan stays open to everyone.</td>
                 </tr>
               </table>
             </td>
           </tr>
-          <!-- Footer -->
           <tr>
-            <td style="padding:22px 20px 0; font-size:12px; line-height:1.6; color:#62625e; text-align:center;">
-              You're getting this because you applied to the pilot at launchwright.app. To have your email deleted, reply "delete".<br><a href="mailto:privacy@launchwright.app" style="color:#62625e;">privacy@launchwright.app</a> &nbsp;·&nbsp; <a href="https://launchwright.app/privacy" style="color:#62625e;">Privacy policy</a>
+            <td style="padding:0 0 20px; font-size:16px; line-height:1.65; color:#3d3d3a;">While you wait, keep building. Launchwright works with the AI tool you already use, like Claude Code, Cursor, or Codex.</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 48px;"><a href="https://launchwright.app/#how" style="display:inline-block; background:#0b0b0b; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none; border-radius:999px; padding:12px 24px;">See how it works</a></td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 40px; font-size:16px; line-height:1.65; color:#0b0b0b;">Questions? Just reply to this email.<br><span style="color:#8a8a84;">The launchwright team</span></td>
+          </tr>
+          <tr>
+            <td style="padding:20px 0 0; border-top:1px solid #ececea; font-size:12px; line-height:1.6; color:#8a8a84;">
+              You're getting this because you applied to the pilot at launchwright.app. To have your email deleted, reply "delete" or write to <a href="mailto:privacy@launchwright.app" style="color:#8a8a84;">privacy@launchwright.app</a>.<br><a href="https://launchwright.app/privacy" style="color:#8a8a84;">Privacy policy</a>
             </td>
           </tr>
         </table>
