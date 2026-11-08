@@ -3,88 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
   <title>Launchwright Dashboard</title>
-  <link rel="icon" href="../public/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="../public/grid.css">
-  <style>
-    /* Every card follows one rhythm: head (title + meta) → body. */
-    .crumb { display: flex; align-items: center; gap: 10px; }
-    .crumb .sep { color: var(--line); font-size: 20px; line-height: 1; }
-    .who { display: flex; align-items: center; gap: 10px; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
-
-    .page-title { padding: 28px 0 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
-    .page-title p { margin: 0; }
-
-    .dash { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-    .dash > * { min-width: 0; }
-    @media (max-width: 639px) {
-      .crumb .tag, .who .tag { display: none; }
-      .crumb .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-      .crumb { min-width: 0; }
-    }
-    @media (min-width: 960px) {
-      .dash { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-      .c-4 { grid-column: span 4; }
-      .c-5 { grid-column: span 5; }
-      .c-7 { grid-column: span 7; }
-      .c-12 { grid-column: span 12; }
-      .c-3 { grid-column: span 3; }
-    }
-    @media (min-width: 640px) and (max-width: 959px) {
-      .dash { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .dash > * { grid-column: span 2; }
-      .dash > .c-3 { grid-column: span 1; }
-    }
-
-    .card-head h2 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
-
-    /* Stats: identical structure → label / value / meter / caption */
-    .stat { display: grid; grid-template-rows: auto auto auto auto; gap: 14px; }
-    .stat p { margin: 0; }
-    .value { font-weight: 700; font-size: 3.5rem; letter-spacing: -0.05em; line-height: 0.9; display: flex; align-items: baseline; gap: 8px; }
-    .value small { font-size: 1rem; font-weight: 500; letter-spacing: 0; color: var(--muted); }
-    .meter { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; height: 8px; }
-    .meter i { border-radius: 99px; background: var(--line); }
-    .meter i.on { background: var(--ink); }
-    .meter i.warn { background: var(--orange); }
-    .status-line { height: 8px; display: flex; align-items: center; gap: 8px; }
-    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
-
-    .hint { display: block; font-size: 0.8125rem; color: var(--muted); margin-top: 4px; }
-
-    .side { display: flex; flex-direction: column; gap: 16px; }
-    .side > .card { flex: none; }
-    .side > .lesson { flex: 1; }
-
-    .approval-body { padding: var(--pad); display: flex; flex-direction: column; gap: 12px; }
-    .approval-body p { margin: 0; }
-    .diff { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 12px 14px; margin: 4px 0; white-space: pre-wrap; }
-    .actions { display: flex; gap: 10px; margin-top: 4px; }
-    .actions .btn { flex: 1; }
-
-    .lesson { background: var(--blue); color: #fff; border-color: transparent; display: flex; flex-direction: column; gap: 10px; }
-    .lesson p { margin: 0; }
-    .lesson .label { color: #fff; opacity: 0.75; }
-    .lesson .title { font-weight: 700; font-size: 1.75rem; letter-spacing: -0.035em; line-height: 1.05; }
-    .lesson code { background: rgb(255 255 255 / 0.16); color: #fff; }
-    .lesson .row { margin-top: auto; padding-top: 8px; justify-content: space-between; }
-    .lesson .btn { background: #fff; color: #0b0b0b; border-color: #fff; }
-    .lesson .meta { font-size: 0.8125rem; opacity: 0.75; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 14px var(--pad); border-top: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
-    thead th { border-top: 0; font-size: 0.8125rem; font-weight: 500; color: var(--muted); padding-top: 12px; padding-bottom: 12px; background: var(--surface-2); }
-    td.result { white-space: normal; min-width: 220px; }
-    .table-wrap { overflow-x: auto; }
-
-    .conn { display: flex; flex-direction: column; gap: 10px; }
-    .conn p { margin: 0; }
-    .conn .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  </style>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/grid.css">
+  <link rel="stylesheet" href="/dashboard.css">
 </head>
 <body>
 <div class="wrap">
@@ -98,6 +25,10 @@
     </div>
     <div class="who">
       <span class="tag warn">Sample data</span>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
       <span class="avatar" aria-label="Juan D.">JD</span>
     </div>
   </header>

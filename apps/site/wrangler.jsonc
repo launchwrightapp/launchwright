@@ -1,5 +1,5 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "launchwright-site",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
@@ -8,6 +8,10 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
+  "routes": [
+    { "pattern": "launchwright.app", "custom_domain": true },
+    { "pattern": "www.launchwright.app", "custom_domain": true }
+  ],
   "observability": { "enabled": true }
   // Secrets (not in this file): DATABASE_URL via `npx wrangler secret put DATABASE_URL`
 }

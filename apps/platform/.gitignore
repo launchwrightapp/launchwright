@@ -1,0 +1,4 @@
+# Copied from apps/site by scripts/sync-shared.mjs
+public/grid.css
+public/favicon.svg
+public/theme.js

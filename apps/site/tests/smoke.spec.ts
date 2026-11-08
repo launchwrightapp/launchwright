@@ -78,3 +78,15 @@ test("form shows an error for a bad email without submitting", async ({ page }) 
   await page.getByRole("button", { name: /Join the waitlist/ }).click();
   await expect(page.locator("#waitlist-status")).toHaveText("Please check your email address.");
 });
+
+test("theme switch toggles and remembers the choice", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  const toggle = page.locator("[data-theme-toggle]");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});

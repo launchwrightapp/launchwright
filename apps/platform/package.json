@@ -1,0 +1,14 @@
+{
+  "name": "launchwright-platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync-shared.mjs",
+    "predev": "npm run sync",
+    "dev": "wrangler dev --port 8791",
+    "predeploy": "npm run sync",
+    "deploy": "wrangler deploy",
+    "pretest:e2e": "npm run sync",
+    "test:e2e": "playwright test"
+  }
+}
