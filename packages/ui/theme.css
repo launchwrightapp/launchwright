@@ -31,6 +31,7 @@
   --bad: #c0241b;
   --bad-bg: #fde7e5;
   --focus-base: #2a17ff;
+  --logo: #2a17ff; /* site blue; creatives/launchwright/logo.svg */
   --focus: #2a17ff;
   color-scheme: light;
 }
@@ -51,6 +52,7 @@
     --bad: #ff7a70;
     --bad-bg: #2f1311;
     --focus-base: #9a90ff;
+    --logo: #9a90ff; /* lighter blue, readable on dark */
     --focus: #9a90ff;
     color-scheme: dark;
   }
@@ -71,6 +73,7 @@
   --bad: #ff7a70;
   --bad-bg: #2f1311;
   --focus-base: #9a90ff;
+  --logo: #9a90ff;
   --focus: #9a90ff;
   color-scheme: dark;
 }
@@ -134,9 +137,10 @@
 }
 
 @layer components {
-  /* The logo is the word "launchwright", all lowercase. Same everywhere. */
+  /* The logo is the word "launchwright", all lowercase, in the site blue.
+     On the black bars (platform, sign-in, site footer) it stays white. */
   .logo {
-    @apply font-sans text-[22px] sm:text-[26px] font-bold leading-none tracking-[-0.02em] whitespace-nowrap text-ink no-underline lowercase;
+    @apply font-sans text-[22px] sm:text-[26px] font-bold leading-none tracking-[-0.02em] whitespace-nowrap text-(--logo) no-underline lowercase;
   }
   .gutter { @apply px-4 md:px-10 xl:px-16; }
   .btn {
