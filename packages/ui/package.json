@@ -1,6 +1,7 @@
 {
   "name": "@launchwright/ui",
   "private": true,
+  "license": "AGPL-3.0-only",
   "version": "0.0.0",
   "description": "Shared UI for the Launchwright site and platform: Tailwind theme, layout, logo, theme switch."
 }

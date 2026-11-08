@@ -1,6 +1,7 @@
 {
   "name": "launchwright-site",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 8790",
