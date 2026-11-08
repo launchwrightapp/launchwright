@@ -10,7 +10,7 @@ import Check from "../../../../packages/ui/Check.astro";
 import Explain from "../components/Explain.astro";
 import { project, checks, passing, modules, modulesDone, audit, connections, lesson } from "../data/sample";
 
-type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox";
+type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox" | "applicants";
 interface Props { title: string; page: PageId }
 const { title, page } = Astro.props;
 
@@ -22,17 +22,26 @@ const icons: Record<PageId, string> = {
   connect: "M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5",
   messages: "M4 5h16v11H9l-5 4z",
   inbox: "M3 13h5l1.5 3h5l1.5-3h5M5.5 5h13L21 13v6H3v-6z",
+  applicants: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M22 20v-1a4 4 0 0 0-3-3.9M16 4.1a3.5 3.5 0 0 1 0 6.8",
 };
-// admin: only the team sees it (the worker removes [data-admin-only] for everyone else).
-const nav: { id: PageId; href: string; label: string; badge?: string; admin?: boolean }[] = [
+// The worker removes [data-admin-only] for learners and [data-learner-only] for the team,
+// so the team sees operations first, then the learner pages as a preview.
+type NavItem = { id: PageId; href: string; label: string; badge?: string; admin?: boolean; learner?: boolean };
+const ops: NavItem[] = [
+  { id: "applicants", href: "/applicants", label: "Applicants", admin: true },
+  { id: "inbox", href: "/inbox", label: "Team inbox", admin: true },
+];
+const isOps = ops.some((o) => o.id === page);
+const nav: NavItem[] = [
+  ...ops,
   { id: "overview", href: "/", label: "Overview" },
   { id: "lessons", href: "/lessons", label: "Lessons" },
   { id: "readiness", href: "/readiness", label: "Readiness" },
   { id: "security", href: "/security", label: "Security", badge: "1" },
   { id: "connect", href: "/connect", label: "Connect AI tool" },
-  { id: "messages", href: "/messages", label: "Messages" },
-  { id: "inbox", href: "/inbox", label: "Team inbox", admin: true },
+  { id: "messages", href: "/messages", label: "Messages", learner: true },
 ];
+const visibility = (n: NavItem) => ({ "data-admin-only": n.admin ? "" : undefined, "data-learner-only": n.learner ? "" : undefined });
 const levels = [
   { value: "simple", label: "Simple", hint: "Plain words. Best if you're new." },
   { value: "tech", label: "Technical", hint: "Exact commands, status codes, and config." },
@@ -52,6 +61,7 @@ const allSections = [
   { id: "modules", label: "Lessons", meta: `${modulesDone}/${modules.length}`, open: true },
   { id: "accounts", label: "Accounts", meta: `${connections.filter((c) => c.on).length}/${connections.length}`, open: false },
   { id: "messages", label: "Messages", meta: "", open: true },
+  { id: "ops", label: "Operations", meta: "", open: true },
 ];
 const focus: Record<PageId, string[]> = {
   overview: ["checks", "modules", "accounts"],
@@ -60,7 +70,8 @@ const focus: Record<PageId, string[]> = {
   security: ["accounts"],
   connect: ["accounts"],
   messages: ["messages"],
-  inbox: ["messages"],
+  inbox: ["ops"],
+  applicants: ["ops"],
 };
 const sections = allSections
   .filter((s) => focus[page].includes(s.id))
@@ -72,7 +83,7 @@ const sections = allSections
     <!-- Title bar -->
     <header class="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 bg-night px-3 text-white lg:static lg:px-4">
       <a href="/" class="logo flex-none text-[20px] text-white sm:text-[20px]" aria-label="Launchwright home">launchwright</a>
-      <span class="hidden truncate text-[14px] text-white/55 md:inline">/ {project.name} / <span class="text-white/85">{title}</span></span>
+      <span class="hidden truncate text-[14px] text-white/55 md:inline">/ {isOps ? "team" : project.name} / <span class="text-white/85">{title}</span></span>
       <div class="ml-auto flex flex-none items-center gap-2">
         <Dropdown id="level" name="level" label="Explain" options={levels} value="simple" tone="dark" hideLabelBelow="sm" searchPlaceholder="Search levels" size="sm" />
         <ThemeToggle tone="dark" compact />
@@ -94,10 +105,13 @@ const sections = allSections
           <nav id="app-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+10px)] z-30 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[24px] border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/20">
             <p class="px-3.5 pb-1.5 pt-1 text-[14px] text-muted">{project.name}</p>
             {nav.map((n) => (
-              <a href={n.href} data-admin-only={n.admin ? "" : undefined} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
+              <>
+              {n.id === "overview" && <p data-admin-only class="mt-1 border-t border-line px-3.5 pb-1 pt-2.5 text-[13px] text-muted">Learner view</p>}
+              <a href={n.href} {...visibility(n)} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
                 {n.label}
                 {n.badge && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
               </a>
+              </>
             ))}
             <div class="mt-1 flex items-center justify-between gap-3 border-t border-line px-3.5 pt-2.5">
               <span class="min-w-0"><span class="block truncate text-[15px] font-semibold" data-user-name>{project.user.name}</span><span class="block truncate text-[13px] text-muted" data-user-login>Sample learner</span></span>
@@ -112,9 +126,11 @@ const sections = allSections
       <!-- Activity bar -->
       <nav aria-label="Dashboard" class="hidden w-14 flex-none flex-col items-center gap-1 bg-night py-2 lg:flex">
         {nav.map((n) => (
+          <>
+          {n.id === "overview" && <span data-admin-only class="my-1 h-px w-8 bg-white/15" aria-hidden="true"></span>}
           <a
             href={n.href}
-            data-admin-only={n.admin ? "" : undefined}
+            {...visibility(n)}
             title={n.label}
             aria-current={n.id === page ? "page" : undefined}
             class="relative grid size-11 place-items-center rounded-xl text-white/55 no-underline hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
@@ -123,17 +139,27 @@ const sections = allSections
             <span class="sr-only">{n.label}</span>
             {n.badge && <span class="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-orange text-[10px] font-bold text-night" aria-hidden="true">{n.badge}</span>}
           </a>
+          </>
         ))}
       </nav>
 
       <!-- Explorer -->
-      <aside aria-label="Explorer" class="hidden w-64 flex-none flex-col gap-1 overflow-y-auto border-r border-line bg-canvas py-3 lg:flex">
+      <aside aria-label="Explorer" class:list={["hidden w-64 flex-none flex-col gap-1 overflow-y-auto border-r border-line py-3 lg:flex", isOps ? "bg-surface" : "bg-canvas"]}>
         <div class="px-4 pb-2">
+          {isOps ? (
+            <>
+              <p class="flex items-center gap-2"><span class="size-2 flex-none rounded-full bg-blue ring-4 ring-blue/15" aria-hidden="true"></span><span class="truncate text-[15px] font-semibold">launchwright team</span></p>
+              <p class="mt-1 truncate pl-4 text-[13px] text-muted">Operations · only you can see this</p>
+            </>
+          ) : (
+            <>
           <p class="flex items-center gap-2">
             <span class="size-2 flex-none rounded-full bg-ok ring-4 ring-ok-bg" aria-hidden="true"></span>
             <span class="truncate text-[15px] font-semibold">{project.name}</span>
           </p>
           <p class="mt-1 truncate pl-4 text-[13px] text-muted">{project.framework} · {project.branch} · {project.stack}</p>
+            </>
+          )}
         </div>
         {sections.map((s) => (
           <section class="border-t border-line px-1.5 pt-1.5">
@@ -179,7 +205,7 @@ const sections = allSections
               {s.id === "messages" && (
                 <>
                   <ul class="flex flex-col">
-                    {nav.filter((n) => n.id === "messages" || n.id === "inbox").map((n) => (
+                    {nav.filter((n) => n.id === "messages").map((n) => (
                       <li data-admin-only={n.admin ? "" : undefined}><a class:list={[row, n.id === page && "bg-surface-3/70 font-medium"]} href={n.href} aria-current={n.id === page ? "page" : undefined}>
                         <svg class="size-4 flex-none text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
                         <span class="truncate">{n.id === "messages" ? "Talk to the team" : n.label}</span>
@@ -188,6 +214,16 @@ const sections = allSections
                   </ul>
                   <p class="px-3 pt-2 text-[13px] text-muted">Or email <a href="mailto:hello@launchwright.app">hello@launchwright.app</a>. A person reads every message.</p>
                 </>
+              )}
+              {s.id === "ops" && (
+                <ul class="flex flex-col">
+                  {ops.map((n) => (
+                    <li><a class:list={[row, n.id === page && "bg-surface-3/70 font-medium"]} href={n.href} aria-current={n.id === page ? "page" : undefined}>
+                      <svg class="size-4 flex-none text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
+                      <span class="truncate">{n.label}</span>
+                    </a></li>
+                  ))}
+                </ul>
               )}
               {s.id === "accounts" && (
                 <ul class="flex flex-col">
@@ -206,7 +242,7 @@ const sections = allSections
         <!-- Open tabs (JS keeps the list; without JS only the current page shows) -->
         <div class="hidden h-11 flex-none items-stretch overflow-x-auto border-b border-line bg-canvas lg:flex" role="navigation" aria-label="Open pages" data-editor-tabs data-page={page}>
           {nav.map((n) => (
-            <div data-tab={n.id} data-admin-only={n.admin ? "" : undefined} hidden={n.id !== page} data-current={n.id === page ? "" : undefined} class="group flex flex-none items-center border-r border-line text-[14px] data-[current]:bg-surface">
+            <div data-tab={n.id} {...visibility(n)} hidden={n.id !== page} data-current={n.id === page ? "" : undefined} class="group flex flex-none items-center border-r border-line text-[14px] data-[current]:bg-surface">
               <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex h-full items-center gap-2 pl-4 pr-1 text-muted no-underline aria-[current=page]:font-semibold aria-[current=page]:text-ink">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
                 {n.label}
@@ -216,17 +252,20 @@ const sections = allSections
               </button>
             </div>
           ))}
-          <button type="button" data-collapse="inspector" aria-controls="inspector" aria-expanded="true" aria-label="Show or hide the lesson panel" title="Lesson panel" class="ml-auto mr-2 hidden size-8 flex-none cursor-pointer self-center place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink aria-expanded:text-ink xl:grid">
+          {!isOps && (
+<button type="button" data-collapse="inspector" aria-controls="inspector" aria-expanded="true" aria-label="Show or hide the lesson panel" title="Lesson panel" class="ml-auto mr-2 hidden size-8 flex-none cursor-pointer self-center place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink aria-expanded:text-ink xl:grid">
             <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg>
           </button>
+)}
         </div>
 
-        <main class="@container relative min-h-0 flex-1 bg-surface px-4 pb-8 pt-5 md:px-6 lg:overflow-y-auto lg:pt-6" data-editor>
+        <main class:list={["@container relative min-h-0 flex-1 px-4 pb-8 pt-5 md:px-6 lg:overflow-y-auto lg:pt-6", isOps ? "bg-surface-2" : "bg-surface"]} data-editor>
           <slot />
         </main>
 
         <!-- Bottom panel -->
-        <section aria-label="Panel" class="hidden flex-none flex-col border-t border-line bg-night text-white lg:flex">
+        {!isOps && (
+<section aria-label="Panel" class="hidden flex-none flex-col border-t border-line bg-night text-white lg:flex">
           <div class="flex h-9 items-center gap-1 px-2">
             <div role="tablist" aria-label="Panel" data-tabs class="flex h-full items-stretch">
               <button type="button" role="tab" id="pt-calls" aria-controls="pp-calls" aria-selected="true" class="cursor-pointer border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Tool calls</button>
@@ -261,10 +300,12 @@ const sections = allSections
             </ul>
           </div>
         </section>
+)}
       </div>
 
       <!-- Lesson panel: the lesson behind your next step. Hide it from the tab bar. -->
-      <aside id="inspector" aria-labelledby="insp-title" class="hidden w-72 flex-none flex-col gap-4 overflow-y-auto border-l border-line bg-canvas p-4 xl:flex">
+      {!isOps && (
+<aside id="inspector" aria-labelledby="insp-title" class="hidden w-72 flex-none flex-col gap-4 overflow-y-auto border-l border-line bg-canvas p-4 xl:flex">
         <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Lesson</p>
         <div class="flex flex-col gap-2 rounded-[20px] bg-blue p-4 text-white">
           <p class="text-[13px] text-white/75">Module {lesson.module} · {lesson.area} · ~{lesson.minutes} min</p>
@@ -284,10 +325,12 @@ const sections = allSections
         <a class="btn btn-sm" href="/lessons">Start the lesson</a>
         <p class="text-[13px] text-muted">Lessons run inside your AI tool. Each step explains what changed and why.</p>
       </aside>
+)}
     </div>
 
     <!-- Status bar -->
     <footer class="flex min-h-8 flex-none flex-wrap items-center gap-x-4 gap-y-1 bg-blue px-3 py-1 text-[13px] text-white">
+      {isOps ? <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>Operations · team only</span> : (<>
       <span class="flex items-center gap-1.5"><svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="7" r="2" /><path d="M6 7v10M18 9c0 5-12 3-12 8" /></svg>main</span>
       <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>Live · {project.commit}</span>
       <a class="text-white no-underline hover:underline" href="/readiness">{passing}/{checks.length} checks</a>
@@ -295,6 +338,7 @@ const sections = allSections
       <span class="ml-auto hidden sm:inline">Claude Code connected</span>
       <span class="hidden sm:inline">Explain: <Explain simple="Simple" tech="Technical" /></span>
       <span class="rounded-full bg-white/15 px-2">Sample data</span>
+    </>)}
     </footer>
   </div>
 </Base>

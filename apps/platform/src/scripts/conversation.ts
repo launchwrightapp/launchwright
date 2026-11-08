@@ -41,12 +41,39 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
   }
 }
 
-// Ctrl/Cmd+Enter sends.
-export function submitOnShortcut(form: HTMLFormElement) {
-  form.querySelector("textarea")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+// Chat box (components/Composer.astro): Enter sends, Shift+Enter adds a line,
+// the field grows with its text, and Send stays off while it's empty.
+export function initComposer(form: HTMLFormElement) {
+  const box = form.querySelector<HTMLTextAreaElement>("[data-composer-input]")!;
+  const send = form.querySelector<HTMLButtonElement>("[data-composer-send]")!;
+  const status = form.querySelector<HTMLElement>("[data-composer-status]")!;
+  const fit = () => {
+    box.style.height = "auto";
+    box.style.height = `${box.scrollHeight}px`;
+    send.disabled = form.dataset.busy === "1" || !box.value.trim();
+  };
+  box.addEventListener("input", fit);
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
-      form.requestSubmit();
+      if (!send.disabled) form.requestSubmit();
     }
   });
+  return {
+    box,
+    value: () => box.value.trim(),
+    busy(on: boolean) {
+      form.dataset.busy = on ? "1" : "";
+      fit();
+    },
+    clear() {
+      box.value = "";
+      fit();
+    },
+    say(text: string, bad = false) {
+      status.textContent = text;
+      status.className = bad ? "text-bad" : "";
+    },
+    focus: () => box.focus(),
+  };
 }

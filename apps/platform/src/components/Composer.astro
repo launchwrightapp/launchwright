@@ -1,0 +1,19 @@
+---
+// Chat box: one rounded field with the send button inside, like AI chat apps.
+// Enter sends, Shift+Enter adds a line (src/scripts/conversation.ts). The field grows as you type.
+interface Props { id: string; label: string; placeholder?: string; [attr: `data-${string}`]: string | undefined }
+const { id, label, placeholder, ...rest } = Astro.props;
+---
+<form {...rest} class="flex flex-col gap-1.5">
+  <div class="flex items-end gap-2 rounded-[24px] border border-line bg-surface py-2 pl-5 pr-2 shadow-xs focus-within:border-transparent focus-within:outline-2 focus-within:outline-(--focus) dark:bg-surface-2">
+    <label for={id} class="sr-only">{label}</label>
+    <textarea id={id} name="body" rows="1" maxlength="5000" required data-composer-input placeholder={placeholder} class="max-h-60 min-h-9 flex-1 resize-none bg-transparent py-1.5 text-[16px] leading-6 text-ink placeholder:text-muted focus:outline-none focus-visible:outline-none"></textarea>
+    <button type="submit" aria-label="Send" title="Send" disabled data-composer-send class="grid size-9 flex-none cursor-pointer place-items-center rounded-full bg-ink text-on-ink transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-30">
+      <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+    </button>
+  </div>
+  <p class="flex flex-wrap gap-x-3 px-2 text-[13px] text-muted">
+    <span data-composer-status role="status"></span>
+    <span class="ml-auto">Enter sends · Shift+Enter for a new line</span>
+  </p>
+</form>

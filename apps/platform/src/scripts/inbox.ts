@@ -1,6 +1,6 @@
 // Team inbox: every conversation, newest first. Pick one, read it, and reply.
 // Replies are emailed from hello@launchwright.app and show on the learner's Messages page.
-import { add, api, renderMessage, submitOnShortcut, type Message } from "./conversation";
+import { add, api, initComposer, renderMessage, type Message } from "./conversation";
 
 interface Summary { id: number; email: string | null; login: string | null; name: string; subject: string; unread: boolean; at: string; preview: string; waiting: boolean }
 interface Thread { id: number; email: string | null; login: string | null; name: string; subject: string }
@@ -13,17 +13,12 @@ const title = document.querySelector<HTMLElement>("[data-pane-title]")!;
 const who = document.querySelector<HTMLElement>("[data-pane-who]")!;
 const convo = document.querySelector<HTMLOListElement>("[data-pane-messages]")!;
 const form = document.querySelector<HTMLFormElement>("[data-reply-form]")!;
-const box = form.querySelector<HTMLTextAreaElement>("textarea")!;
-const button = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
-const status = document.querySelector<HTMLElement>("[data-reply-status]")!;
+const composer = initComposer(form);
 
 let current: Thread | null = null;
 let threads: Summary[] = [];
 
-const say = (text: string, bad = false) => {
-  status.textContent = text;
-  status.className = bad ? "text-[15px] text-bad" : "text-[15px] text-muted";
-};
+const say = composer.say;
 const ago = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 function drawList() {
@@ -89,28 +84,27 @@ async function open(id: number) {
   if (t) t.unread = false;
   drawList();
   say("");
-  box.focus();
+  composer.focus();
 }
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!current) return;
-  const body = box.value.trim();
+  const body = composer.value();
   if (!body) return say("Write a reply first.", true);
-  button.disabled = true;
+  composer.busy(true);
   say("Sending…");
   const { ok, data } = await api<{ message: Message; emailed: boolean }>(`/api/admin/threads/${current.id}/reply`, { method: "POST", body: { body } });
-  button.disabled = false;
+  composer.busy(false);
   if (!ok) return say(data.error ?? "That didn't send. Please try again.", true);
   add(convo, renderMessage(data.message, "out", (x) => `${x.author ?? "Team"} (team)`));
-  box.value = "";
+  composer.clear();
   say(data.emailed ? `Sent from hello@launchwright.app to ${current.email}.` : "Saved. They'll see it on their Messages page.");
   const t = threads.find((x) => x.id === current!.id);
   if (t) Object.assign(t, { waiting: false, preview: body, at: data.message.at });
   threads.sort((a, b) => b.at.localeCompare(a.at));
   drawList();
 });
-submitOnShortcut(form);
 
 const fromHash = () => Number(location.hash.match(/^#thread-(\d+)$/)?.[1] ?? 0);
 const openFromHash = () => {
