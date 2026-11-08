@@ -1,5 +1,10 @@
 node_modules/
-*.tgz
+.wrangler/
+.dev.vars
 .env
 .env.*
+!.dev.vars.example
 .DS_Store
+test-results/
+playwright-report/
+*.tgz

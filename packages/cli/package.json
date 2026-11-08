@@ -1,0 +1,28 @@
+{
+  "name": "launchwright",
+  "version": "0.0.2",
+  "description": "Build it right. Launch it right. Learn how real production apps work while you ship your own.",
+  "keywords": [
+    "launchwright",
+    "mcp",
+    "deploy",
+    "learning",
+    "beginners",
+    "devops",
+    "ci",
+    "production"
+  ],
+  "homepage": "https://launchwright.app",
+  "license": "MIT",
+  "author": "Launchwright",
+  "type": "module",
+  "bin": {
+    "launchwright": "bin/cli.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

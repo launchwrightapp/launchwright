@@ -1,17 +1,15 @@
-# launchwright
+# Launchwright
 
-**Build it right. Launch it right.**
+Build it right. Launch it right.
 
-Launchwright teaches beginners how real production apps work while they ship their own app. Use your own AI tool (Claude Code, Codex, Cursor), connect it to Launchwright, and every step comes with a short lesson on what happened and why.
-
-> This package is a placeholder. The CLI is coming soon.
+| Path | What |
+|---|---|
+| `apps/site` | launchwright.app landing page + waitlist (Cloudflare Workers + Neon) |
+| `apps/site/design` | Dashboard mockup |
+| `packages/cli` | `launchwright` npm package (placeholder CLI) |
 
 ```bash
-npx launchwright
+npm install
+npm run dev -w apps/site
+npm run test:e2e -w apps/site
 ```
-
-Updates: [launchwright.app](https://launchwright.app)
-
-## License
-
-MIT

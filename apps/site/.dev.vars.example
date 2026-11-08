@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local dev (never commit .dev.vars).
+# Without it, the waitlist API returns 503 "not open yet".
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
