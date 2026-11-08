@@ -25,17 +25,17 @@ const nav = [
       <ThemeToggle />
       <a class="btn hidden sm:inline-flex" href={`${base}#pilot`}>Join the free pilot</a>
 
-      <!-- Mobile menu: a native <details>, so it works without JS -->
-      <details class="group relative lg:hidden" data-mobile-menu>
-        <summary class="grid size-[50px] cursor-pointer place-items-center rounded-full border border-line bg-surface text-ink" aria-label="Menu">
-          <svg class="size-5 group-open:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 14h14" /></svg>
-          <svg class="hidden size-5 group-open:block" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
-        </summary>
-        <nav aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 shadow-2xl shadow-black/10">
+      <!-- Mobile menu: custom popover (packages/ui/dropdown.ts) -->
+      <div class="relative lg:hidden" data-popover>
+        <button type="button" data-popover-trigger aria-expanded="false" aria-controls="site-menu" aria-label="Menu" class="group grid size-[50px] cursor-pointer place-items-center rounded-full border border-line bg-surface text-ink">
+          <svg class="size-5 group-aria-expanded:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 14h14" /></svg>
+          <svg class="hidden size-5 group-aria-expanded:block" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
+        </button>
+        <nav id="site-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 shadow-2xl shadow-black/10">
           {nav.map(([href, label]) => <a href={base + href} class="rounded-2xl px-4 py-3 text-[18px] font-medium text-ink no-underline hover:bg-surface-2">{label}</a>)}
           <a class="btn mt-2" href={`${base}#pilot`}>Join the free pilot</a>
         </nav>
-      </details>
+      </div>
     </div>
   </div>
 </header>

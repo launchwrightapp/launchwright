@@ -30,6 +30,8 @@
   --warn-bg: #fdeae1;
   --bad: #c0241b;
   --bad-bg: #fde7e5;
+  --focus-base: #2a17ff;
+  --focus: #2a17ff;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -48,6 +50,8 @@
     --warn-bg: #2e1810;
     --bad: #ff7a70;
     --bad-bg: #2f1311;
+    --focus-base: #9a90ff;
+    --focus: #9a90ff;
     color-scheme: dark;
   }
 }
@@ -66,6 +70,8 @@
   --warn-bg: #2e1810;
   --bad: #ff7a70;
   --bad-bg: #2f1311;
+  --focus-base: #9a90ff;
+  --focus: #9a90ff;
   color-scheme: dark;
 }
 
@@ -111,7 +117,11 @@
     font-size: 17px;
     line-height: 1.55;
   }
-  :focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; border-radius: 4px; }
+  /* Focus ring: blue on light, lighter blue on dark, lime on the always-dark
+     surfaces (night bars, blue cards). Popovers inside them go back to normal. */
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+  .bg-night, .bg-blue { --focus: var(--color-lime); }
+  :is(.bg-night, .bg-blue) :is(.bg-surface, .bg-canvas) { --focus: var(--focus-base); }
   code { @apply font-mono rounded-md bg-surface-3 px-1.5 py-0.5 text-[0.85em]; }
   summary { list-style: none; }
 
@@ -144,7 +154,7 @@
   .card { @apply rounded-[40px] border border-line bg-surface-2 p-7; }
   .label { @apply text-base font-medium text-muted; }
   .input {
-    @apply min-h-[54px] w-full rounded-2xl border border-line bg-surface px-[18px] py-3.5 text-[17px] text-ink placeholder:text-muted focus:border-transparent focus:outline-2 focus:outline-offset-0 focus:outline-blue;
+    @apply min-h-[54px] w-full rounded-2xl border border-line bg-surface px-[18px] py-3.5 text-[17px] text-ink placeholder:text-muted focus:border-transparent focus:outline-2 focus:outline-offset-0 focus:outline-(--focus);
   }
   /* Subtle scroll reveal. Only hides content once site.ts has set .reveal-on,
      so nothing stays hidden without JS, and it's off for reduced motion. */
