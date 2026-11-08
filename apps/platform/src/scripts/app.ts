@@ -53,3 +53,55 @@ document.querySelectorAll<HTMLButtonElement>("[data-decide]").forEach((btn) => {
       : "Sample only: in the real app, Claude Code would be told no and nothing would change.";
   });
 });
+
+// Collapsible sections (explorer groups, bottom panel). Remembered per browser.
+const store = {
+  get(k: string) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k: string, v: string) { try { localStorage.setItem(k, v); } catch {} },
+};
+document.querySelectorAll<HTMLButtonElement>("[data-collapse]").forEach((btn) => {
+  const target = document.getElementById(btn.dataset.collapse!);
+  if (!target) return;
+  const key = `lw-collapse:${btn.dataset.collapse}`;
+  const apply = (open: boolean) => {
+    btn.setAttribute("aria-expanded", String(open));
+    target.hidden = !open;
+  };
+  if (store.get(key) === "closed") apply(false);
+  btn.addEventListener("click", () => {
+    const open = btn.getAttribute("aria-expanded") !== "true";
+    apply(open);
+    store.set(key, open ? "open" : "closed");
+  });
+});
+
+// Editor tabs: pages you've opened stay as tabs until you close them.
+const strip = document.querySelector<HTMLElement>("[data-editor-tabs]");
+if (strip) {
+  const KEY = "lw-tabs";
+  const current = strip.dataset.page!;
+  const all = [...strip.querySelectorAll<HTMLElement>("[data-tab]")].map((t) => t.dataset.tab!);
+  let open: string[] = [];
+  try { open = JSON.parse(store.get(KEY) ?? "[]"); } catch {}
+  open = open.filter((id) => all.includes(id));
+  if (!open.includes(current)) open.push(current);
+  const render = () => {
+    strip.querySelectorAll<HTMLElement>("[data-tab]").forEach((t) => (t.hidden = !open.includes(t.dataset.tab!)));
+    store.set(KEY, JSON.stringify(open));
+  };
+  render();
+  strip.addEventListener("click", (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>("[data-tab-close]");
+    if (!btn) return;
+    const id = btn.dataset.tabClose!;
+    const i = open.indexOf(id);
+    open = open.filter((x) => x !== id);
+    if (id !== current) return render();
+    // Closing the page you're on opens its neighbor (or Overview if none are left).
+    const next = open[Math.max(0, i - 1)] ?? "overview";
+    if (!open.length) open = ["overview"];
+    render();
+    const link = strip.querySelector<HTMLAnchorElement>(`[data-tab="${next}"] a`);
+    if (link) location.href = link.href;
+  });
+}

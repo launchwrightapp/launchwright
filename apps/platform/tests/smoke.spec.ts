@@ -61,9 +61,10 @@ test("explain dropdown works with the keyboard and closes on Escape", async ({ p
 
 test("security tabs switch panels", async ({ page }) => {
   await page.goto("/security");
-  await expect(page.getByRole("tabpanel")).toHaveCount(1);
-  await page.getByRole("tab", { name: /Secrets/ }).click();
-  await expect(page.getByRole("tabpanel")).toContainText("DATABASE_URL");
+  const main = page.getByRole("main");
+  await expect(main.getByRole("tabpanel")).toHaveCount(1);
+  await main.getByRole("tab", { name: /Secrets/ }).click();
+  await expect(main.getByRole("tabpanel")).toContainText("DATABASE_URL");
 });
 
 test("sidebar or menu marks the current page", async ({ page, isMobile }) => {
@@ -83,8 +84,28 @@ test("security headers and noindex", async ({ request }) => {
 
 test("top bar stays fixed while scrolling", async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => scrollTo({ top: 1200, behavior: "instant" }));
+  // Desktop scrolls the editor pane; mobile scrolls the page.
+  await page.evaluate(() => {
+    document.querySelector("[data-editor]")!.scrollTop = 1200;
+    scrollTo({ top: 1200, behavior: "instant" });
+  });
   const box = await page.getByRole("banner").boundingBox();
   expect(box?.y).toBe(0);
   await expect(page.getByRole("button", { name: /^Explain/ })).toBeInViewport();
+});
+
+test("editor shell: tabs remember opened pages, panel shows problems", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The editor chrome is desktop only");
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Dashboard" }).getByRole("link", { name: "Readiness" }).click();
+  const tabs = page.getByRole("navigation", { name: "Open pages" });
+  await expect(tabs.getByRole("link", { name: "Overview" })).toBeVisible();
+  await expect(tabs.getByRole("link", { name: "Readiness" })).toHaveAttribute("aria-current", "page");
+  await tabs.getByRole("button", { name: "Close Overview" }).click();
+  await expect(tabs.getByRole("link", { name: "Overview" })).toBeHidden();
+  const panel = page.getByRole("region", { name: "Panel" });
+  await panel.getByRole("tab", { name: /Problems/ }).click();
+  await expect(panel.getByRole("tabpanel")).toContainText("Auth on API routes");
+  await panel.getByRole("button", { name: "Show or hide the panel" }).click();
+  await expect(panel.getByRole("tabpanel")).toBeHidden();
 });

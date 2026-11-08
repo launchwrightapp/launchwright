@@ -11,8 +11,10 @@ interface Props {
   tone?: "light" | "dark";
   hideLabelBelow?: "sm" | "md" | "lg" | "xl";
   searchPlaceholder?: string;
+  size?: "md" | "sm";
 }
-const { id, name, label, options, value, tone = "light", hideLabelBelow, searchPlaceholder = "Search" } = Astro.props;
+const { id, name, label, options, value, tone = "light", hideLabelBelow, searchPlaceholder = "Search", size = "md" } = Astro.props;
+const sizing = size === "sm" ? "min-h-9 gap-1.5 pl-3.5 pr-2.5 text-[14px]" : "min-h-11 gap-2 pl-4 pr-3.5 text-[15px]";
 const current = options.find((o) => o.value === value) ?? options[0];
 const trigger = tone === "dark"
   ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
@@ -27,11 +29,11 @@ const labelHide = { sm: "max-sm:hidden", md: "max-md:hidden", lg: "max-lg:hidden
     aria-expanded="false"
     aria-controls={`${id}-pop`}
     aria-label={`${label}: ${current.label}`}
-    class:list={["flex min-h-11 cursor-pointer items-center gap-2 rounded-full border pl-4 pr-3.5 text-[15px] font-semibold", trigger]}
+    class:list={["flex cursor-pointer items-center rounded-full border font-semibold", sizing, trigger]}
   >
     <span class:list={["font-normal opacity-60", hideLabelBelow && labelHide[hideLabelBelow]]}>{label}</span>
     <span data-dropdown-value>{current.label}</span>
-    <svg class="size-4 opacity-70 transition in-aria-expanded:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+    <svg class="size-3.5 opacity-70 transition in-aria-expanded:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
   </button>
 
   <div

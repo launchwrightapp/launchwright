@@ -16,7 +16,7 @@ const current = modules.find((m) => m.status === "current")!;
       </p>
     </div>
 
-    <section class="card rounded-[22px] grid grid-cols-1 gap-6 bg-surface p-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end" aria-labelledby="current-title">
+    <section class="card rounded-[22px] grid grid-cols-1 gap-6 bg-surface p-6 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
       <div>
         <p class="flex items-center gap-2"><span class="tag tag-warn">In progress</span><span class="text-muted">Module {current.n}</span></p>
         <h2 id="current-title" class="mt-3 text-3xl font-bold tracking-[-0.02em]">{current.name}</h2>
@@ -28,7 +28,7 @@ const current = modules.find((m) => m.status === "current")!;
       <a class="btn btn-sm" href="#">Continue: Auth on API routes</a>
     </section>
 
-    <ol class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <ol class="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
       {modules.map((m) => (
         <li class:list={["card rounded-[22px] flex items-start gap-3 p-4", m.status === "next" && "bg-transparent"]}>
           <span class:list={["grid size-10 flex-none place-items-center rounded-full text-[15px] font-semibold", m.status === "done" ? "bg-ink text-on-ink" : m.status === "current" ? "bg-orange text-night" : "border border-line text-muted"]}>

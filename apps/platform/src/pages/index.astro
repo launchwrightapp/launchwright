@@ -32,7 +32,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
 <App title="Overview" page="overview">
   <div class="flex flex-col gap-4">
     <!-- Headline: the one number that matters, and the one thing to do next -->
-    <div class="grid grid-cols-1 items-center gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
+    <div class="grid grid-cols-1 items-center gap-6 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)] xl:grid-cols-1">
       <div>
         <p class="text-muted">Good afternoon, {project.user.first}.</p>
         <h1 class="mt-1">
@@ -40,7 +40,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
           <span class="mt-2 block text-base font-normal text-muted">readiness checks passed · {left} left before <span class="text-ink">{project.name}</span> is production-ready</span>
         </h1>
       </div>
-      <section class="flex flex-col gap-3 rounded-[24px] bg-blue p-5 text-white" aria-labelledby="next-title">
+      <section class="flex flex-col gap-3 rounded-[24px] bg-blue p-5 text-white xl:hidden" aria-labelledby="next-title">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="tag bg-white/15 text-white">Your next step</span>
           <span class="text-[15px] text-white/75">Module 06 · ~8 min lesson</span>
@@ -51,10 +51,10 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
       </section>
     </div>
 
-    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+    <div class="grid grid-cols-1 gap-3 @6xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
       <!-- Left group: learning activity -->
       <section class={panel} aria-labelledby="activity-group">
-        <div class="flex flex-wrap items-center justify-between gap-3 px-3 pb-3 pt-2 md:px-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-3 pb-3 pt-2 @3xl:px-4">
           <div>
             <h2 id="activity-group" class="text-[22px] font-bold tracking-[-0.02em]">Activity</h2>
             <p class="text-muted"><Explain simple="What you and your AI tool did, and what you learned." tech="MCP tool calls and concept coverage for this project." /></p>
@@ -66,7 +66,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+        <div class="grid grid-cols-1 gap-2 @2xl:grid-cols-2">
           <!-- Tool calls chart -->
           <div class={card}>
             {activityRanges.map((r) => {
@@ -116,7 +116,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
           </div>
 
           <!-- Latest activity -->
-          <div class="rounded-[28px] border border-line bg-surface dark:bg-surface-2 lg:col-span-2">
+          <div class="rounded-[28px] border border-line bg-surface dark:bg-surface-2 @2xl:col-span-2">
             <div class="flex items-center justify-between gap-3 px-5 pb-1 pt-4">
               <h3 class="text-lg font-semibold">What your AI tool did</h3>
               <a class="text-[15px] font-medium text-muted hover:text-ink" href="/security">See all</a>
@@ -149,7 +149,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
 
       <!-- Right group: the project -->
       <section class={panel} aria-labelledby="project-group">
-        <div class="px-3 pb-3 pt-2 md:px-4">
+        <div class="px-3 pb-3 pt-2 @3xl:px-4">
           <h2 id="project-group" class="text-[22px] font-bold tracking-[-0.02em]">Your project</h2>
           <p class="text-muted">{project.url} · <span class="text-ok">Live</span> · <Explain simple={`updated ${project.deployedAgo}`} tech={`${project.commit} · ${project.deployedAgo}`} /></p>
         </div>
@@ -165,7 +165,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
               <span class="tag tag-warn">1 needs attention</span>
               <span class="tag tag-line">1 not checked</span>
             </p>
-            <ul class="mt-4 grid grid-cols-8 gap-1 sm:gap-2" aria-labelledby="checks-title">
+            <ul class="mt-4 grid grid-cols-8 gap-1 @2xl:gap-2" aria-labelledby="checks-title">
               {checks.map((c) => (
                 <li>
                   <a href={`/readiness#check-${c.id}`} class="group flex flex-col items-center gap-2.5 text-ink no-underline" aria-label={`${c.name}: ${c.status === "pass" ? "passed" : c.status === "fail" ? "needs attention" : "not checked"}`}>
@@ -175,7 +175,7 @@ const badge: Record<string, string> = { GitHub: "bg-ink text-on-ink", Cloudflare
                       c.status === "fail" && "bg-orange",
                       c.status === "pending" && "border-2 border-dashed border-line",
                     ]}></span>
-                    <span class="w-full truncate text-center text-[11px] text-muted sm:text-[13px]">{checkShort[c.id]}</span>
+                    <span class="w-full truncate text-center text-[11px] text-muted @2xl:text-[13px]">{checkShort[c.id]}</span>
                   </a>
                 </li>
               ))}
