@@ -2,6 +2,10 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "launchwright-platform",
   "compatibility_date": "2026-10-01",
+  // Production is served only on the custom domains below.
+  // Preview URLs (per PR) live on workers.dev.
+  "workers_dev": false,
+  "preview_urls": true,
   "assets": { "directory": "./public" },
   "routes": [{ "pattern": "platform.launchwright.app", "custom_domain": true }],
   "observability": { "enabled": true }
