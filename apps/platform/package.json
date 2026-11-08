@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "node scripts/sync-shared.mjs",
-    "predev": "npm run sync",
     "dev": "wrangler dev --port 8791",
-    "predeploy": "npm run sync",
+    "dev:ui": "astro dev",
+    "build": "astro build",
     "deploy": "wrangler deploy",
-    "pretest:e2e": "npm run sync",
     "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.1",
+    "tailwindcss": "^4.3.5"
   }
 }

@@ -77,7 +77,6 @@ jobs:
             (cd "apps/$1" && npx wrangler versions upload --preview-alias "$alias" 2>&1) \
               | tee /dev/stderr | grep -oE "https://$alias-[^ ]+\.workers\.dev" | head -1
           }
-          npm run sync -w apps/platform
           site=$(upload site)
           platform=$(upload platform)
           if [ -z "$site" ] || [ -z "$platform" ]; then

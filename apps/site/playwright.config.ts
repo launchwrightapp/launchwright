@@ -18,7 +18,7 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: "npx wrangler dev --port 8790",
+        command: "npm run dev",
         url: "http://localhost:8790",
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,

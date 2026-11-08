@@ -1,0 +1,27 @@
+---
+// Terminal output lines for product previews. Sample output only.
+export type Line =
+  | { cmd: string }
+  | { you: string }
+  | { ok: string }
+  | { warn: string }
+  | { wait: string }
+  | { lesson: string }
+  | { text: string }
+  | { gap: true };
+
+interface Props { lines: Line[] }
+const { lines } = Astro.props;
+---
+<div class="term">
+  {lines.map((l) =>
+    "cmd" in l ? <div><span class="text-white/45">$</span> {l.cmd}</div>
+    : "you" in l ? <div><span class="text-sky-300">you</span> {l.you}</div>
+    : "ok" in l ? <div><span class="text-lime">✓</span> {l.ok}</div>
+    : "warn" in l ? <div><span class="text-orange">!</span> {l.warn}</div>
+    : "wait" in l ? <div><span class="text-white/45">…</span> {l.wait}</div>
+    : "lesson" in l ? <div class="text-lime">LESSON · {l.lesson}</div>
+    : "text" in l ? <div class="text-white/75">{l.text}</div>
+    : <div aria-hidden="true">&nbsp;</div>
+  )}
+</div>

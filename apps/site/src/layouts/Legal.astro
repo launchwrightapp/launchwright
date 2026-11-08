@@ -1,0 +1,33 @@
+---
+import Base from "../../../../packages/ui/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+
+interface Props { title: string; description: string; updated: string; path: string }
+const { title, description, updated, path } = Astro.props;
+---
+<Base title={`${title} · Launchwright`} description={description} url={`https://launchwright.app${path}`}>
+  <SiteHeader />
+  <main class="gutter pb-24 pt-14 md:pt-20">
+    <article class="legal mx-auto max-w-[46rem]">
+      <p class="label">Last updated {updated}</p>
+      <h1 class="mt-4 text-title font-bold text-balance">{title}</h1>
+      <p class="mt-6 text-[21px] leading-relaxed text-muted">{description}</p>
+      <div class="mt-12">
+        <slot />
+      </div>
+    </article>
+  </main>
+  <SiteFooter />
+</Base>
+
+<style is:global>
+  @reference "../../../../packages/ui/theme.css";
+  .legal h2 { @apply mt-12 border-t border-line pt-10 text-[1.75rem] font-bold leading-tight tracking-[-0.015em]; }
+  .legal h2:first-child { @apply mt-0 border-t-0 pt-0; }
+  .legal p, .legal li { @apply text-[18px] leading-relaxed text-ink/80; }
+  .legal p { @apply mt-4; }
+  .legal ul { @apply mt-4 grid list-disc gap-2 pl-6; }
+  .legal a { @apply font-medium text-ink underline underline-offset-4; }
+  .legal strong { @apply font-semibold text-ink; }
+</style>

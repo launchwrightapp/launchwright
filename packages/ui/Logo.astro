@@ -1,0 +1,6 @@
+---
+// The logo is the word "launchwright", all lowercase. No mark, no tracking.
+interface Props { href?: string; class?: string }
+const { href = "/", class: cls = "" } = Astro.props;
+---
+<a class:list={["logo", cls]} href={href} aria-label="Launchwright home">launchwright</a>

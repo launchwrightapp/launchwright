@@ -1,0 +1,6 @@
+{
+  "name": "@launchwright/ui",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared UI for the Launchwright site and platform: Tailwind theme, layout, logo, theme switch."
+}

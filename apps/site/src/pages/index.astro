@@ -1,0 +1,814 @@
+---
+import Base from "../../../../packages/ui/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Check from "../../../../packages/ui/Check.astro";
+import TermLines, { type Line } from "../components/TermLines.astro";
+
+const CTA = "Join the free pilot";
+
+const heroPoints = [
+  "Use the AI tool you already have: Claude Code, Codex, or Cursor.",
+  "Every step comes with a short lesson: what happened, and why.",
+  "Your cloud accounts, your app. We never host it.",
+  "CI, tests, security, and monitoring, like real production.",
+  "The pilot is free for the first 10 learners.",
+];
+
+
+// The core loop, shown as a walkthrough. Sample output only.
+const loop: { id: string; step: string; file: string; lang: string; code: string[]; title: string; body: string; tools: string[]; term: Line[] }[] = [
+  {
+    id: "build",
+    file: "src/lib/email.ts",
+    lang: "ts",
+    code: ["import { Resend } from \"resend\";", "", "// The key comes from the environment,", "// never from the code itself.", "export function mailer(env: Env) {", "  return new Resend(env.RESEND_API_KEY);", "}"],
+    step: "Build",
+    title: "Keep using your AI tool.",
+    body: "Claude Code, Codex, or Cursor connect to Launchwright on your own subscription. Ask for what you want, and your tool calls Launchwright to set it up the way real teams do.",
+    tools: ["setup_ci", "set_secret", "connect_database"],
+    term: [
+      { you: "Add email sign-ups with Resend." },
+      { gap: true },
+      { cmd: "set_secret RESEND_API_KEY" },
+      { ok: "Saved to Cloudflare as a secret" },
+      { ok: "Value hidden from the AI" },
+      { gap: true },
+      { lesson: "Secrets" },
+      { text: "API keys live in your cloud's secret store," },
+      { text: "never in your code or your Git history." },
+    ],
+  },
+  {
+    id: "verify",
+    file: ".github/workflows/ci.yml",
+    lang: "yml",
+    code: ["on: pull_request", "", "jobs:", "  test:", "    runs-on: ubuntu-latest", "    steps:", "      - uses: actions/checkout@v4", "      - run: npm ci && npm test", "      # Smoke test the preview deploy", "      - run: npx playwright test"],
+    step: "Verify",
+    title: "Every change is checked before it's live.",
+    body: "Each pull request runs your tests in GitHub Actions, deploys a preview, and runs a Playwright smoke test against it. Production only changes when everything is green.",
+    tools: ["setup_ci", "deploy --preview"],
+    term: [
+      { cmd: "deploy --preview" },
+      { ok: "Tests passed (24)" },
+      { ok: "Preview deployed" },
+      { ok: "Smoke test passed on the preview" },
+      { gap: true },
+      { text: "pr-12.my-first-app.workers.dev" },
+    ],
+  },
+  {
+    id: "learn",
+    file: "lessons/preview-deploys.md",
+    lang: "md",
+    code: ["# Preview deploys", "", "A preview is a private copy of your app,", "built from your branch.", "", "You test here first, so a mistake never", "reaches your real users."],
+    step: "Learn",
+    title: "Every step comes with a short lesson.",
+    body: "Each tool call returns the result and a lesson: what happened, and why. You get the full explanation the first time and one line after that. Your progress comes from the work you actually do.",
+    tools: ["every tool call"],
+    term: [
+      { lesson: "Preview deploys · first time" },
+      { text: "A preview is a private copy of your app," },
+      { text: "built from this branch. You test here, so a" },
+      { text: "mistake never reaches your real users." },
+      { gap: true },
+      { lesson: "Preview deploys · fifth time" },
+      { text: "Preview passed. Safe to merge." },
+    ],
+  },
+  {
+    id: "launch",
+    file: "migrations/0007_drop_phone.sql",
+    lang: "sql",
+    code: ["-- Destructive: this deletes data.", "-- Launchwright asks for your approval first.", "", "ALTER TABLE bookings DROP COLUMN phone;"],
+    step: "Launch",
+    title: "Launch when the checks say you're ready.",
+    body: "Readiness checks run on your own repo. Anything destructive, like dropping a database column, waits for your approval in the dashboard.",
+    tools: ["check_readiness", "deploy"],
+    term: [
+      { cmd: "deploy --production" },
+      { warn: "Migration drops column bookings.phone" },
+      { wait: "Waiting for your approval in the dashboard" },
+      { ok: "Approved by you" },
+      { ok: "Live at my-first-app.com" },
+    ],
+  },
+];
+
+// Tiny syntax highlighter for the sample files (escapes first, then colors).
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const COMMENT: Record<string, string> = { ts: "//", yml: "#", sql: "--" };
+function highlight(line: string, lang: string) {
+  const c = COMMENT[lang];
+  if (c && line.trim().startsWith(c)) return `<span class="text-white/55">${esc(line)}</span>`;
+  if (lang === "md" && line.startsWith("#")) return `<span class="font-semibold text-white">${esc(line)}</span>`;
+  let h = esc(line).replace(/(&quot;|")(.*?)\1/g, '<span class="text-lime/85">"$2"</span>');
+  if (lang === "yml") h = h.replace(/^(\s*-?\s*)([\w-]+):/, '$1<span class="text-sky-300">$2</span>:');
+  if (lang === "ts") h = h.replace(/\b(import|from|export|function|return|new)\b/g, '<span class="text-orange/90">$1</span>');
+  if (lang === "sql") h = h.replace(/\b(ALTER|TABLE|DROP|COLUMN)\b/g, '<span class="text-orange/90">$1</span>');
+  return h;
+}
+const icon: Record<string, string> = { ts: "TS", yml: "YML", md: "MD", sql: "SQL" };
+
+// The line in each step that matters, highlighted in the editor.
+const focus: Record<string, number[]> = { build: [6], verify: [8, 10], learn: [6, 7], launch: [4] };
+
+const stages = [
+  {
+    n: "01",
+    name: "Foundation",
+    blurb: "Set up your project the way teams do.",
+    modules: [
+      ["Git", "Branches, commits, and pull requests without the fear."],
+      ["Env & secrets", "Why API keys never belong in your code."],
+      ["Database", "Neon or Supabase, migrations, and backups."],
+    ],
+  },
+  {
+    n: "02",
+    name: "Ship safely",
+    blurb: "Catch problems before your users do.",
+    modules: [
+      ["CI/CD", "GitHub Actions that test before you deploy."],
+      ["Testing", "Unit tests and Playwright smoke tests."],
+      ["Deploy", "Preview deploys, production, and rollback."],
+    ],
+  },
+  {
+    n: "03",
+    name: "Operate",
+    blurb: "Keep it running and keep it safe.",
+    modules: [
+      ["Monitoring", "Logs, errors, and uptime checks."],
+      ["Security", "Auth, security headers, and the Data Privacy Act (RA 10173)."],
+    ],
+  },
+];
+
+// Every readiness check: status (sample project), why it matters, how to fix it.
+const checks: { name: string; pass: boolean; why: string; fix: string; affected?: string }[] = [
+  { name: "No secrets in repo", pass: true, why: "A key committed to Git stays in its history, even after you delete the file.", fix: "Every commit is scanned. Move keys into your cloud's secret store with set_secret." },
+  { name: "Environment config", pass: true, why: "A missing variable can crash production while everything works on your laptop.", fix: "check_env compares what your code reads with what each environment has." },
+  { name: "CI pipeline with tests", pass: true, why: "Tests that only run on your laptop don't protect your main branch.", fix: "setup_ci adds a GitHub Actions workflow that runs on every pull request." },
+  { name: "Playwright E2E on preview deploy", pass: true, why: "A green build can still show a blank page.", fix: "A smoke test runs against a real preview URL before you merge." },
+  { name: "Auth on API routes", pass: false, why: "/api/bookings answers anyone who asks, including people who aren't logged in. Anyone could read your customers' bookings.", affected: "src/app/api/bookings/route.ts", fix: "Ask your AI tool to run check_readiness --fix auth. Review the change in the pull request before you merge." },
+  { name: "Database migrations", pass: true, why: "Schema changes made by hand can't be repeated or rolled back.", fix: "Migrations live in your repo and run in CI, in order." },
+  { name: "HTTPS and security headers", pass: true, why: "Headers like Content-Security-Policy block whole classes of attacks at no cost.", fix: "Your live URL's response headers are checked on every deploy." },
+  { name: "Uptime check", pass: true, why: "You should hear about an outage before your users do.", fix: "Your production URL is checked regularly and you're alerted when it's down." },
+];
+const passing = checks.filter((c) => c.pass).length;
+const fail = checks.find((c) => !c.pass);
+
+// Security and ownership: each promise is shown as the thing you'd actually see.
+const accounts = [
+  ["GitHub", "github.com/juan/my-first-app", "Repo contents, Actions"],
+  ["Cloudflare", "my-first-app.workers.dev", "Workers, DNS"],
+  ["Neon", "my-first-app / main", "One project only"],
+];
+
+const secTabs: [string, string, string][] = [
+  ["accounts", "Accounts", ""],
+  ["secrets", "Secrets", ""],
+  ["approvals", "Approvals", "1"],
+  ["audit", "Audit log", ""],
+];
+
+const audit = [
+  ["10:42", "check_env", "read 6 variables", "ok"],
+  ["10:43", "set_secret", "RESEND_API_KEY, value hidden", "ok"],
+  ["10:45", "deploy", "preview #48", "ok"],
+  ["10:47", "migrate", "drop column bookings.phone", "wait"],
+];
+
+const faq = [
+  ["How does the pilot work?", "Apply with your email. The pilot has 10 seats, and we review every application. If you're in, we'll email you to set up your first project together."],
+  ["Do I need to pay for an AI tool?", "You use the AI tool you already have (Claude Code, Codex, Cursor, and others) on your own subscription. It connects to Launchwright."],
+  ["Where is my app hosted?", "On your own accounts: GitHub for code, Cloudflare for hosting, and Neon or Supabase for the database. We never host your app, so it stays yours."],
+  ["Are my credentials safe?", "Tokens are encrypted and access is least-privilege. The AI never sees your raw credentials, and destructive actions need your approval in the dashboard."],
+  ["Which frameworks are supported?", "At launch: Next.js, Vite (React or Vue), Astro, and Hono. PHP/Laravel, Python, and Docker come with Level 2."],
+  ["I'm a beginner. Can I do this?", "Yes. Launchwright is built for students, beginners, career shifters, and people coming from vibe coding. The first time you meet a concept, you get the full explanation."],
+];
+---
+<Base
+  title="Launchwright"
+  description="You built it with AI. Now learn to ship it. Deploy to your own cloud and learn Git, databases, testing, and security along the way."
+  url="https://launchwright.app"
+>
+  <SiteHeader home />
+
+  <main>
+    <!-- Hero: centered. The product showcase follows right below it. -->
+    <section aria-labelledby="hero-title" class="gutter flex min-h-[calc(100svh-84px)] flex-col items-center justify-center gap-[clamp(10px,2.2vh,28px)] py-[clamp(8px,2.5vh,64px)] text-center">
+      <p class="text-lg font-medium text-muted">For Filipino students, beginners, and career shifters.</p>
+      <h1 id="hero-title" class="text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
+      <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">From your first commit to a secure, deployed app, guided step by step.</p>
+      <div class="w-full max-w-[44rem] overflow-hidden rounded-[28px] border border-line bg-surface text-left shadow-xl shadow-black/[0.04] max-sm:order-2">
+        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-[clamp(7px,1.1vh,12px)]">
+          <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
+          <span class="ml-3 rounded-lg bg-surface px-3 py-1 text-[14px] font-medium text-muted ring-1 ring-line">why-launchwright.md</span>
+        </div>
+        <ul class="py-[clamp(4px,0.9vh,12px)] text-[clamp(16px,2.6vh,19px)]">
+          {heroPoints.map((t, i) => (
+            <li class="flex items-center gap-4 px-5 py-[clamp(4px,0.8vh,9px)] hover:bg-surface-2">
+              <span class="w-5 flex-none select-none text-right text-[14px] text-muted/60" aria-hidden="true">{i + 1}</span>
+              <span class="grid size-[22px] flex-none place-items-center rounded-md bg-ink text-on-ink"><Check class="size-3.5" /></span>
+              <span class="text-ink/80">{t}{i === heroPoints.length - 1 && <span class="ml-1 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] bg-blue motion-safe:animate-pulse" aria-hidden="true"></span>}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="flex items-center gap-2.5 text-muted max-sm:order-1 sm:[@media(max-height:780px)]:hidden">
+        <span class="flex gap-1" aria-hidden="true">{Array.from({ length: 10 }, () => <i class="size-2.5 rounded-full bg-ink opacity-20"></i>)}</span>
+        <span><b class="font-semibold text-ink">10 seats</b> in the pilot cohort</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-6" data-hero-cta>
+        <a class="btn" href="#pilot">{CTA}</a>
+        <a class="text-[17px] font-semibold underline-offset-4 hover:underline" href="#how">See how it works</a>
+      </div>
+    </section>
+
+    <!-- How it works: the loop, shown inside an editor -->
+    <section id="how" aria-labelledby="how-title" class="backdrop bg-dots-dark gutter scroll-mt-24 bg-night py-20 text-white md:py-28">
+      <div class="flex max-w-3xl flex-col gap-5">
+        <p class="label text-white/60" data-reveal>How it works</p>
+        <h2 id="how-title" data-reveal class="text-title font-bold text-balance">One loop, from first commit to launch.</h2>
+        <p class="text-[21px] text-white/65" data-reveal>Build, verify, learn, launch. Every pass through the loop makes your app safer and you more confident.</p>
+      </div>
+
+      <div class="mt-12 overflow-hidden rounded-[44px] bg-[#111] text-white shadow-2xl shadow-black/40 ring-1 ring-white/10" data-reveal>
+        <!-- Title bar -->
+        <div class="flex items-center gap-2 border-b border-white/10 px-5 py-3.5">
+          <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
+          <span class="flex-1 truncate text-center font-mono text-[13px] text-white/50">my-first-app<span class="hidden sm:inline"> — your editor + Launchwright</span></span>
+          <span class="w-[52px]" aria-hidden="true"></span>
+        </div>
+
+        <div class="grid lg:grid-cols-[250px_minmax(0,1fr)]">
+          <!-- Sidebar: the steps -->
+          <aside class="border-b border-white/10 bg-white/[0.03] lg:border-b-0 lg:border-r">
+            <p class="hidden px-5 pb-2 pt-5 font-mono text-[12px] uppercase tracking-[0.12em] text-white/55 lg:block">Walkthrough</p>
+            <div role="tablist" aria-label="How it works" aria-orientation="vertical" data-tabs class="grid grid-cols-2 gap-1 p-2 lg:flex lg:flex-col lg:p-3 lg:pt-1">
+              {loop.map((s, i) => (
+                <button
+                  type="button"
+                  role="tab"
+                  id={`tab-${s.id}`}
+                  aria-controls={`panel-${s.id}`}
+                  aria-selected={i === 0 ? "true" : "false"}
+                  tabindex={i === 0 ? 0 : -1}
+                  class="flex flex-none cursor-pointer items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left text-[17px] font-medium text-white/60 transition hover:bg-white/5 hover:text-white aria-selected:bg-white/10 aria-selected:text-white"
+                >
+                  <span class="grid size-7 flex-none place-items-center rounded-lg bg-white/10 font-mono text-[12px]">{String(i + 1).padStart(2, "0")}</span>{s.step}
+                </button>
+              ))}
+            </div>
+            <div class="hidden px-5 pb-5 pt-6 lg:block">
+              <p class="font-mono text-[12px] uppercase tracking-[0.12em] text-white/55">MCP servers</p>
+              <p class="mt-3 flex items-center gap-2 text-[15px] text-white/75"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>launchwright</p>
+            </div>
+          </aside>
+
+          <!-- One panel per step: editor + terminal + explanation -->
+          <div>
+            {loop.map((s, i) => (
+              <div role="tabpanel" id={`panel-${s.id}`} aria-labelledby={`tab-${s.id}`} data-panel class="grid xl:grid-cols-[minmax(0,1fr)_340px]">
+                <div class="flex min-w-0 flex-col">
+                  <!-- Editor tab -->
+                  <div class="flex border-b border-white/10 bg-white/[0.02]">
+                    <span class="flex items-center gap-2 border-r border-white/10 border-t-2 border-t-lime bg-night px-4 py-2.5 font-mono text-[13px] text-white/85">
+                      <span class="rounded bg-white/10 px-1 text-[10px] text-white/70">{icon[s.lang]}</span>{s.file}
+                    </span>
+                  </div>
+                  <!-- Code -->
+                  <pre class="m-0 overflow-x-auto py-5 font-mono text-[17px] leading-[1.8]"><code class="flex min-w-max flex-col bg-transparent p-0 text-white/85">{s.code.map((line, n) => (
+                    <span class:list={["flex border-l-2", focus[s.id]?.includes(n + 1) ? "border-lime bg-lime/10" : "border-transparent"]}><span class="w-12 flex-none select-none pr-4 text-right text-white/40">{n + 1}</span><span class="whitespace-pre pr-6" set:html={highlight(line, s.lang) || " "} /></span>
+                  ))}</code></pre>
+                  <!-- Terminal panel -->
+                  <div class="mt-auto border-t border-white/10">
+                    <div class="flex gap-5 px-5 pt-3 font-mono text-[12px] uppercase tracking-[0.12em]">
+                      <span class="border-b-2 border-lime pb-2 text-white/85">Terminal</span>
+                      <span class="pb-2 text-white/50">Problems</span>
+                      <span class="pb-2 text-white/50">Output</span>
+                    </div>
+                    <div class="min-h-[200px] px-5 pb-5 pt-3"><TermLines lines={s.term} /></div>
+                  </div>
+                </div>
+                <!-- Explanation -->
+                <div class="flex flex-col gap-4 border-t border-white/10 bg-white/[0.03] p-6 md:p-8 xl:border-l xl:border-t-0">
+                  <p class="font-mono text-[13px] text-white/60">Step {i + 1} of 4 · {s.step}</p>
+                  <h3 class="text-[1.75rem] font-bold leading-tight tracking-[-0.015em]">{s.title}</h3>
+                  <p class="text-[17px] leading-relaxed text-white/70">{s.body}</p>
+                  <div class="mt-auto flex flex-wrap gap-2 pt-2">
+                    {s.tools.map((t) => <code class="bg-white/10 text-[14px] text-white/85">{t}</code>)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-white/10 bg-white/[0.03] px-5 py-2 font-mono text-[12px] text-white/50">
+          <span>⎇ main</span>
+          <span><span class="text-lime">✓</span> CI passing</span>
+          <span class="ml-auto flex items-center gap-2"><span class="size-1.5 rounded-full bg-lime" aria-hidden="true"></span>Launchwright connected</span>
+        </div>
+      </div>
+      <p class="label mt-4 text-white/50">Sample output. Launchwright v0.1 is in development with the pilot cohort.</p>
+    </section>
+
+    <!-- Preview strip: four mini product cards -->
+    <section aria-label="Product preview" class="gutter pt-20 md:pt-28">
+      <div class="mb-10 flex max-w-3xl flex-col gap-5" data-reveal>
+        <p class="label">In the dashboard</p>
+        <h2 class="text-title font-bold text-balance">Your progress, at a glance.</h2>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-reveal>
+
+        <!-- Tool call -->
+        <div class="flex sm:min-h-[340px] flex-col gap-6 rounded-[44px] bg-blue p-8 text-white">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-[22px] font-semibold tracking-tight">Every step teaches</p>
+          </div>
+          <ul class="grid gap-2">
+            {["Preview deployed", "Smoke test passed"].map((t) => (
+              <li class="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-[17px]">
+                <span class="grid size-6 flex-none place-items-center rounded-full bg-lime text-night"><Check class="size-3.5" /></span>
+                {t}
+              </li>
+            ))}
+          </ul>
+          <div class="mt-auto rounded-2xl bg-white p-4 text-night">
+            <p class="text-[15px] font-semibold text-blue">Lesson</p>
+            <p class="mt-1 text-[17px] font-medium">Test on a preview first, before you merge to main.</p>
+          </div>
+        </div>
+
+        <!-- Readiness -->
+        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-lime p-8 text-night">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-[22px] font-semibold tracking-tight">Readiness checks</p>
+          </div>
+          <p class="mt-6 text-[clamp(6rem,24vw,8rem)] sm:mt-auto font-bold leading-[0.85] tracking-[-0.035em]">8<span class="opacity-30">/8</span></p>
+          <div class="mt-5 grid grid-cols-8 gap-1.5" aria-hidden="true">
+            {Array.from({ length: 8 }, () => <span class="h-2 rounded-full bg-night"></span>)}
+          </div>
+          <p class="mt-3 text-[17px] font-semibold">All passed</p>
+        </div>
+
+        <!-- Lessons -->
+        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-surface-3 p-8 text-ink">
+          <p class="text-[22px] font-semibold tracking-tight">Lessons</p>
+          <ul class="mt-6 grid gap-2 sm:mt-auto">
+            {[["Env & secrets", "Done", "opacity-60"], ["Preview deploys", "Now", "shadow-lg shadow-black/5 ring-1 ring-line"], ["Rollback", "Next", "opacity-60"]].map(([t, st, cls]) => (
+              <li class:list={["flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-[17px]", cls]}>
+                <span class="font-medium">{t}</span>
+                <span class:list={["tag", st === "Now" ? "bg-blue text-white" : st === "Done" ? "tag-ok" : "tag-line"]}>{st}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <!-- Level 1 -->
+        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-orange p-8 text-white">
+          <p class="text-[22px] font-semibold tracking-tight">Skills learned</p>
+          <p class="mt-6 text-[clamp(6rem,24vw,8rem)] sm:mt-auto font-bold leading-[0.85] tracking-[-0.035em]">5<span class="opacity-40">/8</span></p>
+          <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/25" aria-hidden="true"><div class="h-full w-5/8 rounded-full bg-white"></div></div>
+          <p class="mt-3 text-[17px] font-semibold">Level 1 · Next: Deploy</p>
+        </div>
+      </div>
+      <p class="label mt-3.5">Preview of v0.1. Sample data only.</p>
+    </section>
+
+    <!-- Learning path -->
+    <section id="curriculum" aria-labelledby="curr-title" class="gutter scroll-mt-24 py-20 md:py-28">
+      <div class="grid items-end gap-6 lg:grid-cols-2 lg:gap-16">
+        <div class="flex flex-col gap-5">
+          <p class="label">Learning path · Level 1</p>
+          <h2 id="curr-title" class="text-title font-bold text-balance">Your path to production.</h2>
+        </div>
+        <p class="text-[21px] leading-relaxed text-muted lg:pb-2">Eight skills in three stages, learned on your own project with managed free tiers. Nothing to memorize up front: each skill shows up when your project needs it.</p>
+      </div>
+
+      <!-- Journey track: one line connecting the stages, outside the cards -->
+      <div class="relative mt-12 hidden grid-cols-4 gap-3 xl:grid" aria-hidden="true">
+        <span class="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-[linear-gradient(to_right,var(--line)_75%,transparent_75%)]"></span>
+        {[0, 1, 2, 3].map((i) => (
+          <div class="relative flex">
+            {i === 0
+              ? <span class="tag bg-blue text-white">Start here</span>
+              : <span class:list={["mt-[9px] size-3 rounded-full", i === 3 ? "border-2 border-line bg-surface" : "bg-line"]}></span>}
+          </div>
+        ))}
+      </div>
+
+      <ol class="mt-5 grid gap-3 max-xl:mt-12 md:grid-cols-2 xl:grid-cols-4">
+        {stages.map((s) => (
+          <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-[40px] border border-line bg-surface">
+            <div class="flex flex-col gap-3 border-b border-line p-7">
+              <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">{s.n} /</span> {s.name}</h3>
+              <p class="text-[17px] text-pretty text-muted">{s.blurb}</p>
+            </div>
+            <ul class="divide-y divide-line px-7">
+              {s.modules.map(([m, d]) => (
+                <li class="py-5">
+                  <div>
+                    <p class="text-[18px] font-semibold">{m}</p>
+                    <p class="mt-0.5 text-base text-muted">{d}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+
+        <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-[40px] border border-dashed border-line bg-surface-2">
+          <div class="flex flex-col gap-3 border-b border-line p-7">
+            <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">L2 /</span> Your own VPS</h3>
+            <p class="text-[17px] text-pretty text-muted">Later: run apps on a server you control.</p>
+          </div>
+          <div class="flex flex-wrap content-start gap-2 p-7">
+            {["Linux", "SSH", "Nginx", "Docker", "TLS", "Backups", "Rollback"].map((t) => (
+              <span class="tag tag-line">{t}</span>
+            ))}
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Readiness: status, the one problem, and its fix first. The full list is one click away. -->
+    <section id="readiness" aria-labelledby="ready-title" class="backdrop bg-dots-corner gutter scroll-mt-24 border-t border-line bg-surface-2 py-20 md:py-28">
+      <div class="grid items-end gap-6 lg:grid-cols-2 lg:gap-16">
+        <div class="flex flex-col gap-5">
+          <p class="label">Readiness checks</p>
+          <h2 id="ready-title" class="text-title font-bold text-balance">Know exactly when you're ready to launch.</h2>
+        </div>
+        <p class="text-[21px] leading-relaxed text-muted lg:pb-2">Eight checks run in GitHub Actions on your own repo. Each one tells you what's wrong, why it matters, and how to fix it with your AI tool.</p>
+      </div>
+
+      <div class="mt-12 overflow-hidden rounded-[40px] border border-line bg-surface shadow-xl shadow-black/[0.04]">
+        <!-- Title bar -->
+        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-5 py-3.5">
+          <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
+          <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
+          <span class="ml-3 truncate rounded-lg bg-surface px-3 py-1 text-[14px] font-medium text-muted ring-1 ring-line">Readiness · my-first-app</span>
+          <span class="ml-auto hidden text-[14px] text-muted sm:inline">Run #48 · on every push</span>
+          <span class="tag tag-line ml-3">Sample</span>
+        </div>
+
+        <!-- Status first: the score, the one problem, and the next action -->
+        <div class="grid gap-6 bg-lime p-6 text-night md:p-9 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-10">
+          <div class="flex flex-col gap-4">
+            <p class="font-semibold opacity-70">Launch readiness</p>
+            <p class="text-[clamp(2.25rem,3.8vw,3.25rem)] font-bold leading-[1] tracking-[-0.02em]">{passing} of {checks.length} checks passed</p>
+            <div class="mt-auto grid grid-cols-8 gap-1.5 pt-2" aria-hidden="true">
+              {checks.map((c) => <span class:list={["h-2.5 rounded-full", c.pass ? "bg-night" : "bg-orange"]}></span>)}
+            </div>
+            <p class="flex flex-wrap gap-x-4 gap-y-1 text-[15px] font-semibold">
+              <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-night" aria-hidden="true"></span>{passing} passed</span>
+              <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-orange" aria-hidden="true"></span>{checks.length - passing} needs attention</span>
+            </p>
+          </div>
+          {fail && (
+            <div class="flex flex-col gap-4 rounded-[32px] bg-surface p-6 text-ink md:p-7">
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="tag tag-warn">Action needed</span>
+                <span class="text-[15px] text-muted"><code>{fail.affected}</code></span>
+              </div>
+              <h3 class="text-[1.75rem] font-bold leading-tight tracking-[-0.015em]">{fail.name}</h3>
+              <p class="text-[17px] text-muted">{fail.why}</p>
+              <div class="rounded-3xl bg-night p-5 text-white">
+                <p class="text-[14px] text-white/55">Suggested fix · ask your AI tool</p>
+                <p class="mt-1.5 text-[17px]"><span class="text-sky-300">you</span> Fix the failing auth check, then show me the diff.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <!-- The full list, one click away -->
+        <details class="group" data-all-checks>
+          <summary class="flex cursor-pointer items-center justify-between gap-4 border-t border-line px-6 py-5 text-[18px] font-semibold hover:bg-surface-2 md:px-9">
+            <span>View all {checks.length} checks <span class="font-normal text-muted">· {passing} passed, {checks.length - passing} needs attention</span></span>
+            <span class="text-2xl font-normal leading-none text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
+          </summary>
+        <!-- Checks + detail -->
+        <div class="grid border-t border-line lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+          <div role="tablist" aria-label="Readiness checks" aria-orientation="vertical" data-tabs class="flex flex-col gap-1 border-b border-line p-3 lg:border-b-0 lg:border-r">
+            {checks.map((c, i) => (
+              <button
+                type="button"
+                role="tab"
+                id={`check-tab-${i}`}
+                aria-controls={`check-panel-${i}`}
+                aria-selected={c.pass ? "false" : "true"}
+                tabindex={c.pass ? -1 : 0}
+                data-check={c.pass ? "pass" : "fail"}
+                class="flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-[17px] font-medium transition hover:bg-surface-2 aria-selected:bg-surface-3"
+              >
+                {c.pass
+                  ? <span class="grid size-6 flex-none place-items-center rounded-full bg-ok-bg text-ok"><Check class="size-3.5" /></span>
+                  : <span class="grid size-6 flex-none place-items-center rounded-full bg-warn-bg text-[15px] font-bold text-warn" aria-hidden="true">!</span>}
+                <span class="flex-1">{c.name}</span>
+                <span class:list={["tag", c.pass ? "tag-ok" : "tag-warn"]}>{c.pass ? "Passed" : "Needs attention"}</span>
+              </button>
+            ))}
+          </div>
+
+          <div>
+            {checks.map((c, i) => (
+              <div role="tabpanel" id={`check-panel-${i}`} aria-labelledby={`check-tab-${i}`} data-panel class="flex h-full flex-col gap-6 p-7 md:p-9">
+                <div class="flex flex-wrap items-center gap-3">
+                  <span class:list={["tag", c.pass ? "tag-ok" : "tag-warn"]}>{c.pass ? "Passed" : "Needs attention"}</span>
+                  <span class="text-[15px] text-muted">Check {i + 1} of {checks.length}</span>
+                </div>
+                <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]">{c.name}</h3>
+                <div>
+                  <p class="font-semibold">Why it matters</p>
+                  <p class="mt-1 text-[17px] text-muted">{c.why}</p>
+                </div>
+                {c.affected && (
+                  <div>
+                    <p class="font-semibold">Affected</p>
+                    <p class="mt-2"><code>{c.affected}</code></p>
+                  </div>
+                )}
+                <div>
+                  <p class="font-semibold">How to fix</p>
+                  <p class="mt-1 text-[17px] text-muted">{c.fix}</p>
+                </div>
+                {!c.pass && (
+                  <div class="mt-auto rounded-3xl bg-night p-5 text-white">
+                    <p class="text-[14px] text-white/55">Ask your AI tool</p>
+                    <p class="mt-1.5 text-[17px]"><span class="text-sky-300">you</span> Fix the failing auth check, then show me the diff.</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Trust -->
+    <section id="trust" aria-labelledby="trust-title" class="gutter scroll-mt-24 py-20 md:py-28">
+      <div class="flex flex-col gap-8">
+        <div class="mb-4 grid items-end gap-6 lg:grid-cols-2 lg:gap-16" data-reveal>
+          <div class="flex flex-col gap-6">
+            <p class="label">Security and ownership</p>
+            <h2 id="trust-title" class="text-title font-bold text-balance">Your accounts. Your app. Your call.</h2>
+          </div>
+          <p class="max-w-[36rem] text-[20px] leading-relaxed text-muted lg:justify-self-end">Launchwright does the work in your accounts, with the least access it needs. Here's what you see in your dashboard.</p>
+        </div>
+
+        <!-- The three promises, then the dashboard that shows them -->
+        <ul class="grid gap-3 md:grid-cols-3" data-reveal>
+          {[
+            ["Your credentials", "Encrypted, least-privilege, and never shown to your AI."],
+            ["Your infrastructure", "Your GitHub, Cloudflare, and database. We never host your app."],
+            ["Your approval", "Anything risky waits for you. Every action is logged."],
+          ].map(([t, d], i) => (
+            <li class="flex gap-4 rounded-[28px] border border-line p-6">
+              <span class="grid size-9 flex-none place-items-center rounded-full bg-ink text-[14px] font-bold text-on-ink">{i + 1}</span>
+              <div>
+                <p class="text-[19px] font-semibold">{t}</p>
+                <p class="mt-1 text-[16px] text-muted">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <!-- One dashboard window that shows every promise at once -->
+        <figure class="m-0 overflow-hidden rounded-[40px] border border-line bg-surface shadow-2xl shadow-black/[0.06]" data-reveal>
+          <div class="flex items-center gap-3 border-b border-line bg-surface-2 px-5 py-3.5">
+            <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
+            <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
+            <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
+            <span class="ml-2 truncate rounded-lg border border-line bg-surface px-3 py-1 text-[14px] text-muted">launchwright.app/my-first-app/security</span>
+            <span class="tag tag-line ml-auto">Sample</span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-[230px_minmax(0,1fr)]">
+            <!-- Sidebar -->
+            <nav class="flex flex-col gap-1 border-line p-4 max-lg:hidden lg:border-r" aria-label="Dashboard (sample)">
+              <div class="mb-3 flex items-center gap-3 rounded-2xl border border-line px-3 py-2.5">
+                <span class="grid size-8 place-items-center rounded-lg bg-ink text-[14px] font-bold text-on-ink">m</span>
+                <div class="min-w-0"><p class="truncate text-[15px] font-semibold">my-first-app</p><p class="text-[13px] text-muted">Owner: you</p></div>
+              </div>
+              {[["Overview", ""], ["Lessons", ""], ["Readiness", "7/8"], ["Security", "1"]].map(([item, badge]) => (
+                <span class:list={["flex items-center justify-between rounded-xl px-3 py-2 text-[15px]", item === "Security" ? "bg-surface-3 font-semibold" : "text-muted"]}>
+                  {item}
+                  {badge && <span class:list={["rounded-full px-2 text-[13px] font-semibold", item === "Security" ? "bg-warn-bg text-warn" : "bg-surface-3 text-muted"]}>{badge}</span>}
+                </span>
+              ))}
+            </nav>
+
+            <!-- Main -->
+            <div class="flex min-w-0 flex-col gap-5 bg-surface-2 p-5 md:p-7">
+              <div class="flex flex-wrap items-end justify-between gap-3">
+                <div><p class="text-[15px] text-muted">my-first-app</p><p class="text-2xl font-semibold tracking-tight">Security</p></div>
+                <span class="tag tag-ok">Least-privilege access on</span>
+              </div>
+
+              <div role="tablist" aria-label="Security (sample dashboard)" data-tabs class="-mb-1 flex gap-1 overflow-x-auto border-b border-line">
+                {secTabs.map(([id, label, badge], i) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    id={`sec-tab-${id}`}
+                    aria-controls={`sec-panel-${id}`}
+                    aria-selected={i === 0 ? "true" : "false"}
+                    tabindex={i === 0 ? 0 : -1}
+                    class="-mb-px flex flex-none cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 pb-3 pt-1 text-[16px] font-medium text-muted hover:text-ink max-sm:px-2 aria-selected:border-ink aria-selected:text-ink"
+                  >
+                    {label}
+                    {badge && <span class="rounded-full bg-warn-bg px-2 text-[13px] font-semibold text-warn">{badge}</span>}
+                  </button>
+                ))}
+              </div>
+
+              <div class="lg:min-h-[330px]">
+                <!-- Accounts -->
+                <div role="tabpanel" id="sec-panel-accounts" aria-labelledby="sec-tab-accounts" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                  <header class="border-b border-line px-5 py-4">
+                    <p class="font-semibold">Connected accounts</p>
+                    <p class="text-[15px] text-muted">Your app runs here. It stays yours, even if you leave.</p>
+                  </header>
+                  <ul class="divide-y divide-line">
+                    {accounts.map(([name, where, scope]) => (
+                      <li class="flex items-center gap-4 px-5 py-3.5">
+                        <div class="flex min-w-0 flex-1 flex-col">
+                          <p class="font-semibold">{name} <span class="ml-1 text-[14px] font-medium text-muted">Owner: you</span></p>
+                          <p class="truncate text-[14px] text-muted">{where} · {scope}</p>
+                        </div>
+                        <span class="text-[14px] font-medium text-muted underline decoration-line underline-offset-4">Disconnect</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <!-- Secrets -->
+                <div role="tabpanel" id="sec-panel-secrets" aria-labelledby="sec-tab-secrets" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                  <header class="border-b border-line px-5 py-4">
+                    <p class="font-semibold">Secrets</p>
+                    <p class="text-[15px] text-muted">Encrypted. Your AI can use them, never read them.</p>
+                  </header>
+                  <ul class="divide-y divide-line text-[15px]">
+                    {["DATABASE_URL", "RESEND_API_KEY", "SESSION_SECRET"].map((k) => (
+                      <li class="flex items-center gap-3 px-5 py-3">
+                        <code class="truncate">{k}</code>
+                        <span class="tracking-widest text-muted">••••••••</span>
+                        <span class="ml-auto whitespace-nowrap text-[14px] text-muted">AI: use only</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="mt-auto border-t border-line px-5 py-3 text-[14px] text-muted"><b class="font-semibold text-ink">Claude Code</b> asked to read <code>DATABASE_URL</code> · <span class="font-medium text-warn">Blocked</span></p>
+                </div>
+
+                <!-- Approval -->
+                <div role="tabpanel" id="sec-panel-approvals" aria-labelledby="sec-tab-approvals" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                  <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+                    <div><p class="font-semibold">Needs your approval</p><p class="text-[15px] text-muted">Risky actions wait for you.</p></div>
+                    <span class="tag tag-warn">1 pending</span>
+                  </header>
+                  <div class="flex flex-col gap-3 p-5">
+                    <p class="text-[17px] font-semibold">Migration drops a column</p>
+                    <p class="text-[14px] text-muted">Requested by <b class="text-ink">Claude Code</b> via <code>deploy</code></p>
+                    <pre class="m-0 whitespace-pre-wrap rounded-2xl bg-warn-bg px-4 py-2.5 font-mono text-[14px] text-warn">- ALTER TABLE bookings DROP COLUMN phone;</pre>
+                    <p class="text-[14px] text-muted">Deletes phone numbers from 132 bookings. Only recoverable from a backup.</p>
+                    <div class="flex gap-2.5">
+                      <span class="btn min-h-[42px] flex-1 text-[15px]">Approve</span>
+                      <span class="btn btn-outline min-h-[42px] flex-1 text-[15px]">Reject</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Audit log -->
+                <div role="tabpanel" id="sec-panel-audit" aria-labelledby="sec-tab-audit" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                  <header class="border-b border-line px-5 py-4">
+                    <p class="font-semibold">Audit log</p>
+                    <p class="text-[15px] text-muted">Every tool call: what ran, when, and what it touched.</p>
+                  </header>
+                  <ol class="divide-y divide-line">
+                    {audit.map(([time, tool, what, state]) => (
+                      <li class="flex items-center gap-3 px-5 py-3 text-[14px]">
+                        <span class="w-10 flex-none tabular-nums text-muted">{time}</span>
+                        <span class="min-w-0 flex-1 truncate"><code>{tool}</code> <span class="text-muted">{what}</span></span>
+                        {state === "ok"
+                          ? <span class="tag tag-ok text-[13px]">Done</span>
+                          : <span class="tag tag-warn text-[13px]">Waiting</span>}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        </figure>
+        <p class="label text-center">Sample dashboard. Accounts, keys, and logs are examples.</p>
+      </div>
+    </section>
+
+    <!-- Pilot application -->
+    <section id="pilot" aria-labelledby="pilot-title" class="backdrop bg-grid-low gutter scroll-mt-24 border-t border-line bg-surface-2 py-20 md:py-28">
+      <!-- One container: the offer, the application, and what happens next -->
+      <div class="overflow-hidden rounded-[40px] border border-line bg-surface shadow-2xl shadow-black/[0.05]" data-reveal>
+        <div class="grid lg:grid-cols-[5fr_6fr]">
+          <!-- Offer -->
+          <div class="flex flex-col gap-6 border-line bg-surface-2/60 p-7 max-lg:border-b md:p-10 lg:border-r">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="tag bg-blue text-white">Applications open</span>
+              <span class="text-muted">10 seats</span>
+            </div>
+            <h2 id="pilot-title" class="text-title font-bold text-balance">{CTA}.</h2>
+            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You'll ship your own app and understand every step.</p>
+            <ul class="grid gap-3.5 text-[18px]" aria-label="What you get">
+              {["One project, all the way to launch", "The full Level 1 learning path", "Readiness checks on your own repo", "Works with your own AI tool and cloud accounts"].map((t) => (
+                <li class="flex items-center gap-3.5">
+                  <span class="grid size-[22px] flex-none place-items-center rounded-md bg-ink text-on-ink"><Check class="size-3.5" /></span>{t}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-auto text-base text-muted">After the pilot, a free Starter plan stays open to everyone.</p>
+          </div>
+
+          <!-- Application -->
+          <div class="flex flex-col">
+            <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5 md:px-10">
+              <p class="text-[19px] font-semibold">Your application</p>
+              <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">Takes about a minute</p>
+            </div>
+            <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/api/waitlist" method="post" novalidate>
+          <label class="block">
+            <span class="mb-2 block font-medium">Email</span>
+            <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
+          </label>
+          <label class="block">
+            <span class="mb-2 block font-medium">What do you want to ship? <span class="text-muted">(optional)</span></span>
+            <input class="input" type="text" name="building" maxlength="280" placeholder="e.g. a booking app for our barbershop" />
+          </label>
+          <div class="absolute -left-[9999px] size-px overflow-hidden" aria-hidden="true">
+            <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+          <label class="flex items-start gap-3 text-base text-muted">
+            <input class="mt-0.5 size-5 flex-none accent-ink" type="checkbox" name="consent" value="yes" required />
+            <span>I agree that Launchwright may use my email to contact me about the pilot, as described in the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>. I can ask for it to be deleted at any time.</span>
+          </label>
+          <div class="flex flex-wrap items-center gap-4">
+            <button class="btn" type="submit">{CTA}</button>
+            <p id="waitlist-status" class="m-0 font-medium data-[kind=err]:text-warn data-[kind=ok]:text-ok" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+          </div>
+        </div>
+
+        <!-- What happens next -->
+        <ol class="grid divide-line border-t border-line sm:grid-cols-3 sm:divide-x max-sm:divide-y" aria-label="What happens next">
+          {[
+            ["Apply", "Your email, and what you want to ship."],
+            ["We review", "We read every application and email you."],
+            ["Start building", "Connect your AI tool and ship a preview."],
+          ].map(([t, d], i) => (
+            <li class="flex gap-3 p-6 md:px-10">
+              <span class="grid size-7 flex-none place-items-center rounded-full bg-blue text-[14px] font-semibold text-white">{i + 1}</span>
+              <div>
+                <p class="font-semibold">{t}</p>
+                <p class="mt-0.5 text-[15px] text-muted">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+    <!-- FAQ -->
+    <section id="faq" aria-labelledby="faq-title" class="gutter scroll-mt-24 py-20 md:py-28">
+      <div class="mx-auto flex max-w-[52rem] flex-col gap-10">
+        <h2 id="faq-title" class="text-center text-title font-bold text-balance" data-reveal>Questions?</h2>
+        <div>
+          {faq.map(([q, a]) => (
+            <details class="group border-t border-line last:border-b">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 py-6 text-xl font-semibold tracking-[-0.01em]">
+                {q}
+                <span class="text-2xl font-normal leading-none text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="mb-6 text-[17px] text-muted">{a}</p>
+            </details>
+          ))}
+        </div>
+        <p class="text-center text-[17px] text-muted">Still deciding? Seats are limited. <a class="font-semibold text-ink underline underline-offset-4" href="#pilot">Apply for the pilot</a></p>
+      </div>
+    </section>
+
+  </main>
+
+  <SiteFooter home />
+</Base>
+
+<script>
+  import "../scripts/site.ts";
+</script>

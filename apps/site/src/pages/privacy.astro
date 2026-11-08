@@ -1,0 +1,56 @@
+---
+import Legal from "../layouts/Legal.astro";
+const CONTACT = "privacy@launchwright.app";
+---
+<Legal
+  title="Privacy policy"
+  path="/privacy"
+  updated="November 8, 2026"
+  description="What we collect, why, and the rights you have under the Philippine Data Privacy Act of 2012 (RA 10173). The short version: we collect very little, and you can ask us to delete it at any time."
+>
+  <h2>Who we are</h2>
+  <p>Launchwright ("we") runs launchwright.app and the Launchwright pilot. We are the personal information controller for the data described here. For anything about your data, email <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+
+  <h2>What we collect</h2>
+  <p>When you apply for the pilot, we collect:</p>
+  <ul>
+    <li><strong>Your email address</strong>, so we can contact you about the pilot.</li>
+    <li><strong>What you want to ship</strong>, only if you choose to tell us.</li>
+    <li><strong>When you gave consent</strong>, so we can show we asked first.</li>
+  </ul>
+  <p>When you visit the site, Cloudflare (our host) processes basic technical data such as your IP address to deliver the page and protect it from abuse. We use Cloudflare Web Analytics, which counts visits without cookies and without tracking you across sites. Your light or dark theme choice is saved only in your own browser.</p>
+  <p>We don't use advertising trackers, and we don't sell or rent your data.</p>
+
+  <h2>Why we use it</h2>
+  <p>We use your application only to review it, contact you about the pilot, and plan the cohort. The legal basis is your consent, which you give with the checkbox on the form. You can withdraw it at any time.</p>
+
+  <h2>Who processes it for us</h2>
+  <ul>
+    <li><strong>Cloudflare</strong>, which hosts the site and handles the form.</li>
+    <li><strong>Neon</strong>, which stores the application database.</li>
+  </ul>
+  <p>These providers may store data outside the Philippines. They process it only to provide their service to us.</p>
+
+  <h2>How long we keep it</h2>
+  <p>We keep your application until the pilot ends. If you don't join, we delete it within 30 days after the pilot ends. If you ask us to delete it sooner, we will.</p>
+
+  <h2>How we protect it</h2>
+  <p>Data is encrypted in transit (HTTPS) and at rest by our providers. Only the Launchwright team can access applications, and the database credentials are never in our code.</p>
+
+  <h2>Your rights</h2>
+  <p>Under RA 10173 you have the right to:</p>
+  <ul>
+    <li>be informed about how your data is used;</li>
+    <li>access the data we hold about you;</li>
+    <li>correct it if it's wrong;</li>
+    <li>object to its use, or withdraw consent;</li>
+    <li>have it deleted or blocked;</li>
+    <li>get a copy in a portable format;</li>
+    <li>be compensated for damages from inaccurate or unauthorized use; and</li>
+    <li>file a complaint with the <a href="https://privacy.gov.ph">National Privacy Commission</a>.</li>
+  </ul>
+  <p>To use any of these rights, email <a href={`mailto:${CONTACT}`}>{CONTACT}</a>. We'll reply within 15 days.</p>
+
+  <h2>Changes</h2>
+  <p>If we change this policy, we'll update the date at the top. If a change affects data we already hold, we'll email you first.</p>
+</Legal>

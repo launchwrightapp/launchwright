@@ -1,0 +1,41 @@
+---
+import Logo from "../../../../packages/ui/Logo.astro";
+import ThemeToggle from "../../../../packages/ui/ThemeToggle.astro";
+
+// On the home page links are "#section"; on other pages they go back to "/#section".
+interface Props { home?: boolean }
+const { home = false } = Astro.props;
+const base = home ? "" : "/";
+
+const nav = [
+  ["#how", "How it works"],
+  ["#curriculum", "Learning path"],
+  ["#readiness", "Readiness"],
+  ["#trust", "Security"],
+  ["#faq", "FAQ"],
+];
+---
+<header data-autohide class="gutter sticky top-0 z-20 border-b border-transparent bg-surface/90 backdrop-blur transition-transform duration-300 supports-[backdrop-filter]:bg-surface/75 motion-reduce:transition-none data-[hidden]:-translate-y-full">
+  <div class="flex h-[84px] items-center justify-between gap-4">
+    <Logo />
+    <nav aria-label="Sections" class="hidden gap-1 text-[17px] font-medium lg:flex" data-scrollspy={home ? "" : undefined}>
+      {nav.map(([href, label]) => <a href={base + href} class="rounded-full px-4 py-2 text-muted no-underline transition hover:text-ink aria-[current=true]:bg-blue aria-[current=true]:text-white">{label}</a>)}
+    </nav>
+    <div class="flex items-center gap-2.5">
+      <ThemeToggle />
+      <a class="btn hidden sm:inline-flex" href={`${base}#pilot`}>Join the free pilot</a>
+
+      <!-- Mobile menu: a native <details>, so it works without JS -->
+      <details class="group relative lg:hidden" data-mobile-menu>
+        <summary class="grid size-[50px] cursor-pointer place-items-center rounded-full border border-line bg-surface text-ink" aria-label="Menu">
+          <svg class="size-5 group-open:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 14h14" /></svg>
+          <svg class="hidden size-5 group-open:block" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
+        </summary>
+        <nav aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 shadow-2xl shadow-black/10">
+          {nav.map(([href, label]) => <a href={base + href} class="rounded-2xl px-4 py-3 text-[18px] font-medium text-ink no-underline hover:bg-surface-2">{label}</a>)}
+          <a class="btn mt-2" href={`${base}#pilot`}>Join the free pilot</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>

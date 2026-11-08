@@ -64,7 +64,7 @@ async function waitlist(req: Request, env: Env, url: URL): Promise<Response> {
   if (!consent) return json({ error: "Please give consent to join." }, 400);
 
   if (!env.DATABASE_URL) {
-    return json({ error: "The waitlist isn't open yet. Please check back soon." }, 503);
+    return json({ error: "Applications aren't being saved yet. Please check back soon." }, 503);
   }
 
   try {
