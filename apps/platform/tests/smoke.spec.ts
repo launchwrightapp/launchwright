@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const pages = [
-  ["/", "checks passed"],
+  ["/", "barbershop-booking"],
   ["/lessons", "modules done"],
   ["/readiness", "checks passed"],
   ["/security", "You stay in control"],
@@ -21,11 +21,36 @@ for (const [path, heading] of pages) {
   });
 }
 
-test("overview shows the next step, checks, and the approval", async ({ page }) => {
+test("overview leads with now, then progress, then history", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Add login checks to your API" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Readiness checks", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Approve" })).toBeVisible();
+  const main = page.getByRole("main");
+  const order = await main.getByRole("heading", { level: 2 }).allTextContents();
+  expect(order).toEqual(["Now", "Progress", "Recent activity"]);
+  await expect(main.getByRole("heading", { name: "Fix auth on API routes" })).toBeVisible();
+  await expect(main.getByRole("heading", { name: "Readiness checks", exact: true })).toBeVisible();
+  await expect(main.getByRole("heading", { name: "Lesson progress" })).toBeVisible();
+});
+
+test("approval explains itself and can show the change", async ({ page }) => {
+  await page.goto("/");
+  const card = page.locator("#approval");
+  await expect(card.getByText("If you approve")).toBeVisible();
+  const diff = card.locator("pre");
+  await expect(diff).toBeHidden();
+  await card.getByRole("button", { name: "Inspect change" }).click();
+  await expect(diff).toContainText("DROP COLUMN");
+  await card.getByRole("button", { name: "Approve" }).click();
+  await expect(card.getByRole("status")).toContainText("Sample only");
+});
+
+test("activity filters by kind", async ({ page }) => {
+  await page.goto("/");
+  const list = page.locator("#activity-list > li");
+  await expect(list).toHaveCount(5);
+  await page.getByRole("group", { name: "Filter activity" }).getByRole("button", { name: "Approvals" }).click();
+  await expect(list.filter({ visible: true })).toHaveCount(1);
+  await page.getByRole("group", { name: "Filter activity" }).getByRole("button", { name: "All" }).click();
+  await expect(list.filter({ visible: true })).toHaveCount(5);
 });
 
 test("explain dropdown is searchable and switches simple and technical", async ({ page }) => {
@@ -108,4 +133,21 @@ test("editor shell: tabs remember opened pages, panel shows problems", async ({ 
   await expect(panel.getByRole("tabpanel")).toContainText("Auth on API routes");
   await panel.getByRole("button", { name: "Show or hide the panel" }).click();
   await expect(panel.getByRole("tabpanel")).toBeHidden();
+});
+
+test("explorer leads with what needs attention; lesson panel can be hidden", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The editor chrome is desktop only");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const explorer = page.getByRole("complementary", { name: "Explorer" });
+  await expect(explorer.getByRole("link", { name: /Auth on API routes/ })).toBeVisible();
+  await expect(explorer.getByRole("link", { name: /No secrets in repo/ })).toBeHidden();
+  await explorer.getByRole("button", { name: /Passed/ }).click();
+  await expect(explorer.getByRole("link", { name: /No secrets in repo/ })).toBeVisible();
+  const lesson = page.getByRole("complementary", { name: "Add login checks to your API" });
+  await expect(lesson).toBeVisible();
+  await page.getByRole("button", { name: "Show or hide the lesson panel" }).click();
+  await expect(lesson).toBeHidden();
+  await page.reload();
+  await expect(lesson).toBeHidden();
 });

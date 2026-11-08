@@ -7,6 +7,9 @@ export const project = {
   repo: "juan/barbershop-booking",
   commit: "a41f9c2",
   deployedAgo: "2h ago",
+  branch: "main",
+  stack: "Cloudflare + Neon",
+  preview: "Preview ready",
   user: { name: "Juan D.", first: "Juan", initials: "JD" },
 };
 
@@ -94,14 +97,28 @@ export const approval = {
   tech: "Destructive migration (DROP COLUMN) on bookings, 132 rows affected. Last backup: 06:00 today (PITR available, 7 days).",
 };
 
-// Tool calls your AI tool made through Launchwright, per day (sample).
-const series = (n: number, seed: number) =>
-  Array.from({ length: n }, (_, i) => 6 + Math.round(((Math.sin(i * 1.7 + seed) + 1) / 2) * 30 + ((i * 7 + seed * 3) % 9)));
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-export const activityRanges = [
-  { id: "7d", label: "7 days", values: series(7, 1), labels: days },
-  { id: "14d", label: "14 days", values: series(14, 2), labels: Array.from({ length: 14 }, (_, i) => days[i % 7].slice(0, 1)) },
-  { id: "30d", label: "30 days", values: series(30, 3), labels: Array.from({ length: 30 }, (_, i) => (i % 5 === 0 ? `${i + 1}` : "")) },
+// The lesson behind the current blocker (shown in the lesson panel).
+export const lesson = {
+  module: "06",
+  area: "Security",
+  minutes: 8,
+  title: "Add login checks to your API",
+  steps: [
+    { simple: "What \"logged in\" means to a server", tech: "Sessions vs bearer tokens" },
+    { simple: "Find the routes anyone can call", tech: "Enumerate unauthenticated handlers" },
+    { simple: "Add the check with your AI tool", tech: "Middleware guard on /api/*" },
+    { simple: "Run the check again", tech: "check_readiness auth → expect 401" },
+  ],
+};
+
+// Plain-language summary of recent events. The raw tool log lives in the bottom panel.
+export type EventKind = "action" | "approval" | "lesson" | "problem";
+export const events: { kind: EventKind; time: string; simple: string; tech: string }[] = [
+  { kind: "approval", time: "14:02", simple: "Claude Code wants to change your database. It's waiting for you.", tech: "deploy → destructive migration held for approval" },
+  { kind: "problem", time: "13:48", simple: "Readiness check found an API anyone can use without logging in.", tech: "check_readiness: auth failed on POST /api/bookings (200, expected 401)" },
+  { kind: "action", time: "13:40", simple: "Cursor saved your email service key. The AI never saw it.", tech: "set_secret RESEND_API_KEY (production), value redacted" },
+  { kind: "lesson", time: "12:15", simple: "You learned how to read error logs.", tech: "get_logs: 3 errors, concept logs.reading covered" },
+  { kind: "action", time: "11:57", simple: "Your tests now run every time you push.", tech: "setup_ci: .github/workflows/ci.yml created" },
 ];
 
 // Short labels for the readiness chart.

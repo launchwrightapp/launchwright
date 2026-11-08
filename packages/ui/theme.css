@@ -28,6 +28,8 @@
   --ok-bg: #e5f4ec;
   --warn: #b4410e;
   --warn-bg: #fdeae1;
+  --bad: #c0241b;
+  --bad-bg: #fde7e5;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -44,6 +46,8 @@
     --ok-bg: #12291d;
     --warn: #ff8a5c;
     --warn-bg: #2e1810;
+    --bad: #ff7a70;
+    --bad-bg: #2f1311;
     color-scheme: dark;
   }
 }
@@ -60,6 +64,8 @@
   --ok-bg: #12291d;
   --warn: #ff8a5c;
   --warn-bg: #2e1810;
+  --bad: #ff7a70;
+  --bad-bg: #2f1311;
   color-scheme: dark;
 }
 
@@ -76,6 +82,8 @@
   --color-ok-bg: var(--ok-bg);
   --color-warn: var(--warn);
   --color-warn-bg: var(--warn-bg);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
 }
 
 @theme {
@@ -131,6 +139,7 @@
   }
   .tag-ok { @apply bg-ok-bg text-ok; }
   .tag-warn { @apply bg-warn-bg text-warn; }
+  .tag-bad { @apply bg-bad-bg text-bad; }
   .tag-line { @apply border border-line bg-transparent text-muted; }
   .card { @apply rounded-[40px] border border-line bg-surface-2 p-7; }
   .label { @apply text-base font-medium text-muted; }

@@ -8,7 +8,7 @@ import { checks, passing } from "../data/sample";
 // Failing first, then not checked, then passed.
 const order = { fail: 0, pending: 1, pass: 2 } as const;
 const sorted = [...checks].sort((a, b) => order[a.status] - order[b.status]);
-const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-warn", "Needs attention"], pending: ["tag tag-line", "Not checked"] } as const;
+const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], pending: ["tag tag-line", "Not started"] } as const;
 ---
 <App title="Readiness" page="readiness">
   <div class="flex flex-col gap-4">

@@ -54,7 +54,8 @@ document.querySelectorAll<HTMLButtonElement>("[data-decide]").forEach((btn) => {
   });
 });
 
-// Collapsible sections (explorer groups, bottom panel). Remembered per browser.
+// Collapsible sections (explorer groups, bottom panel, lesson panel). The markup
+// sets the default; your choice is remembered per browser.
 const store = {
   get(k: string) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k: string, v: string) { try { localStorage.setItem(k, v); } catch {} },
@@ -67,7 +68,8 @@ document.querySelectorAll<HTMLButtonElement>("[data-collapse]").forEach((btn) =>
     btn.setAttribute("aria-expanded", String(open));
     target.hidden = !open;
   };
-  if (store.get(key) === "closed") apply(false);
+  const saved = store.get(key);
+  if (saved) apply(saved === "open");
   btn.addEventListener("click", () => {
     const open = btn.getAttribute("aria-expanded") !== "true";
     apply(open);
@@ -105,3 +107,34 @@ if (strip) {
     if (link) location.href = link.href;
   });
 }
+
+// Show/hide toggles that aren't remembered (e.g. "Inspect change").
+document.querySelectorAll<HTMLButtonElement>("[data-toggle]").forEach((btn) => {
+  const target = document.getElementById(btn.dataset.toggle!);
+  if (!target) return;
+  btn.addEventListener("click", () => {
+    const open = target.hidden;
+    target.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  });
+});
+
+// Filter chips: show only list items whose data-kind matches.
+document.querySelectorAll<HTMLElement>("[data-filter]").forEach((group) => {
+  const list = document.getElementById(group.dataset.filter!);
+  if (!list) return;
+  const empty = list.parentElement?.querySelector<HTMLElement>("[data-filter-empty]");
+  const chips = [...group.querySelectorAll<HTMLButtonElement>("[data-kind]")];
+  group.addEventListener("click", (e) => {
+    const chip = (e.target as Element).closest<HTMLButtonElement>("[data-kind]");
+    if (!chip) return;
+    chips.forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+    const kind = chip.dataset.kind!;
+    let shown = 0;
+    list.querySelectorAll<HTMLElement>(":scope > [data-kind]").forEach((li) => {
+      li.hidden = kind !== "all" && li.dataset.kind !== kind;
+      if (!li.hidden) shown++;
+    });
+    if (empty) empty.hidden = shown > 0;
+  });
+});
