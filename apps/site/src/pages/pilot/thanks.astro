@@ -1,0 +1,27 @@
+---
+// Where the pilot questionnaire lands after sending (with or without JS).
+import Base from "../../../../../packages/ui/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+---
+<Base title="Application sent · Launchwright" noindex>
+  <SiteHeader />
+  <main class="gutter pb-24 pt-14 md:pt-20">
+    <div class="flex max-w-[46rem] flex-col gap-6">
+      <span class="tag tag-ok self-start">Application received</span>
+      <h1 class="text-title font-bold text-balance">Thanks! Your application is in.</h1>
+      <p class="text-[21px] leading-relaxed text-muted">We read every application ourselves. Check your inbox for a confirmation from hello@launchwright.app. If you're in, we'll email you a link to get started.</p>
+      <ol class="grid gap-3 text-[18px]">
+        <li class="flex gap-3"><span class="grid size-7 flex-none place-items-center rounded-full bg-ink text-[14px] font-semibold text-on-ink">1</span>We review your answers.</li>
+        <li class="flex gap-3"><span class="grid size-7 flex-none place-items-center rounded-full bg-surface-3 text-[14px] font-semibold">2</span>If you're in, we email you a link to get started.</li>
+        <li class="flex gap-3"><span class="grid size-7 flex-none place-items-center rounded-full bg-surface-3 text-[14px] font-semibold">3</span>Not this round? The free Starter plan stays open after the pilot.</li>
+      </ol>
+      <p><a class="btn btn-outline" href="/">Back to the home page</a></p>
+    </div>
+  </main>
+  <SiteFooter />
+</Base>
+
+<script>
+  import "../../../../../packages/ui/dropdown";
+</script>

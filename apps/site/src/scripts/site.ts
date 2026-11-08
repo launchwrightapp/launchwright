@@ -91,53 +91,19 @@ if ("IntersectionObserver" in window && revealables.length && !matchMedia("(pref
   document.documentElement.classList.add("reveal-on");
 }
 
-// Pilot application form: submit with fetch, fall back to a normal POST without JS.
+// Pilot form on the home page: only checks the email, then continues to the
+// questionnaire (/pilot?email=...). Without JS it goes there as a plain GET.
 const form = document.getElementById("waitlist") as HTMLFormElement | null;
 const statusEl = document.getElementById("waitlist-status");
-const THANKS = "Thanks! Your application is in. We'll email you.";
 
-function show(msg: string, kind: "ok" | "err" | "" = "") {
-  if (!statusEl) return;
-  statusEl.textContent = msg;
-  statusEl.dataset.kind = kind;
-}
-
-if (new URLSearchParams(location.search).get("joined") === "1") show(THANKS, "ok");
-
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
+form?.addEventListener("submit", (e) => {
   const email = form.elements.namedItem("email") as HTMLInputElement;
-  const consent = form.elements.namedItem("consent") as HTMLInputElement;
-
-  if (!email.checkValidity()) {
-    show("Please check your email address.", "err");
-    email.focus();
-    return;
+  if (email.checkValidity()) return;
+  e.preventDefault();
+  if (statusEl) {
+    statusEl.textContent = "Please check your email address.";
+    statusEl.dataset.kind = "err";
   }
-  if (!consent.checked) {
-    show("Please give consent to join.", "err");
-    return;
-  }
-
-  const button = form.querySelector("button")!;
-  button.disabled = true;
-  show("Sending...");
-
-  try {
-    const data = Object.fromEntries(new FormData(form));
-    const res = await fetch("/api/waitlist", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...data, consent: true }),
-    });
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) throw new Error(body.error || "Something went wrong. Please try again.");
-    form.reset();
-    show(THANKS, "ok");
-  } catch (err) {
-    show((err as Error).message, "err");
-  } finally {
-    button.disabled = false;
-  }
+  email.focus();
 });
 export {};

@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { sendAcknowledgement, sendAcceptance, type Applicant } from "./emails";
+import { cleanAnswers } from "./options";
 
 interface Env {
   ASSETS: Fetcher;
@@ -11,7 +12,7 @@ interface Env {
 const PILOT_SEATS = 10;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_BODY = 4096;
+const MAX_BODY = 8192; // the pilot questionnaire (src/pages/pilot.astro) fits well under this
 
 const SECURITY_HEADERS = {
   "x-content-type-options": "nosniff",
@@ -44,7 +45,13 @@ async function readBody(req: Request): Promise<{ data: Record<string, unknown>; 
     }
   }
   if (type.includes("application/x-www-form-urlencoded")) {
-    return { data: Object.fromEntries(new URLSearchParams(text)), isForm: true };
+    // Checkbox groups send the same name more than once; keep every value.
+    const data: Record<string, unknown> = {};
+    for (const [k, v] of new URLSearchParams(text)) {
+      const prev = data[k];
+      data[k] = prev === undefined ? v : Array.isArray(prev) ? [...prev, v] : [prev, v];
+    }
+    return { data, isForm: true };
   }
   return null;
 }
@@ -55,7 +62,7 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
   const { data, isForm } = parsed;
 
   const done = () =>
-    isForm ? Response.redirect(`${url.origin}/?joined=1#pilot`, 303) : json({ ok: true });
+    isForm ? Response.redirect(`${url.origin}/pilot/thanks`, 303) : json({ ok: true });
 
   // Honeypot: bots fill hidden fields. Pretend it worked.
   if (clean(data.website, 200)) return done();
@@ -64,6 +71,8 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
   const name = clean(data.name, 100);
   const building = clean(data.building, 280);
   const consent = data.consent === true || data.consent === "yes";
+  // Everything else from the questionnaire: known choices and short text only.
+  const answers = cleanAnswers(data);
 
   if (!EMAIL_RE.test(email)) return json({ error: "Please check your email address." }, 400);
   if (!consent) return json({ error: "Please give consent to join." }, 400);
@@ -75,8 +84,8 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
   try {
     const sql = neon(env.DATABASE_URL);
     const rows = await sql`
-      insert into waitlist (email, name, building, consent_at)
-      values (${email}, ${name || null}, ${building || null}, now())
+      insert into waitlist (email, name, building, answers, consent_at)
+      values (${email}, ${name || null}, ${building || null}, ${answers ? JSON.stringify(answers) : null}::jsonb, now())
       on conflict (email) do nothing
       returning id
     `;
@@ -119,7 +128,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
   // List applicants, newest first.
   if (url.pathname === "/api/admin/applicants" && req.method === "GET") {
     const rows = await sql`
-      select email, name, building, created_at, acknowledged_at, accepted_at
+      select email, name, building, answers, created_at, acknowledged_at, accepted_at
       from waitlist order by created_at desc limit 500
     `;
     return json({ seats: PILOT_SEATS, accepted: rows.filter((r) => r.accepted_at).length, applicants: rows });

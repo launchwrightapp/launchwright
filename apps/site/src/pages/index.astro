@@ -741,40 +741,27 @@ const faq = [
           <div class="flex flex-col">
             <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5 md:px-10">
               <p class="text-[19px] font-semibold">Your application</p>
-              <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">Takes about a minute</p>
+              <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">About 3 minutes</p>
             </div>
-            <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/api/waitlist" method="post" novalidate>
-          <label class="block">
-            <span class="mb-2 block font-medium">First name <span class="text-muted">(optional)</span></span>
-            <input class="input" type="text" name="name" maxlength="100" autocomplete="given-name" placeholder="Juan" />
-          </label>
-          <label class="block">
-            <span class="mb-2 block font-medium">Email</span>
-            <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
-          </label>
-          <label class="block">
-            <span class="mb-2 block font-medium">What do you want to ship? <span class="text-muted">(optional)</span></span>
-            <input class="input" type="text" name="building" maxlength="280" placeholder="e.g. a booking app for our barbershop" />
-          </label>
-          <div class="absolute -left-[9999px] size-px overflow-hidden" aria-hidden="true">
-            <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
-          </div>
-          <label class="flex items-start gap-3 text-base text-muted">
-            <input class="mt-0.5 size-5 flex-none accent-ink" type="checkbox" name="consent" value="yes" required />
-            <span>I agree that Launchwright may use my email to contact me about the pilot, as described in the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>. I can ask for it to be deleted at any time.</span>
-          </label>
-          <div class="flex flex-wrap items-center gap-4">
-            <button class="btn" type="submit">{CTA}</button>
-            <p id="waitlist-status" class="m-0 font-medium data-[kind=err]:text-warn data-[kind=ok]:text-ok" role="status" aria-live="polite"></p>
-          </div>
-        </form>
+            <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/pilot" method="get" novalidate>
+              <p class="text-[19px] leading-relaxed text-muted">A few short questions about you and what you want to ship. It helps us pick a cohort we can really help.</p>
+              <label class="block">
+                <span class="mb-2 block font-medium">Email</span>
+                <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
+              </label>
+              <div class="flex flex-wrap items-center gap-4">
+                <button class="btn" type="submit">Continue</button>
+                <p id="waitlist-status" class="m-0 font-medium data-[kind=err]:text-warn" role="status" aria-live="polite"></p>
+              </div>
+              <p class="text-[15px] text-muted">5 short steps, about 3 minutes. Nothing is saved until you send it.</p>
+            </form>
           </div>
         </div>
 
         <!-- What happens next -->
         <ol class="grid divide-line border-t border-line sm:grid-cols-3 sm:divide-x max-sm:divide-y" aria-label="What happens next">
           {[
-            ["Apply", "Your email, and what you want to ship."],
+            ["Apply", "Five short questions about you and your project."],
             ["We review", "We read every application and email you."],
             ["Start building", "Connect your AI tool and ship a preview."],
           ].map(([t, d], i) => (

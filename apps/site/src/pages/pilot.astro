@@ -1,0 +1,159 @@
+---
+// Pilot application: a guided 5-step questionnaire (scripts/pilot.ts).
+// Without JS every step shows, one after another, and the form still posts.
+// Option values are checked again on the server (worker/index.ts, ANSWER_OPTIONS).
+import Base from "../../../../packages/ui/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { OPTIONS } from "../../worker/options";
+
+const steps = ["About you", "Experience", "Your project", "Goals", "Review"];
+const card = "flex min-h-[54px] cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-[17px] transition hover:border-muted has-[:checked]:border-ink has-[:checked]:bg-surface-2 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--focus)";
+const control = "size-5 flex-none accent-ink";
+const legend = "mb-3 block font-medium";
+const optional = "text-muted";
+const heading = "text-[1.75rem] font-bold leading-tight tracking-[-0.015em] outline-none";
+---
+<Base title="Apply for the pilot · Launchwright" description="Five short steps, about 3 minutes. Tell us about you and what you want to ship." url="https://launchwright.app/pilot">
+  <SiteHeader />
+  <main class="gutter pb-24 pt-10 md:pt-16">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-16">
+      <!-- Intro and the step list -->
+      <div class="flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="tag bg-blue text-white">Applications open</span>
+          <span class="text-muted">10 seats · free</span>
+        </div>
+        <h1 class="text-title font-bold text-balance">Apply for the pilot</h1>
+        <p class="text-[21px] leading-relaxed text-muted">Five short steps, about 3 minutes. It helps us pick a cohort we can really help, and plan the lessons around you.</p>
+        <ol class="flex flex-col gap-1 max-lg:hidden" aria-label="Steps" data-step-list>
+          {steps.map((s, i) => (
+            <li data-step-item={i + 1} class="group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[17px] text-muted data-[state=current]:bg-surface-2 data-[state=current]:font-semibold data-[state=current]:text-ink data-[state=done]:text-ink">
+              <span class="grid size-8 flex-none place-items-center rounded-full border border-line text-[15px] font-semibold tabular-nums group-data-[state=current]:border-ink group-data-[state=current]:bg-ink group-data-[state=current]:text-on-ink group-data-[state=done]:border-ink">{i + 1}</span>
+              {s}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <!-- The questionnaire -->
+      <div class="overflow-hidden rounded-[32px] border border-line bg-surface shadow-2xl shadow-black/[0.05]">
+        <div class="flex flex-col gap-3 border-b border-line px-6 py-5 md:px-10" data-progress hidden>
+          <p class="flex items-center justify-between text-[15px] text-muted"><span data-progress-text>Step 1 of 5</span><span data-progress-name>{steps[0]}</span></p>
+          <div class="grid grid-cols-5 gap-1.5" aria-hidden="true">
+            {steps.map((_, i) => <span data-progress-bar={i + 1} class="h-1.5 rounded-full bg-surface-3 data-[on]:bg-ink"></span>)}
+          </div>
+        </div>
+
+        <form id="pilot-form" class="flex flex-col" action="/api/waitlist" method="post" novalidate>
+          <!-- 1 About you -->
+          <section data-step="1" aria-labelledby="step-1-title" class="flex flex-col gap-6 p-6 md:p-10">
+            <h2 id="step-1-title" class={heading} tabindex="-1">About you</h2>
+            <label class="block">
+              <span class={legend}>First name <span class={optional}>(optional)</span></span>
+              <input class="input" type="text" name="name" maxlength="100" autocomplete="given-name" placeholder="Juan" />
+            </label>
+            <label class="block">
+              <span class={legend}>Email</span>
+              <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
+            </label>
+            <fieldset data-required>
+              <legend class={legend}>What describes you best?</legend>
+              <div class="grid gap-2.5 sm:grid-cols-2">
+                {OPTIONS.role.map(([v, l]) => <label class={card}><input class={control} type="radio" name="role" value={v} required />{l}</label>)}
+              </div>
+            </fieldset>
+            <label class="block">
+              <span class={legend}>City or province <span class={optional}>(optional)</span></span>
+              <input class="input" type="text" name="city" maxlength="100" autocomplete="address-level2" placeholder="e.g. Quezon City" />
+            </label>
+          </section>
+
+          <!-- 2 Experience -->
+          <section data-step="2" aria-labelledby="step-2-title" class="flex flex-col gap-6 border-t border-line p-6 md:p-10">
+            <h2 id="step-2-title" class={heading} tabindex="-1">Your experience</h2>
+            <fieldset data-required>
+              <legend class={legend}>How much have you coded?</legend>
+              <div class="grid gap-2.5 sm:grid-cols-2">
+                {OPTIONS.experience.map(([v, l]) => <label class={card}><input class={control} type="radio" name="experience" value={v} required />{l}</label>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class={legend}>Which AI tools do you use? <span class={optional}>(pick any)</span></legend>
+              <div class="grid gap-2.5 sm:grid-cols-2">
+                {OPTIONS.tools.map(([v, l]) => <label class={card}><input class={control} type="checkbox" name="tools" value={v} />{l}</label>)}
+              </div>
+            </fieldset>
+          </section>
+
+          <!-- 3 Your project -->
+          <section data-step="3" aria-labelledby="step-3-title" class="flex flex-col gap-6 border-t border-line p-6 md:p-10">
+            <h2 id="step-3-title" class={heading} tabindex="-1">Your project</h2>
+            <label class="block">
+              <span class={legend}>What do you want to ship?</span>
+              <textarea class="input min-h-28 resize-y" name="building" required maxlength="280" rows="3" placeholder="e.g. a booking app for our barbershop"></textarea>
+              <span class="mt-2 block text-[15px] text-muted">One or two sentences is plenty. An idea is fine.</span>
+            </label>
+            <fieldset data-required>
+              <legend class={legend}>Where is it now?</legend>
+              <div class="grid gap-2.5 sm:grid-cols-2">
+                {OPTIONS.stage.map(([v, l]) => <label class={card}><input class={control} type="radio" name="stage" value={v} required />{l}</label>)}
+              </div>
+            </fieldset>
+            <label class="block">
+              <span class={legend}>GitHub username <span class={optional}>(optional)</span></span>
+              <input class="input" type="text" name="github" maxlength="39" pattern="[A-Za-z0-9](?:[A-Za-z0-9\-]{0,38})" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="juandelacruz" />
+            </label>
+          </section>
+
+          <!-- 4 Goals -->
+          <section data-step="4" aria-labelledby="step-4-title" class="flex flex-col gap-6 border-t border-line p-6 md:p-10">
+            <h2 id="step-4-title" class={heading} tabindex="-1">Your goals</h2>
+            <fieldset>
+              <legend class={legend}>What do you most want to learn? <span class={optional}>(pick any)</span></legend>
+              <div class="grid gap-2.5 sm:grid-cols-2">
+                {OPTIONS.learn.map(([v, l]) => <label class={card}><input class={control} type="checkbox" name="learn" value={v} />{l}</label>)}
+              </div>
+            </fieldset>
+            <fieldset data-required>
+              <legend class={legend}>How many hours a week can you give it?</legend>
+              <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {OPTIONS.hours.map(([v, l]) => <label class={card}><input class={control} type="radio" name="hours" value={v} required />{l}</label>)}
+              </div>
+            </fieldset>
+            <label class="block">
+              <span class={legend}>How did you hear about us? <span class={optional}>(optional)</span></span>
+              <input class="input" type="text" name="heard" maxlength="200" placeholder="e.g. a friend, Facebook, a dev community" />
+            </label>
+          </section>
+
+          <!-- 5 Review -->
+          <section data-step="5" aria-labelledby="step-5-title" class="flex flex-col gap-6 border-t border-line p-6 md:p-10">
+            <h2 id="step-5-title" class={heading} tabindex="-1">Review and send</h2>
+            <dl data-review hidden class="grid divide-y divide-line rounded-2xl border border-line"></dl>
+            <div class="absolute -left-[9999px] size-px overflow-hidden" aria-hidden="true">
+              <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+            </div>
+            <label class="flex items-start gap-3 text-base text-muted">
+              <input class="mt-0.5 size-5 flex-none accent-ink" type="checkbox" name="consent" value="yes" required />
+              <span>I agree that Launchwright may use my email to contact me about the pilot, as described in the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>. I can ask for it to be deleted at any time.</span>
+            </label>
+          </section>
+
+          <!-- Controls -->
+          <div class="flex flex-wrap items-center gap-3 border-t border-line px-6 py-5 md:px-10">
+            <button type="button" class="btn btn-outline" data-back hidden>Back</button>
+            <button type="button" class="btn" data-next hidden>Continue</button>
+            <button type="submit" class="btn" data-submit>Send application</button>
+            <p id="pilot-status" class="m-0 font-medium data-[kind=err]:text-warn" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <SiteFooter />
+</Base>
+
+<script>
+  import "../scripts/pilot.ts";
+</script>

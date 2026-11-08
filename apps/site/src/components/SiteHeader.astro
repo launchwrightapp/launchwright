@@ -6,6 +6,7 @@ import ThemeToggle from "../../../../packages/ui/ThemeToggle.astro";
 interface Props { home?: boolean }
 const { home = false } = Astro.props;
 const base = home ? "" : "/";
+const pilotHref = home ? "#pilot" : "/pilot";
 
 const nav = [
   ["#how", "How it works"],
@@ -23,7 +24,7 @@ const nav = [
     </nav>
     <div class="flex items-center gap-2.5">
       <ThemeToggle />
-      <a class="btn hidden sm:inline-flex" href={`${base}#pilot`}>Join the free pilot</a>
+      <a class="btn hidden sm:inline-flex" href={pilotHref}>Join the free pilot</a>
 
       <!-- Mobile menu: custom popover (packages/ui/dropdown.ts) -->
       <div class="relative lg:hidden" data-popover>
@@ -33,7 +34,7 @@ const nav = [
         </button>
         <nav id="site-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 shadow-2xl shadow-black/10">
           {nav.map(([href, label]) => <a href={base + href} class="rounded-2xl px-4 py-3 text-[18px] font-medium text-ink no-underline hover:bg-surface-2">{label}</a>)}
-          <a class="btn mt-2" href={`${base}#pilot`}>Join the free pilot</a>
+          <a class="btn mt-2" href={pilotHref}>Join the free pilot</a>
         </nav>
       </div>
     </div>
