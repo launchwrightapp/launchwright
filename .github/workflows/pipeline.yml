@@ -1,0 +1,137 @@
+name: CI/CD
+
+# GitHub flow:
+#   branch -> pull request -> CI + preview deploy + E2E on preview -> merge to main
+#   main -> deploy production -> E2E smoke on live site -> roll back if it fails
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 \
+            detect --source /repo --redact --verbose
+
+  test:
+    name: Typecheck + E2E (local)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck -w apps/site
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -w apps/site
+      - run: npm run test:e2e -w apps/platform
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-local
+          path: apps/*/test-results/
+          retention-days: 7
+
+  preview:
+    name: Preview deploy + E2E
+    if: github.event_name == 'pull_request'
+    needs: [secrets, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Upload preview versions (production is untouched)
+        id: up
+        run: |
+          alias="pr-${{ github.event.number }}"
+          upload() {
+            (cd "apps/$1" && npx wrangler versions upload --preview-alias "$alias" 2>&1) \
+              | tee /dev/stderr | grep -oE "https://$alias-[^ ]+\.workers\.dev" | head -1
+          }
+          npm run sync -w apps/platform
+          site=$(upload site)
+          platform=$(upload platform)
+          if [ -z "$site" ] || [ -z "$platform" ]; then
+            echo "::error::Preview upload did not return a URL (check CLOUDFLARE_API_TOKEN)"
+            exit 1
+          fi
+          echo "site=$site" >> "$GITHUB_OUTPUT"
+          echo "platform=$platform" >> "$GITHUB_OUTPUT"
+      - name: E2E on preview
+        run: |
+          BASE_URL="${{ steps.up.outputs.site }}" npm run test:e2e -w apps/site
+          BASE_URL="${{ steps.up.outputs.platform }}" npm run test:e2e -w apps/platform
+      - name: Comment preview links on the PR
+        if: always() && steps.up.outputs.site != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(printf '### Preview\n\n| App | URL |\n|---|---|\n| Site | %s |\n| Platform | %s |\n\nE2E on preview: **%s** · commit `%s`' \
+            "${{ steps.up.outputs.site }}" "${{ steps.up.outputs.platform }}" "${{ job.status }}" "${GITHUB_SHA::7}")
+          gh pr comment ${{ github.event.number }} --body "$body" --edit-last --create-if-none
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-preview
+          path: apps/*/test-results/
+          retention-days: 7
+
+  deploy:
+    name: Deploy production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [secrets, test]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Deploy site
+        working-directory: apps/site
+        run: npx wrangler deploy --message "${GITHUB_SHA::7}"
+      - name: Deploy platform
+        run: npm run deploy -w apps/platform -- --message "${GITHUB_SHA::7}"
+      - name: Smoke test production
+        run: |
+          BASE_URL=https://launchwright.app npm run test:e2e -w apps/site
+          BASE_URL=https://platform.launchwright.app npm run test:e2e -w apps/platform
+      - name: Roll back if the smoke test failed
+        if: failure()
+        run: |
+          (cd apps/site && npx wrangler rollback --message "Auto rollback: smoke test failed on ${GITHUB_SHA::7}")
+          (cd apps/platform && npx wrangler rollback --message "Auto rollback: smoke test failed on ${GITHUB_SHA::7}")

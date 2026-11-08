@@ -2,7 +2,7 @@
     .crumb { display: flex; align-items: center; gap: 10px; }
     .crumb .sep { color: var(--line); font-size: 20px; line-height: 1; }
     .who { display: flex; align-items: center; gap: 10px; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: 15px; font-weight: 600; }
 
     .page-title { padding: 28px 0 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
     .page-title p { margin: 0; }
@@ -28,13 +28,13 @@
       .dash > .c-3 { grid-column: span 1; }
     }
 
-    .card-head h2 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+    .card-head h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
 
     /* Stats: identical structure → label / value / meter / caption */
     .stat { display: grid; grid-template-rows: auto auto auto auto; gap: 14px; }
     .stat p { margin: 0; }
-    .value { font-weight: 700; font-size: 3.5rem; letter-spacing: -0.05em; line-height: 0.9; display: flex; align-items: baseline; gap: 8px; }
-    .value small { font-size: 1rem; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+    .value { font-weight: 700; font-size: 4.5rem; letter-spacing: -0.05em; line-height: 0.9; display: flex; align-items: baseline; gap: 8px; }
+    .value small { font-size: 1.125rem; font-weight: 500; letter-spacing: 0; color: var(--muted); }
     .meter { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; height: 8px; }
     .meter i { border-radius: 99px; background: var(--line); }
     .meter i.on { background: var(--ink); }
@@ -42,7 +42,7 @@
     .status-line { height: 8px; display: flex; align-items: center; gap: 8px; }
     .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
 
-    .hint { display: block; font-size: 0.8125rem; color: var(--muted); margin-top: 4px; }
+    .hint { display: block; font-size: 0.9375rem; color: var(--muted); margin-top: 4px; }
 
     .side { display: flex; flex-direction: column; gap: 16px; }
     .side > .card { flex: none; }
@@ -50,22 +50,22 @@
 
     .approval-body { padding: var(--pad); display: flex; flex-direction: column; gap: 12px; }
     .approval-body p { margin: 0; }
-    .diff { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 12px 14px; margin: 4px 0; white-space: pre-wrap; }
+    .diff { font-family: var(--font-mono); font-size: 0.9375rem; background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 12px 14px; margin: 4px 0; white-space: pre-wrap; }
     .actions { display: flex; gap: 10px; margin-top: 4px; }
     .actions .btn { flex: 1; }
 
     .lesson { background: var(--blue); color: #fff; border-color: transparent; display: flex; flex-direction: column; gap: 10px; }
     .lesson p { margin: 0; }
     .lesson .label { color: #fff; opacity: 0.75; }
-    .lesson .title { font-weight: 700; font-size: 1.75rem; letter-spacing: -0.035em; line-height: 1.05; }
+    .lesson .title { font-weight: 700; font-size: 2.25rem; letter-spacing: -0.035em; line-height: 1.05; }
     .lesson code { background: rgb(255 255 255 / 0.16); color: #fff; }
     .lesson .row { margin-top: auto; padding-top: 8px; justify-content: space-between; }
     .lesson .btn { background: #fff; color: #0b0b0b; border-color: #fff; }
-    .lesson .meta { font-size: 0.8125rem; opacity: 0.75; }
+    .lesson .meta { font-size: 1rem; opacity: 0.75; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 1.0625rem; }
     th, td { text-align: left; padding: 14px var(--pad); border-top: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
-    thead th { border-top: 0; font-size: 0.8125rem; font-weight: 500; color: var(--muted); padding-top: 12px; padding-bottom: 12px; background: var(--surface-2); }
+    thead th { border-top: 0; font-size: 0.9375rem; font-weight: 500; color: var(--muted); padding-top: 12px; padding-bottom: 12px; background: var(--surface-2); }
     td.result { white-space: normal; min-width: 220px; }
     .table-wrap { overflow-x: auto; }
 
