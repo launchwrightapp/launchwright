@@ -1,6 +1,7 @@
 ---
-// The logo is the word "launchwright", all lowercase. No mark, no tracking.
+// The logo: the LW mark plus the word "launchwright", all lowercase.
+import Mark from "./Mark.astro";
 interface Props { href?: string; class?: string }
 const { href = "/", class: cls = "" } = Astro.props;
 ---
-<a class:list={["logo", cls]} href={href} aria-label="Launchwright home">launchwright</a>
+<a class:list={["logo inline-flex items-center gap-[0.3em]", cls]} href={href} aria-label="Launchwright home"><Mark class="h-[0.95em] w-auto" />launchwright</a>
