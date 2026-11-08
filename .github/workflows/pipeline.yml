@@ -55,7 +55,8 @@ jobs:
 
   preview:
     name: Preview deploy + E2E
-    if: github.event_name == 'pull_request'
+    # Forks don't get deploy secrets, so previews run only for branches in this repo.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     needs: [secrets, test]
     runs-on: ubuntu-latest
     permissions:
@@ -77,7 +78,6 @@ jobs:
             (cd "apps/$1" && npx wrangler versions upload --preview-alias "$alias" 2>&1) \
               | tee /dev/stderr | grep -oE "https://$alias-[^ ]+\.workers\.dev" | head -1
           }
-          npm run sync -w apps/platform
           site=$(upload site)
           platform=$(upload platform)
           if [ -z "$site" ] || [ -z "$platform" ]; then

@@ -1,0 +1,253 @@
+---
+// IDE-style shell: title bar, activity bar, explorer, editor tabs + page,
+// bottom panel (tool calls, problems), lesson inspector, status bar.
+// Desktop (lg+) fills the viewport and only the panes scroll. Below lg it's a
+// normal scrolling page with a menu.
+import Base from "../../../../packages/ui/Base.astro";
+import ThemeToggle from "../../../../packages/ui/ThemeToggle.astro";
+import Dropdown from "../../../../packages/ui/Dropdown.astro";
+import Check from "../../../../packages/ui/Check.astro";
+import Explain from "../components/Explain.astro";
+import { project, checks, passing, modules, modulesDone, audit, connections, lesson } from "../data/sample";
+
+type PageId = "overview" | "lessons" | "readiness" | "security" | "connect";
+interface Props { title: string; page: PageId }
+const { title, page } = Astro.props;
+
+const icons: Record<PageId, string> = {
+  overview: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  lessons: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7",
+  readiness: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
+  security: "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z",
+  connect: "M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5",
+};
+const nav: { id: PageId; href: string; label: string; badge?: string }[] = [
+  { id: "overview", href: "/", label: "Overview" },
+  { id: "lessons", href: "/lessons", label: "Lessons" },
+  { id: "readiness", href: "/readiness", label: "Readiness" },
+  { id: "security", href: "/security", label: "Security", badge: "1" },
+  { id: "connect", href: "/connect", label: "Connect AI tool" },
+];
+const levels = [
+  { value: "simple", label: "Simple", hint: "Plain words. Best if you're new." },
+  { value: "tech", label: "Technical", hint: "Exact commands, status codes, and config." },
+];
+const problems = checks.filter((c) => c.status !== "pass");
+const attention = checks.filter((c) => c.status !== "pass");
+const passed = checks.filter((c) => c.status === "pass");
+const sectionHead = "flex min-h-9 w-full cursor-pointer items-center gap-1.5 px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted hover:text-ink";
+const chevron = "size-3.5 transition in-aria-expanded:rotate-90";
+const row = "flex min-h-9 items-center gap-2.5 rounded-lg px-3 text-[14px] text-ink no-underline hover:bg-surface-3/70";
+const subHead = "flex min-h-8 w-full cursor-pointer items-center gap-1.5 px-3 text-[13px] font-medium text-muted hover:text-ink";
+// Low-priority groups start closed; the explorer highlights only what needs you.
+const sections = [
+  { id: "checks", label: "Checks", meta: `${passing}/${checks.length}`, open: true },
+  { id: "modules", label: "Lessons", meta: `${modulesDone}/${modules.length}`, open: true },
+  { id: "accounts", label: "Accounts", meta: `${connections.filter((c) => c.on).length}/${connections.length}`, open: false },
+];
+---
+<Base title={`${title} · Launchwright`} noindex>
+  <script src="../scripts/app.ts"></script>
+  <div class="relative flex min-h-svh flex-col bg-canvas lg:h-svh lg:overflow-hidden">
+    <!-- Title bar -->
+    <header class="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 bg-night px-3 text-white lg:static lg:px-4">
+      <a href="/" class="logo flex-none text-[20px] text-white sm:text-[20px]" aria-label="Launchwright home">launchwright</a>
+      <span class="hidden truncate text-[14px] text-white/55 md:inline">/ {project.name} / <span class="text-white/85">{title}</span></span>
+      <div class="ml-auto flex flex-none items-center gap-2">
+        <Dropdown id="level" name="level" label="Explain" options={levels} value="simple" tone="dark" hideLabelBelow="sm" searchPlaceholder="Search levels" size="sm" />
+        <ThemeToggle tone="dark" compact />
+        <span class="hidden size-8 place-items-center rounded-full bg-lime text-[12px] font-semibold text-night lg:grid" role="img" aria-label={project.user.name}>{project.user.initials}</span>
+        <div class="relative lg:hidden" data-popover>
+          <button type="button" data-popover-trigger aria-expanded="false" aria-controls="app-menu" aria-label="Menu" class="group grid size-9 cursor-pointer place-items-center rounded-full border border-white/15 bg-white/5 text-white">
+            <svg class="size-5 group-aria-expanded:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            <svg class="hidden size-5 group-aria-expanded:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+          <nav id="app-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+10px)] z-30 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[24px] border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/20">
+            <p class="px-3.5 pb-1.5 pt-1 text-[14px] text-muted">{project.name}</p>
+            {nav.map((n) => (
+              <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
+                {n.label}
+                {n.badge && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex min-h-0 flex-1">
+      <!-- Activity bar -->
+      <nav aria-label="Dashboard" class="hidden w-14 flex-none flex-col items-center gap-1 bg-night py-2 lg:flex">
+        {nav.map((n) => (
+          <a
+            href={n.href}
+            title={n.label}
+            aria-current={n.id === page ? "page" : undefined}
+            class="relative grid size-11 place-items-center rounded-xl text-white/55 no-underline hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
+          >
+            <svg class="size-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
+            <span class="sr-only">{n.label}</span>
+            {n.badge && <span class="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-orange text-[10px] font-bold text-night" aria-hidden="true">{n.badge}</span>}
+          </a>
+        ))}
+      </nav>
+
+      <!-- Explorer -->
+      <aside aria-label="Explorer" class="hidden w-64 flex-none flex-col gap-1 overflow-y-auto border-r border-line bg-canvas py-3 lg:flex">
+        <div class="px-4 pb-2">
+          <p class="flex items-center gap-2">
+            <span class="size-2 flex-none rounded-full bg-ok ring-4 ring-ok-bg" aria-hidden="true"></span>
+            <span class="truncate text-[15px] font-semibold">{project.name}</span>
+          </p>
+          <p class="mt-1 truncate pl-4 text-[13px] text-muted">{project.framework} · {project.branch} · {project.stack}</p>
+        </div>
+        {sections.map((s) => (
+          <section class="border-t border-line px-1.5 pt-1.5">
+            <button type="button" class={sectionHead} aria-expanded={String(s.open)} aria-controls={`exp-${s.id}`} data-collapse={`exp-${s.id}`}>
+              <svg class={chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+              {s.label}<span class="ml-auto font-medium normal-case tracking-normal tabular-nums">{s.meta}</span>
+            </button>
+            <div id={`exp-${s.id}`} hidden={!s.open} class="pb-2">
+              {s.id === "checks" && (
+                <>
+                  <p class="px-3 pb-0.5 pt-1 text-[13px] font-medium text-muted">Needs attention</p>
+                  <ul class="flex flex-col">
+                    {attention.map((c) => (
+                      <li><a class:list={[row, c.status === "fail" && "bg-bad-bg font-medium text-bad"]} href={`/readiness#check-${c.id}`}>
+                        <span class:list={["size-2 flex-none rounded-full", c.status === "fail" ? "bg-bad" : "border border-dashed border-muted"]} aria-hidden="true"></span>
+                        <span class="truncate">{c.name}</span>
+                        <span class="ml-auto text-[12px] font-normal">{c.status === "fail" ? "Failed" : "Not started"}</span>
+                      </a></li>
+                    ))}
+                  </ul>
+                  <button type="button" class={subHead} aria-expanded="false" aria-controls="exp-passed" data-collapse="exp-passed">
+                    <svg class={chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                    Passed<span class="ml-auto tabular-nums">{passed.length}</span>
+                  </button>
+                  <ul id="exp-passed" hidden class="flex flex-col">
+                    {passed.map((c) => (
+                      <li><a class:list={[row, "text-muted"]} href={`/readiness#check-${c.id}`}><Check class="size-3.5 flex-none" /><span class="truncate">{c.name}</span><span class="sr-only">: passed</span></a></li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {s.id === "modules" && (
+                <ul class="flex flex-col">
+                  {modules.map((m) => (
+                    <li><a class:list={[row, m.status === "current" && "bg-surface-3/70 font-medium", m.status === "done" && "text-muted"]} href="/lessons" aria-current={m.status === "current" ? "step" : undefined}>
+                      {m.status === "done" ? <Check class="size-3.5 flex-none" /> : <span class:list={["size-2 flex-none rounded-full", m.status === "current" ? "bg-blue" : "border border-muted"]} aria-hidden="true"></span>}
+                      <span class:list={["truncate", m.status === "next" && "text-muted"]}>{m.n} {m.name}</span>
+                      {m.status === "current" && <span class="ml-auto text-[12px] font-normal text-muted">Now</span>}
+                    </a></li>
+                  ))}
+                </ul>
+              )}
+              {s.id === "accounts" && (
+                <ul class="flex flex-col">
+                  {connections.map((c) => (
+                    <li><a class={row} href="/security"><span class="truncate">{c.name}</span><span class:list={["ml-auto text-[12px]", c.on ? "text-ok" : "text-muted"]}>{c.on ? "Connected" : "Not connected"}</span></a></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        ))}
+      </aside>
+
+      <!-- Editor column -->
+      <div class="flex min-w-0 flex-1 flex-col">
+        <!-- Open tabs (JS keeps the list; without JS only the current page shows) -->
+        <div class="hidden h-11 flex-none items-stretch overflow-x-auto border-b border-line bg-canvas lg:flex" role="navigation" aria-label="Open pages" data-editor-tabs data-page={page}>
+          {nav.map((n) => (
+            <div data-tab={n.id} hidden={n.id !== page} data-current={n.id === page ? "" : undefined} class="group flex flex-none items-center border-r border-line text-[14px] data-[current]:bg-surface">
+              <a href={n.href} aria-current={n.id === page ? "page" : undefined} class="flex h-full items-center gap-2 pl-4 pr-1 text-muted no-underline aria-[current=page]:font-semibold aria-[current=page]:text-ink">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
+                {n.label}
+              </a>
+              <button type="button" data-tab-close={n.id} aria-label={`Close ${n.label}`} class="mr-2 grid size-6 cursor-pointer place-items-center rounded-md text-muted opacity-0 hover:bg-surface-3 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100 group-data-[current]:opacity-100">
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </div>
+          ))}
+          <button type="button" data-collapse="inspector" aria-controls="inspector" aria-expanded="true" aria-label="Show or hide the lesson panel" title="Lesson panel" class="ml-auto mr-2 hidden size-8 flex-none cursor-pointer self-center place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink aria-expanded:text-ink xl:grid">
+            <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg>
+          </button>
+        </div>
+
+        <main class="@container relative min-h-0 flex-1 bg-surface px-4 pb-8 pt-5 md:px-6 lg:overflow-y-auto lg:pt-6" data-editor>
+          <slot />
+        </main>
+
+        <!-- Bottom panel -->
+        <section aria-label="Panel" class="hidden flex-none flex-col border-t border-line bg-night text-white lg:flex">
+          <div class="flex h-9 items-center gap-1 px-2">
+            <div role="tablist" aria-label="Panel" data-tabs class="flex h-full items-stretch">
+              <button type="button" role="tab" id="pt-calls" aria-controls="pp-calls" aria-selected="true" class="cursor-pointer border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Tool calls</button>
+              <button type="button" role="tab" id="pt-problems" aria-controls="pp-problems" aria-selected="false" class="flex cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Problems <span class="grid size-5 place-items-center rounded-full bg-orange text-[11px] tracking-normal text-night">{problems.length}</span></button>
+            </div>
+            <span class="ml-3 hidden text-[13px] text-white/45 xl:inline">Live from your AI tool · Sample</span>
+            <button type="button" data-collapse="panel-body" aria-controls="panel-body" aria-expanded="true" aria-label="Show or hide the panel" class="ml-auto grid size-8 cursor-pointer place-items-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white">
+              <svg class="size-4 rotate-180 transition in-aria-expanded:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+          </div>
+          <div id="panel-body" class="h-28 overflow-y-auto px-4 pb-2 [@media(min-height:1000px)]:h-40">
+            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-0.5 text-[13px]">
+              {audit.map((r) => (
+                <li class="grid grid-cols-[3.5rem_9.5rem_7rem_minmax(0,1fr)] gap-3">
+                  <span class="tabular-nums text-white/45">{r.time}</span>
+                  <span class="text-lime">{r.tool}</span>
+                  <span class="text-white/55">{r.client}</span>
+                  <span class:list={["truncate", r.tone === "warn" ? "text-orange" : r.tone === "ok" ? "text-[#5fd39a]" : "text-white/85"]}>{r.result}</span>
+                </li>
+              ))}
+              <li class="mt-1"><span class="inline-block h-4 w-2 translate-y-0.5 bg-white/60 motion-safe:animate-pulse" aria-hidden="true"></span><span class="sr-only">Waiting for the next tool call</span></li>
+            </ol>
+            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-0.5 text-[13px]">
+              {problems.map((c) => (
+                <li>
+                  <a href={`/readiness#check-${c.id}`} class="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-0.5 text-white/85 no-underline hover:bg-white/5">
+                    <span class:list={["mt-1.5 size-2 rounded-full", c.status === "fail" ? "bg-[#ff7a70]" : "bg-white/40"]} aria-hidden="true"></span>
+                    <span><span class="font-semibold text-white">{c.name}</span> <span class="text-white/60"><Explain simple={c.simple} tech={c.tech} /></span></span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <!-- Lesson panel: the lesson behind your next step. Hide it from the tab bar. -->
+      <aside id="inspector" aria-labelledby="insp-title" class="hidden w-72 flex-none flex-col gap-4 overflow-y-auto border-l border-line bg-canvas p-4 xl:flex">
+        <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Lesson</p>
+        <div class="flex flex-col gap-2 rounded-[20px] bg-blue p-4 text-white">
+          <p class="text-[13px] text-white/75">Module {lesson.module} · {lesson.area} · ~{lesson.minutes} min</p>
+          <h2 id="insp-title" class="text-[19px] font-bold leading-tight tracking-[-0.02em]">{lesson.title}</h2>
+        </div>
+        <div>
+          <p class="label text-[13px]">You'll learn</p>
+          <ol class="mt-2 flex flex-col gap-2 text-[14px]">
+            {lesson.steps.map((st, i) => (
+              <li class="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2">
+                <span class="grid size-6 place-items-center rounded-full bg-surface-3 text-[12px] font-semibold tabular-nums">{i + 1}</span>
+                <span class="pt-0.5"><Explain simple={st.simple} tech={st.tech} /></span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <a class="btn btn-sm" href="/lessons">Start the lesson</a>
+        <p class="text-[13px] text-muted">Lessons run inside your AI tool. Each step explains what changed and why.</p>
+      </aside>
+    </div>
+
+    <!-- Status bar -->
+    <footer class="flex min-h-8 flex-none flex-wrap items-center gap-x-4 gap-y-1 bg-blue px-3 py-1 text-[13px] text-white">
+      <span class="flex items-center gap-1.5"><svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="7" r="2" /><path d="M6 7v10M18 9c0 5-12 3-12 8" /></svg>main</span>
+      <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>Live · {project.commit}</span>
+      <a class="text-white no-underline hover:underline" href="/readiness">{passing}/{checks.length} checks</a>
+      <a class="text-white no-underline hover:underline" href="/security">1 approval waiting</a>
+      <span class="ml-auto hidden sm:inline">Claude Code connected</span>
+      <span class="hidden sm:inline">Explain: <Explain simple="Simple" tech="Technical" /></span>
+      <span class="rounded-full bg-white/15 px-2">Sample data</span>
+    </footer>
+  </div>
+</Base>

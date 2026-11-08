@@ -1,0 +1,6 @@
+---
+// Small check mark icon. Inherits the text color.
+interface Props { class?: string }
+const { class: cls = "size-4" } = Astro.props;
+---
+<svg class:list={["flex-none", cls]} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3 3 7-7" /></svg>

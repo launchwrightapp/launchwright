@@ -1,0 +1,44 @@
+---
+import Legal from "../layouts/Legal.astro";
+const CONTACT = "hello@launchwright.app";
+---
+<Legal
+  title="Terms of use"
+  path="/terms"
+  updated="November 8, 2026"
+  description="The rules for using launchwright.app and joining the Launchwright pilot. Plain language, because you should be able to understand what you agree to."
+>
+  <h2>The pilot</h2>
+  <p>The Launchwright pilot is free for the first 10 learners we accept. It is an early version: features may change, break, or be removed while we build it with you. We may end the pilot at any time, and we'll tell you before we do.</p>
+
+  <h2>Who can join</h2>
+  <p>You need a valid email address. If you are under 18, you need permission from a parent or guardian.</p>
+
+  <h2>Your accounts and costs</h2>
+  <p>Launchwright works with accounts you own: your AI tool, GitHub, Cloudflare, and Neon or Supabase. We never host your app.</p>
+  <ul>
+    <li>You are responsible for those accounts and for any charges on them. We teach with free tiers, but the providers set their own limits and prices.</li>
+    <li>You can disconnect Launchwright from any account at any time.</li>
+  </ul>
+
+  <h2>Your code is yours</h2>
+  <p>You own your app and your code. We don't claim any rights to them. Lessons and site content are ours; you may use them to learn and to build your own projects.</p>
+
+  <h2>Approvals</h2>
+  <p>Launchwright asks for your approval before destructive actions, such as deleting data or dropping a database column. Read each request before you approve it. You are responsible for the changes you approve.</p>
+
+  <h2>Fair use</h2>
+  <p>Don't use Launchwright to break the law, attack other systems, send spam, or get around another service's rules. We may remove access if you do.</p>
+
+  <h2>No warranty</h2>
+  <p>The pilot is provided as is. We work hard to make it reliable and safe, but we can't promise it will be error-free or that your app will never have problems. Keep backups of anything important.</p>
+
+  <h2>Limits on liability</h2>
+  <p>To the extent the law allows, Launchwright is not liable for indirect losses, lost data, or lost profits from using the pilot. Nothing in these terms limits rights you have under Philippine consumer law.</p>
+
+  <h2>Privacy</h2>
+  <p>How we handle your data is explained in our <a href="/privacy">privacy policy</a>.</p>
+
+  <h2>Changes and contact</h2>
+  <p>If we change these terms, we'll update the date at the top and tell pilot learners by email. These terms are governed by the laws of the Philippines. Questions? Email <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+</Legal>

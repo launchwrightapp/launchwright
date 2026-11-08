@@ -1,0 +1,68 @@
+---
+import App from "../layouts/App.astro";
+import Explain from "../components/Explain.astro";
+import CopyBox from "../components/CopyBox.astro";
+import Check from "../../../../packages/ui/Check.astro";
+import { checks, passing } from "../data/sample";
+
+// Failing first, then not checked, then passed.
+const order = { fail: 0, pending: 1, pass: 2 } as const;
+const sorted = [...checks].sort((a, b) => order[a.status] - order[b.status]);
+const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], pending: ["tag tag-line", "Not started"] } as const;
+---
+<App title="Readiness" page="readiness">
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="label">Readiness</p>
+        <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">{passing} of {checks.length} checks passed</h1>
+        <p class="mt-1 max-w-[70ch] text-muted">
+          <Explain simple="These are the things real teams check before they call an app production-ready. Fix them one at a time." tech="Checks run in GitHub Actions on your repo (run #48, 13:48). Results are read back over the GitHub API." />
+        </p>
+      </div>
+      <button class="btn btn-sm" type="button">Run checks again</button>
+    </div>
+
+    <ul class="flex flex-col gap-3">
+      {sorted.map((c) => (
+        <li id={`check-${c.id}`} class="scroll-mt-28">
+          <details class="card rounded-[22px] group p-0" open={c.status !== "pass"}>
+            <summary class="flex cursor-pointer items-center gap-4 px-5 py-3.5">
+              <span class:list={["grid size-9 flex-none place-items-center rounded-full", c.status === "pass" ? "bg-ok-bg text-ok" : c.status === "fail" ? "bg-warn-bg text-warn" : "bg-surface-3 text-muted"]} aria-hidden="true">
+                {c.status === "pass" ? <Check class="size-4" /> : c.status === "fail" ? "!" : "–"}
+              </span>
+              <span class="min-w-0 flex-1 font-semibold">{c.name}</span>
+              <span class={tag[c.status][0]}>{tag[c.status][1]}</span>
+              <svg class="size-5 flex-none text-muted transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </summary>
+            <div class="grid grid-cols-1 gap-6 border-t border-line px-5 py-4 @3xl:grid-cols-2">
+              <div class="flex flex-col gap-4">
+                <div>
+                  <p class="label">What we checked</p>
+                  <p class="mt-1"><Explain simple={c.simple} tech={c.tech} /></p>
+                </div>
+                <div>
+                  <p class="label">Why it matters</p>
+                  <p class="mt-1">{c.why}</p>
+                </div>
+              </div>
+              {c.fix ? (
+                <div class="flex flex-col gap-4 rounded-3xl bg-surface p-5">
+                  <p class="label">How to fix</p>
+                  <p>{c.fix.simple}</p>
+                  <CopyBox label="Paste into your AI tool" text={c.fix.prompt} />
+                  <p class="text-[15px] text-muted">Or run the tool directly: <code>{c.fix.command}</code></p>
+                </div>
+              ) : (
+                <div class="flex items-start gap-3 rounded-3xl bg-surface p-5 text-muted">
+                  <Check class="mt-1 size-4 text-ok" />
+                  <p>Nothing to do. We'll check again on every push.</p>
+                </div>
+              )}
+            </div>
+          </details>
+        </li>
+      ))}
+    </ul>
+  </div>
+</App>

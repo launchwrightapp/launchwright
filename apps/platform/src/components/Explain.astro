@@ -1,0 +1,7 @@
+---
+// Shows the beginner wording or the developer wording, depending on the
+// "Explain" switch (data-level on <html>, set by theme.js). Without JS: simple.
+interface Props { simple: string; tech: string; class?: string }
+const { simple, tech, class: cls = "" } = Astro.props;
+---
+<span class:list={["in-data-[level=tech]:hidden", cls]}>{simple}</span><span class:list={["hidden in-data-[level=tech]:inline", cls]}>{tech}</span>

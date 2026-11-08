@@ -1,14 +1,16 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "launchwright-site",
-  "main": "src/index.ts",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  // Builds the Astro site into dist/ before dev, deploy, and preview uploads.
+  "build": { "command": "npm run build" },
   // Production is served only on the custom domains below.
   // Preview URLs (per PR) live on workers.dev.
   "workers_dev": false,
   "preview_urls": true,
   "assets": {
-    "directory": "./public",
+    "directory": "./dist",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },

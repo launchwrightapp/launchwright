@@ -1,0 +1,38 @@
+---
+// Page shell shared by every Launchwright app: fonts, theme, favicon.
+import "./theme.css";
+import themeScript from "./theme.js?url";
+import favicon from "./favicon.svg?url";
+
+interface Props {
+  title: string;
+  description?: string;
+  url?: string;
+  noindex?: boolean;
+}
+const { title, description, url, noindex = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex" />}
+    {url && <meta property="og:url" content={url} />}
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href={favicon} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" />
+    <!-- Blocking on purpose: applies the saved theme before first paint. -->
+    <script is:inline src={themeScript}></script>
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
