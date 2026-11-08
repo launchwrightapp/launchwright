@@ -3,7 +3,7 @@
   Confirmation: sent when we accept someone into the pilot (not wired up yet).
   Subject:  You're in: launchwright pilot
   From:     launchwright <hello@launchwright.app>   Reply-To: hello@launchwright.app
-  Fields:   {{name}} (falls back to "there")
+  Fields:   {{name}} (falls back to "there"), {{headline}} ("You're in, Juan." or "You're in.")
   Plain text: pilot-accepted.txt
   Email clients ignore <style> and external CSS, so styles are inline and layout is tables.
   Keep the .html and .txt versions in sync.
@@ -53,7 +53,7 @@
             </tr>
             <tr>
               <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">2</td>
-              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><h1 style="margin:0; font-size:30px; line-height:1.15; font-weight:700; letter-spacing:-0.03em; color:#0b0b0b;">You're in, {{name}}.</h1></td>
+              <td valign="top" style="padding:6px 0; padding-left:20px; padding-right:28px;"><h1 style="margin:0; font-size:30px; line-height:1.15; font-weight:700; letter-spacing:-0.03em; color:#0b0b0b;">{{headline}}</h1></td>
             </tr>
             <tr>
               <td width="44" valign="top" align="right" style="padding:6px 0; padding-right:14px; font-size:12px; line-height:26px; color:#b9b8b1; font-variant-numeric:tabular-nums; border-right:1px solid #e6e5e0;">3</td>

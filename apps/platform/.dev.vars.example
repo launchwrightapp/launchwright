@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local dev (never commit .dev.vars).
+# GitHub App "launchwright-app" → Client secrets. Without these, sign-in returns 503.
+GITHUB_CLIENT_SECRET=paste-the-client-secret
+# Any long random string, e.g. the output of: openssl rand -hex 32
+SESSION_SECRET=paste-a-random-string

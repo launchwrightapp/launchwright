@@ -34,7 +34,7 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
   <div class="flex flex-col gap-6">
     <!-- Project identity -->
     <div>
-      <p class="text-muted">Good afternoon, {project.user.first}.</p>
+      <p class="text-muted">Good afternoon, <span data-user-first>{project.user.first}</span>.</p>
       <h1 class="mt-0.5 text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.03em]">{project.name}</h1>
       <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted">
         <span>{project.framework}</span><span aria-hidden="true">·</span>

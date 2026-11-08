@@ -56,7 +56,16 @@ const sections = [
       <div class="ml-auto flex flex-none items-center gap-2">
         <Dropdown id="level" name="level" label="Explain" options={levels} value="simple" tone="dark" hideLabelBelow="sm" searchPlaceholder="Search levels" size="sm" />
         <ThemeToggle tone="dark" compact />
-        <span class="hidden size-8 place-items-center rounded-full bg-lime text-[12px] font-semibold text-night lg:grid" role="img" aria-label={project.user.name}>{project.user.initials}</span>
+        <!-- Account (filled in by the worker for the signed-in person) -->
+        <div class="relative hidden lg:block" data-popover>
+          <button type="button" data-popover-trigger aria-expanded="false" aria-controls="account-menu" aria-label="Account" class="grid size-8 cursor-pointer place-items-center overflow-hidden rounded-full bg-lime text-[12px] font-semibold text-night hover:ring-2 hover:ring-white/40">
+            <span data-user-avatar class="grid size-full place-items-center" role="img" aria-label={project.user.name}>{project.user.initials}</span>
+          </button>
+          <div id="account-menu" data-popover-panel hidden class="absolute right-0 top-[calc(100%+10px)] z-30 w-64 rounded-[20px] border border-line bg-surface p-2 text-ink shadow-2xl shadow-black/20">
+            <p class="px-3 pb-2 pt-1.5"><span class="block truncate font-semibold" data-user-name>{project.user.name}</span><span class="block truncate text-[14px] text-muted" data-user-login>Sample learner</span></p>
+            <form method="post" action="/auth/logout" class="border-t border-line pt-1.5"><button type="submit" class="flex min-h-10 w-full cursor-pointer items-center rounded-xl px-3 text-left text-[15px] font-medium hover:bg-surface-2">Sign out</button></form>
+          </div>
+        </div>
         <div class="relative lg:hidden" data-popover>
           <button type="button" data-popover-trigger aria-expanded="false" aria-controls="app-menu" aria-label="Menu" class="group grid size-9 cursor-pointer place-items-center rounded-full border border-white/15 bg-white/5 text-white">
             <svg class="size-5 group-aria-expanded:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -70,6 +79,10 @@ const sections = [
                 {n.badge && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
               </a>
             ))}
+            <div class="mt-1 flex items-center justify-between gap-3 border-t border-line px-3.5 pt-2.5">
+              <span class="min-w-0"><span class="block truncate text-[15px] font-semibold" data-user-name>{project.user.name}</span><span class="block truncate text-[13px] text-muted" data-user-login>Sample learner</span></span>
+              <form method="post" action="/auth/logout"><button type="submit" class="btn btn-sm btn-outline">Sign out</button></form>
+            </div>
           </nav>
         </div>
       </div>

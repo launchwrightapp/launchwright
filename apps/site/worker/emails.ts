@@ -24,6 +24,7 @@ export interface Applicant { email: string; name: string | null; building: strin
 
 const vars = (a: Applicant) => ({
   name: a.name?.split(/\s+/)[0] || "there",
+  headline: a.name ? `You're in, ${a.name.split(/\s+/)[0]}.` : "You're in.",
   building: a.building || "You didn't say yet. Reply and tell us, it helps us review.",
 });
 

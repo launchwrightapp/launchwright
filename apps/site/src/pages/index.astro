@@ -745,6 +745,10 @@ const faq = [
             </div>
             <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/api/waitlist" method="post" novalidate>
           <label class="block">
+            <span class="mb-2 block font-medium">First name <span class="text-muted">(optional)</span></span>
+            <input class="input" type="text" name="name" maxlength="100" autocomplete="given-name" placeholder="Juan" />
+          </label>
+          <label class="block">
             <span class="mb-2 block font-medium">Email</span>
             <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
           </label>

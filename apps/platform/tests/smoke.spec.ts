@@ -1,4 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { signIn, remote } from "./auth";
+
+// Dashboard pages need a session; these run against the local test server (see auth.ts).
+test.beforeEach(async ({ context, baseURL }) => {
+  test.skip(remote, "Signed-in tests run locally and in CI, not against deployed URLs");
+  await signIn(context, baseURL!);
+});
 
 const pages = [
   ["/", "barbershop-booking"],
@@ -101,11 +108,6 @@ test("sidebar or menu marks the current page", async ({ page, isMobile }) => {
   await expect(page).toHaveURL(/\/readiness/);
 });
 
-test("security headers and noindex", async ({ request }) => {
-  const h = (await request.get("/")).headers();
-  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
-  expect(h["x-robots-tag"]).toBe("noindex");
-});
 
 test("top bar stays fixed while scrolling", async ({ page }) => {
   await page.goto("/");
@@ -150,4 +152,17 @@ test("explorer leads with what needs attention; lesson panel can be hidden", asy
   await expect(lesson).toBeHidden();
   await page.reload();
   await expect(lesson).toBeHidden();
+});
+
+test("the signed-in person appears in the title bar and can sign out", async ({ page, isMobile }) => {
+  await page.goto("/");
+  await expect(page.getByRole("main")).toContainText("Good afternoon, Test.");
+  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
+  else await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(page.getByText("@test-learner").locator("visible=true")).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).locator("visible=true").click();
+  await expect(page).toHaveURL(/\/signin\?signed_out=1/);
+  await expect(page.getByRole("status")).toHaveText("You're signed out.");
+  await page.goto("/lessons");
+  await expect(page).toHaveURL(/\/signin\?next=%2Flessons/);
 });

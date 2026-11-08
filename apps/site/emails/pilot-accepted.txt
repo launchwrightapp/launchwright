@@ -1,4 +1,4 @@
-You're in, {{name}}.
+{{headline}}
 
 You have one of the 10 seats in the free launchwright pilot. Over the next weeks you'll take your own app to production and understand every step.
 

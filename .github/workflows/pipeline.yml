@@ -43,6 +43,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck -w apps/site
+      - run: npm run typecheck -w apps/platform
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e -w apps/site
       - run: npm run test:e2e -w apps/platform
