@@ -1,0 +1,23 @@
+Hi {{name}},
+
+Thanks for applying. You're on the list.
+
+The free pilot has 10 seats. We read every application ourselves, so there's nothing else you need to do right now.
+
+What you're building:
+{{building}}
+
+WHAT HAPPENS NEXT
+1. We read your application. Every one, by a person.
+2. If you're in, we email you. Then we set up your first project together.
+3. Not this round? After the pilot, a free Starter plan stays open to everyone.
+
+While you wait, keep building. Launchwright works with the AI tool you already use, like Claude Code, Cursor, or Codex. Anything you build now, we can help you take to production.
+See how it works: https://launchwright.app/#how
+
+Questions? Just reply to this email.
+The launchwright team
+
+--
+You're getting this because you applied to the pilot at launchwright.app. To have your email deleted, reply "delete" or write to privacy@launchwright.app.
+Privacy policy: https://launchwright.app/privacy

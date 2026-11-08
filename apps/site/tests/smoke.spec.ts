@@ -223,3 +223,10 @@ test("mobile menu opens, links to sections, and closes", async ({ page, isMobile
   await expect(menu).toBeHidden();
   await expect(toggle).toBeFocused();
 });
+
+test("admin routes are hidden without the admin token", async ({ request }) => {
+  for (const [method, path] of [["GET", "/api/admin/applicants"], ["POST", "/api/admin/accept"]] as const) {
+    const res = await request.fetch(path, { method, headers: { authorization: "Bearer wrong" }, data: method === "POST" ? { email: "a@b.co" } : undefined });
+    expect(res.status()).toBe(404);
+  }
+});

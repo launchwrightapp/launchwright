@@ -1,0 +1,20 @@
+You're in, {{name}}.
+
+You have one of the 10 seats in the free launchwright pilot. Over the next weeks you'll take your own app to production and understand every step.
+
+YOUR NEXT STEP
+Reply to this email with two or three times that work for you this week. We'll set up your first project together on a 30-minute call.
+
+HAVE THESE READY FOR THE CALL
+- A GitHub account
+- The AI tool you use, like Claude Code, Cursor, or Codex
+- Your project, or just the idea. It doesn't have to work yet.
+
+Free, no card needed. The pilot costs nothing. You'll connect your own free-tier accounts (like Cloudflare and Neon), and your AI tool never sees your keys.
+
+Welcome aboard. Talk soon.
+The launchwright team
+
+--
+You're getting this because you applied to the pilot at launchwright.app. Changed your mind? Reply and we'll give your seat to someone else. To have your email deleted, write to privacy@launchwright.app.
+Privacy policy: https://launchwright.app/privacy
