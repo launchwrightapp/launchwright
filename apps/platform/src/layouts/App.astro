@@ -44,12 +44,27 @@ const sectionHead = "flex min-h-9 w-full cursor-pointer items-center gap-1.5 px-
 const chevron = "size-3.5 transition in-aria-expanded:rotate-90";
 const row = "flex min-h-9 items-center gap-2.5 rounded-lg px-3 text-[14px] text-ink no-underline hover:bg-surface-3/70";
 const subHead = "flex min-h-8 w-full cursor-pointer items-center gap-1.5 px-3 text-[13px] font-medium text-muted hover:text-ink";
-// Low-priority groups start closed; the explorer highlights only what needs you.
-const sections = [
+// The explorer follows the activity bar, like an editor's side bar: Overview shows the
+// whole project; every other page shows only its own section, opened.
+// On Overview, low-priority groups start closed so only what needs you stands out.
+const allSections = [
   { id: "checks", label: "Checks", meta: `${passing}/${checks.length}`, open: true },
   { id: "modules", label: "Lessons", meta: `${modulesDone}/${modules.length}`, open: true },
   { id: "accounts", label: "Accounts", meta: `${connections.filter((c) => c.on).length}/${connections.length}`, open: false },
+  { id: "messages", label: "Messages", meta: "", open: true },
 ];
+const focus: Record<PageId, string[]> = {
+  overview: ["checks", "modules", "accounts"],
+  lessons: ["modules"],
+  readiness: ["checks"],
+  security: ["accounts"],
+  connect: ["accounts"],
+  messages: ["messages"],
+  inbox: ["messages"],
+};
+const sections = allSections
+  .filter((s) => focus[page].includes(s.id))
+  .map((s) => (page === "overview" ? s : { ...s, open: true }));
 ---
 <Base title={`${title} · Launchwright`} noindex>
   <script src="../scripts/app.ts"></script>
@@ -160,6 +175,19 @@ const sections = [
                     </a></li>
                   ))}
                 </ul>
+              )}
+              {s.id === "messages" && (
+                <>
+                  <ul class="flex flex-col">
+                    {nav.filter((n) => n.id === "messages" || n.id === "inbox").map((n) => (
+                      <li data-admin-only={n.admin ? "" : undefined}><a class:list={[row, n.id === page && "bg-surface-3/70 font-medium"]} href={n.href} aria-current={n.id === page ? "page" : undefined}>
+                        <svg class="size-4 flex-none text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
+                        <span class="truncate">{n.id === "messages" ? "Talk to the team" : n.label}</span>
+                      </a></li>
+                    ))}
+                  </ul>
+                  <p class="px-3 pt-2 text-[13px] text-muted">Or email <a href="mailto:hello@launchwright.app">hello@launchwright.app</a>. A person reads every message.</p>
+                </>
               )}
               {s.id === "accounts" && (
                 <ul class="flex flex-col">

@@ -166,3 +166,17 @@ test("the signed-in person appears in the title bar and can sign out", async ({ 
   await page.goto("/lessons");
   await expect(page).toHaveURL(/\/signin\?next=%2Flessons/);
 });
+
+test("the explorer follows the current section", async ({ page }, info) => {
+  test.skip(info.project.name === "mobile", "The explorer is desktop-only");
+  const explorer = page.getByRole("complementary", { name: "Explorer" });
+  await page.goto("/");
+  await expect(explorer.getByRole("button", { name: /Checks/ })).toBeVisible();
+  await expect(explorer.getByRole("button", { name: /Lessons/ })).toBeVisible();
+  await page.goto("/lessons");
+  await expect(explorer.getByRole("button", { name: /Lessons/ })).toBeVisible();
+  await expect(explorer.getByRole("button", { name: /Checks/ })).toHaveCount(0);
+  await page.goto("/messages");
+  await expect(explorer.getByRole("link", { name: "Talk to the team" })).toBeVisible();
+  await expect(explorer.getByRole("button", { name: /Checks/ })).toHaveCount(0);
+});
