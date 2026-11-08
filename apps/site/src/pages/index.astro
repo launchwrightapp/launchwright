@@ -3,11 +3,20 @@ import Base from "../../../../packages/ui/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import Check from "../../../../packages/ui/Check.astro";
+import Mark from "../../../../packages/ui/Mark.astro";
 import TermLines, { type Line } from "../components/TermLines.astro";
 
 const CTA = "Join the free pilot";
 
 // Hero arc: tiles sit on the curve y = quadratic(0,120 → 500,-20 → 1000,120) in a 1000×200 box.
+// Platform activity bar icons (same as apps/platform App.astro): overview, lessons, readiness, security, connect.
+const mockNav = [
+  "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7",
+  "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
+  "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z",
+  "M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5",
+];
 const heroPath = [
   { pos: "left-[10%] top-[47%]", d: ["m18 16 4-4-4-4", "m6 8-4 4 4 4", "m14.5 4-5 16"] },
   { pos: "left-[30%] top-[31%]", fill: true, d: ["M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-1.96c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"] },
@@ -206,8 +215,17 @@ const faq = [
 
   <main>
     <!-- Hero: centered. The product showcase follows right below it. -->
-    <section aria-labelledby="hero-title" class="gutter flex min-h-[calc(100svh-84px)] flex-col items-center justify-center gap-[clamp(10px,2.2vh,28px)] py-[clamp(8px,2.5vh,64px)] text-center">
-      <p class="text-lg font-medium text-muted">For Filipino students, beginners, and career shifters.</p>
+    <section aria-labelledby="hero-title" class="gutter relative isolate flex min-h-[calc(100svh-84px)] overflow-hidden flex-col items-center justify-center gap-[clamp(10px,2.2vh,28px)] py-[clamp(8px,2.5vh,64px)] text-center">
+      <!-- Soft dome behind the launch path (decorative) -->
+      <svg class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[clamp(120px,22vh,240px)] w-full" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="hero-dome" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2a17ff" stop-opacity="0.07" />
+            <stop offset="1" stop-color="#2a17ff" stop-opacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d="M120 200 Q500 -10 880 200 Z" fill="url(#hero-dome)" class="dark:opacity-[2.2]" />
+      </svg>
       <h1 id="hero-title" class="text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
       <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">From your first commit to a secure, deployed app, guided step by step.</p>
       <div class="w-full max-w-[44rem] overflow-hidden rounded-[28px] border border-line bg-surface text-left shadow-xl shadow-black/[0.04] max-sm:order-2">
@@ -235,15 +253,18 @@ const faq = [
         <a class="btn" href="#pilot">{CTA}</a>
         <a class="text-[17px] font-semibold underline-offset-4 hover:underline" href="#how">See how it works</a>
       </div>
-      <!-- The path to launch: your code, GitHub, launch, secured, in the cloud. Decorative. -->
-      <div class="relative -mb-[clamp(8px,2.5vh,64px)] mt-[clamp(8px,2vh,20px)] aspect-[5/1] max-sm:order-3 w-full max-w-[44rem] sm:aspect-[7/1] lg:max-w-[56rem]" aria-hidden="true">
+      <!-- The path to launch: your code, GitHub, launch, secured, in the cloud. Decorative.
+           The tiles float gently (theme.css .float); still for reduced motion. -->
+      <div class="relative -mb-[clamp(8px,2.5vh,64px)] mt-[clamp(8px,2vh,20px)] aspect-[5/1] w-full max-w-[44rem] max-sm:order-3 sm:aspect-[7/1] lg:max-w-[56rem]" aria-hidden="true">
+
         <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
-          <path d="M-200 260 Q500 -40 1200 260 Z" class="fill-blue/[0.05] dark:fill-blue/[0.12]" />
-          <path d="M0 120 Q500 -20 1000 120" class="stroke-blue/45" stroke-width="2" vector-effect="non-scaling-stroke" />
+          <path d="M100 94.8 Q500 5.2 900 94.8" class="stroke-blue/40 dark:stroke-[#9a90ff]/45" stroke-width="1.5" vector-effect="non-scaling-stroke" />
         </svg>
-        {heroPath.map((t) => (
-          <span class:list={["absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center", t.pos, t.main ? "size-14 rounded-[18px] bg-blue text-white shadow-xl shadow-blue/35 sm:size-[72px] sm:rounded-[22px]" : "size-10 rounded-[14px] border border-line bg-surface text-blue shadow-lg shadow-blue/10 sm:size-14 sm:rounded-[16px] dark:bg-surface-2 dark:text-[#9a90ff]"]}>
-            <svg class:list={[t.main ? "size-7 sm:size-9" : "size-5 sm:size-7"]} viewBox="0 0 24 24" fill={t.fill ? "currentColor" : "none"} stroke={t.fill ? "none" : "currentColor"} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{t.d.map((d) => <path d={d} />)}</svg>
+        {heroPath.map((t, i) => (
+          <span class:list={["absolute -translate-x-1/2 -translate-y-1/2", t.pos]}>
+            <span class:list={["float grid place-items-center", `float-${i}`, t.main ? "size-14 rounded-[18px] bg-blue text-white shadow-[0_14px_36px_-6px_rgb(42_23_255/0.55)] sm:size-[72px] sm:rounded-[22px]" : "size-10 rounded-[14px] bg-surface text-blue shadow-[0_10px_28px_-10px_rgb(42_23_255/0.35),0_0_0_1px_rgb(42_23_255/0.06)] sm:size-14 sm:rounded-[16px] dark:bg-surface-2 dark:text-[#9a90ff] dark:shadow-[0_10px_28px_-10px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.08)]"]}>
+              <svg class:list={[t.main ? "size-7 sm:size-9" : "size-5 sm:size-7"]} viewBox="0 0 24 24" fill={t.fill ? "currentColor" : "none"} stroke={t.fill ? "none" : "currentColor"} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{t.d.map((d) => <path d={d} />)}</svg>
+            </span>
           </span>
         ))}
       </div>
@@ -604,32 +625,54 @@ const faq = [
         </ul>
 
         <!-- One dashboard window that shows every promise at once -->
-        <figure class="m-0 overflow-hidden rounded-[40px] border border-line bg-surface shadow-2xl shadow-black/[0.06]" data-reveal>
-          <div class="flex items-center gap-3 border-b border-line bg-surface-2 px-5 py-3.5">
-            <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
-            <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
-            <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
-            <span class="ml-2 truncate rounded-lg border border-line bg-surface px-3 py-1 text-[14px] text-muted">launchwright.app/my-first-app/security</span>
-            <span class="tag tag-line ml-auto">Sample</span>
+        <figure class="m-0 overflow-hidden rounded-[28px] border border-line bg-canvas shadow-2xl shadow-black/[0.08]" data-reveal>
+          <!-- Same shell as the platform: title bar, activity bar, explorer, editor tab, status bar -->
+          <div class="flex h-12 items-center gap-3 bg-night px-4 text-white">
+            <span class="logo inline-flex items-center gap-[0.3em] text-[17px] text-white"><Mark class="h-[0.95em] w-auto" />launchwright</span>
+            <span class="hidden truncate text-[14px] text-white/55 sm:inline">/ my-first-app / <span class="text-white/85">Security</span></span>
+            <span class="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-[13px] text-white/80">Sample</span>
+            <span class="grid size-7 place-items-center rounded-full bg-lime text-[11px] font-semibold text-night" aria-hidden="true">JD</span>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-[230px_minmax(0,1fr)]">
-            <!-- Sidebar -->
-            <nav class="flex flex-col gap-1 border-line p-4 max-lg:hidden lg:border-r" aria-label="Dashboard (sample)">
-              <div class="mb-3 flex items-center gap-3 rounded-2xl border border-line px-3 py-2.5">
-                <span class="grid size-8 place-items-center rounded-lg bg-ink text-[14px] font-bold text-on-ink">m</span>
-                <div class="min-w-0"><p class="truncate text-[15px] font-semibold">my-first-app</p><p class="text-[13px] text-muted">Owner: you</p></div>
-              </div>
-              {[["Overview", ""], ["Lessons", ""], ["Readiness", "7/8"], ["Security", "1"]].map(([item, badge]) => (
-                <span class:list={["flex items-center justify-between rounded-xl px-3 py-2 text-[15px]", item === "Security" ? "bg-surface-3 font-semibold" : "text-muted"]}>
-                  {item}
-                  {badge && <span class:list={["rounded-full px-2 text-[13px] font-semibold", item === "Security" ? "bg-warn-bg text-warn" : "bg-surface-3 text-muted"]}>{badge}</span>}
+          <div class="grid grid-cols-1 lg:grid-cols-[48px_220px_minmax(0,1fr)]">
+            <!-- Activity bar -->
+            <div class="flex flex-col items-center gap-1 bg-night py-2 max-lg:hidden" aria-hidden="true">
+              {mockNav.map((d, i) => (
+                <span class:list={["relative grid size-9 place-items-center rounded-lg", i === 3 ? "bg-white/10 text-white" : "text-white/50"]}>
+                  <svg class="size-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={d} /></svg>
+                  {i === 3 && <span class="absolute right-0.5 top-0.5 grid size-3.5 place-items-center rounded-full bg-orange text-[9px] font-bold text-night">1</span>}
                 </span>
               ))}
+            </div>
+
+            <!-- Explorer -->
+            <nav class="flex flex-col gap-1 border-r border-line bg-canvas py-3 max-lg:hidden" aria-label="Dashboard (sample)">
+              <div class="px-4 pb-2">
+                <p class="flex items-center gap-2"><span class="size-2 flex-none rounded-full bg-ok ring-4 ring-ok-bg" aria-hidden="true"></span><span class="truncate text-[15px] font-semibold">my-first-app</span></p>
+                <p class="mt-1 truncate pl-4 text-[13px] text-muted">Next.js · main · Cloudflare + Neon</p>
+              </div>
+              <div class="border-t border-line px-1.5 pt-1.5">
+                <p class="flex min-h-9 items-center gap-1.5 px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Security</p>
+                {[["Accounts", "3/3", "text-ok"], ["Secrets", "3", "text-muted"], ["Approvals", "1", "bad"], ["Audit log", "", ""]].map(([item, meta, tone]) => (
+                  <span class:list={["flex min-h-9 items-center gap-2.5 rounded-lg px-3 text-[14px]", item === "Accounts" && "bg-surface-3/70 font-medium"]}>
+                    <span class="truncate">{item}</span>
+                    {meta && (tone === "bad"
+                      ? <span class="ml-auto grid size-5 place-items-center rounded-full bg-orange text-[11px] font-semibold text-night">{meta}</span>
+                      : <span class:list={["ml-auto text-[12px]", tone]}>{meta}</span>)}
+                  </span>
+                ))}
+              </div>
             </nav>
 
+            <div class="flex min-w-0 flex-col">
+              <!-- Editor tab -->
+              <div class="flex h-10 items-stretch border-b border-line bg-canvas max-sm:hidden" aria-hidden="true">
+                <span class="flex items-center gap-2 border-r border-t-2 border-line border-t-blue bg-surface px-4 text-[13px] font-semibold">
+                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={mockNav[3]} /></svg>Security
+                </span>
+              </div>
             <!-- Main -->
-            <div class="flex min-w-0 flex-col gap-5 bg-surface-2 p-5 md:p-7">
+            <div class="flex min-w-0 flex-1 flex-col gap-5 bg-surface p-5 md:p-7">
               <div class="flex flex-wrap items-end justify-between gap-3">
                 <div><p class="text-[15px] text-muted">my-first-app</p><p class="text-2xl font-semibold tracking-tight">Security</p></div>
                 <span class="tag tag-ok">Least-privilege access on</span>
@@ -728,6 +771,15 @@ const faq = [
                 </div>
               </div>
             </div>
+            </div>
+          </div>
+          <!-- Status bar -->
+          <div class="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-1 bg-blue px-3 py-1 text-[13px] text-white" aria-hidden="true">
+            <span>main</span>
+            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime"></span>Live · a41f9c2</span>
+            <span>7/8 checks</span>
+            <span>1 approval waiting</span>
+            <span class="ml-auto rounded-full bg-white/15 px-2">Sample data</span>
           </div>
         </figure>
         <p class="label text-center">Sample dashboard. Accounts, keys, and logs are examples.</p>

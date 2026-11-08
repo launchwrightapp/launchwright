@@ -195,3 +195,18 @@
   }
   .term { @apply m-0 whitespace-pre-wrap break-words font-mono text-base leading-[1.75]; }
 }
+
+/* Gentle floating for decorative tiles (hero arc). Each tile gets its own rhythm.
+   Off when the visitor prefers reduced motion. */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .float { animation: float 5s ease-in-out infinite; }
+  .float-0 { animation-delay: -0.4s; animation-duration: 5.6s; }
+  .float-1 { animation-delay: -1.6s; animation-duration: 4.8s; }
+  .float-2 { animation-delay: -2.4s; animation-duration: 6s; }
+  .float-3 { animation-delay: -0.9s; animation-duration: 5.2s; }
+  .float-4 { animation-delay: -3.1s; animation-duration: 5.8s; }
+}
