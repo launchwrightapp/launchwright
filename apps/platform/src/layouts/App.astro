@@ -180,7 +180,7 @@ const sections = [
 
         <!-- Bottom panel -->
         <section aria-label="Panel" class="hidden flex-none flex-col border-t border-line bg-night text-white lg:flex">
-          <div class="flex h-10 items-center gap-1 px-2">
+          <div class="flex h-9 items-center gap-1 px-2">
             <div role="tablist" aria-label="Panel" data-tabs class="flex h-full items-stretch">
               <button type="button" role="tab" id="pt-calls" aria-controls="pp-calls" aria-selected="true" class="cursor-pointer border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Tool calls</button>
               <button type="button" role="tab" id="pt-problems" aria-controls="pp-problems" aria-selected="false" class="flex cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Problems <span class="grid size-5 place-items-center rounded-full bg-orange text-[11px] tracking-normal text-night">{problems.length}</span></button>
@@ -190,8 +190,8 @@ const sections = [
               <svg class="size-4 rotate-180 transition in-aria-expanded:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
           </div>
-          <div id="panel-body" class="h-44 overflow-y-auto px-4 pb-3">
-            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-1 text-[14px]">
+          <div id="panel-body" class="h-28 overflow-y-auto px-4 pb-2 [@media(min-height:1000px)]:h-40">
+            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-0.5 text-[13px]">
               {audit.map((r) => (
                 <li class="grid grid-cols-[3.5rem_9.5rem_7rem_minmax(0,1fr)] gap-3">
                   <span class="tabular-nums text-white/45">{r.time}</span>
@@ -202,7 +202,7 @@ const sections = [
               ))}
               <li class="mt-1"><span class="inline-block h-4 w-2 translate-y-0.5 bg-white/60 motion-safe:animate-pulse" aria-hidden="true"></span><span class="sr-only">Waiting for the next tool call</span></li>
             </ol>
-            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-1 text-[14px]">
+            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-0.5 text-[13px]">
               {problems.map((c) => (
                 <li>
                   <a href={`/readiness#check-${c.id}`} class="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-0.5 text-white/85 no-underline hover:bg-white/5">
