@@ -68,10 +68,11 @@ const steps = [
         <li><code>check_env</code> <span class="text-muted">settings the code needs vs. what production has</span></li>
         <li><code>set_secret</code> <span class="text-muted">you type the value here; the AI only knows the name</span></li>
         <li><code>connect_database</code> <span class="text-muted">Neon or Supabase, connection string never shown</span></li>
-        <li><code>setup_ci</code> <span class="text-muted">a pull request with CI, previews and deploys</span></li>
+        <li><code>setup_ci</code> <span class="text-muted">a pull request with CI, previews, deploys and a pre-commit secret scan</span></li>
         <li><code>deploy</code> <span class="text-muted">previews now; production after you approve</span></li>
         <li><code>get_logs</code> <span class="text-muted">CI and Worker logs, secrets hidden</span></li>
         <li><code>explain_error</code> <span class="text-muted">an error in plain words, and the smallest fix</span></li>
+        <li><code>review_pr</code> <span class="text-muted">review a pull request with you, risky parts first</span></li>
       </ul>
       <p class="text-[14px] text-muted">Guided lessons are MCP prompts: look for <code>lesson-deploy</code>, <code>lesson-secrets</code>, <code>lesson-debug</code> and friends in your tool's prompt or slash-command list.</p>
     </div>

@@ -77,7 +77,7 @@ const me = {
   user: { id: 1, login: "juandc", name: "Juan Dela Cruz" },
   configured: { database: true, encryption: true, supabase: false },
   projects: [{ repo: "juan/barbershop-booking", framework: "Next.js", packageManager: "npm", database: "Neon", hosting: "Cloudflare Workers", worker: "barbershop", productionUrl: "https://barbershop.juan.dev", readiness: { passed: 5, total: 8 }, checks: sampleChecks, checkedAt: ago(20), updatedAt: ago(20) }],
-  conceptsSeen: ["project_status", "pull_requests", "env_config", "secrets", "secret_storage", "env_drift", "database", "migrations", "ci", "secret_scanning", "e2e", "readiness", "api_auth"],
+  conceptsSeen: ["project_status", "pull_requests", "code_review", "env_config", "secrets", "secret_storage", "env_drift", "database", "migrations", "ci", "secret_scanning", "e2e", "readiness", "api_auth"],
   connections: [
     { provider: "cloudflare", method: "api_key", label: "Juan's account", scopes: "Workers Scripts: Edit · Workers Observability: Read", connectedAt: ago(3 * DAY) },
     { provider: "neon", method: "api_key", label: "juan@example.com", scopes: "Neon API key", connectedAt: ago(3 * DAY) },

@@ -15,14 +15,15 @@ concepts) lives in `packages/core/curriculum.ts`, shared with the dashboard.
 | Tool | What it does | Changes things? |
 |---|---|---|
 | `project_status` | Framework, package manager, database, hosting, connected accounts, readiness, next step | No |
-| `check_readiness` | The 8 readiness checks. Repo: secret scanning, env config, CI with tests, E2E on a preview, migrations. Live (with `url`): auth on API routes, HTTPS + security headers, uptime | No (plain GETs) |
+| `check_readiness` | The 8 readiness checks. Repo: secret scanning, env config, CI with tests (and a protected main that requires them), E2E on a preview, migrations. Live (with `url`): auth on API routes, HTTPS + security headers, uptime | No (plain GETs) |
 | `check_env` | Settings the code reads vs. `.env.example` vs. production (Worker vars/secrets, Actions secrets); secrets exposed to the browser | No |
 | `set_secret` | Returns a dashboard link; the learner types the value; a second call writes it to GitHub Actions and/or the Worker | Yes |
 | `connect_database` | Lists or creates a Neon/Supabase project and writes the pooled `DATABASE_URL` straight into secrets | Yes (replacing one needs approval) |
-| `setup_ci` | Opens a PR: gitleaks, checks, Playwright, Cloudflare previews + E2E on the preview, production deploy with smoke test and rollback, uptime check | PR only |
+| `setup_ci` | Opens a PR: gitleaks, checks, Playwright, Cloudflare previews + E2E on the preview, production deploy with smoke test and rollback, uptime check, and a `.githooks/pre-commit` gitleaks scan of staged changes (skipped if the repo uses husky/lefthook/pre-commit) | PR only |
 | `deploy` | Dispatches the deploy workflow in the learner's repo. Preview now; production and rollback need dashboard approval | Yes (gated) |
 | `get_logs` | CI run logs around the first error, or recent Worker logs; redacted and fenced as untrusted | No |
 | `explain_error` | Plain-words explanation, likely causes and the smallest fix for common errors | No |
+| `review_pr` | Lists open PRs, or prepares a review of one for the learner's AI tool: STOP/LOOK flags (secrets, CI changes, dependencies, install scripts, skipped/deleted tests, risky migrations, API routes, unsafe HTML), CI on the head commit, branch protection, and the redacted, fenced diff | No |
 
 **Monorepos:** every `wrangler.jsonc`/`.toml` (outside `node_modules`, `examples/`, `fixtures/`, `tests/`) is one
 Cloudflare app. With more than one, `check_env`, `set_secret`, `connect_database`, `setup_ci`, `deploy` and
@@ -31,7 +32,7 @@ and ask. `check_env` then reads only that app's folder. Each app gets its own `l
 `setup_ci` for a second app keeps the existing `ci.yml`. A repo with one app works as before.
 
 Prompts (guided lessons): `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
-`lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`.
+`lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`, `lesson-review`.
 
 ## Security model
 

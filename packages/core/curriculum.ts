@@ -7,6 +7,7 @@ export type ModuleId = "git" | "env" | "database" | "cicd" | "testing" | "deploy
 export type Concept =
   | "project_status"
   | "pull_requests"
+  | "code_review"
   | "env_config"
   | "secrets"
   | "secret_storage"
@@ -45,7 +46,7 @@ export interface Module {
 }
 
 export const MODULES: Module[] = [
-  { id: "git", n: "01", name: "Git and GitHub", blurb: "Know your stack, work in pull requests.", prompt: null },
+  { id: "git", n: "01", name: "Git and GitHub", blurb: "Know your stack, work in pull requests, review before merging.", prompt: "lesson-review" },
   { id: "env", n: "02", name: "Env and secrets", blurb: "Settings outside the code, secrets entered securely.", prompt: "lesson-secrets" },
   { id: "database", n: "03", name: "Database", blurb: "Neon or Supabase, connection strings, migrations.", prompt: "lesson-database" },
   { id: "cicd", n: "04", name: "CI/CD", blurb: "Checks on PRs and pushes to main, secret scanning.", prompt: "lesson-ci" },
@@ -65,8 +66,14 @@ export const LESSONS: Record<Concept, Lesson> = {
   pull_requests: {
     module: "git",
     title: "Working in pull requests",
-    full: "Ang pull request (PR) ay proposal na i-merge ang changes mula sa isang branch papunta sa iba, kadalasan sa main. Dito mo binabasa ang change at nakikita ang resulta ng CI bago ka magdesisyon. Pero ang PR mismo hindi pumipigil sa direktang push sa main. I-on ang branch protection para i-require ang PR, review at passing checks, at tingnan kung sino ang puwedeng mag-bypass nito. Hindi kailanman nagpu-push ang Launchwright sa main branch mo: nag-o-open ito ng PR at ikaw ang magdedecide.",
-    short: "PRs: gamitin ang branch protection para i-require ang review at passing checks.",
+    full: "Ang pull request (PR) ay proposal na i-merge ang changes mula sa isang branch papunta sa iba, kadalasan sa main. Dito mo binabasa ang change at nakikita ang resulta ng CI bago ka magdesisyon. Pero ang PR mismo hindi pumipigil sa direktang push sa main. I-on ang branch protection para i-require ang PR at passing checks (pati approval ng reviewer kung may kasama ka sa team), at tingnan kung sino ang puwedeng mag-bypass nito. Hindi kailanman nagpu-push ang Launchwright sa main branch mo: nag-o-open ito ng PR at ikaw ang magdedecide.",
+    short: "PRs: gamitin ang branch protection para i-require ang PR at passing checks.",
+  },
+  code_review: {
+    module: "git",
+    title: "Code review",
+    full: "Ang code review ay pagbasa ng change bago ito i-merge: ano ang ginagawa nito, tama ba, at may masisira ba. Mas mahalaga ito kapag AI ang sumulat, kasi mabilis itong gumawa ng maraming lines na mukhang tama. Unahin ang delikado: secrets, auth at access sa data, database changes, bagong dependencies, changes sa CI, at tests na na-skip o na-delete. Tapos tingnan kung may tests na sumasakop sa change. Kung mag-isa ka lang, hindi mo puwedeng i-approve ang sarili mong PR sa GitHub, kaya huwag i-require ang approvals; i-require ang PR at passing checks, at i-review ang change kasama ang AI tool mo gamit ang review_pr. Ikaw pa rin ang magdedesisyon kung ime-merge.",
+    short: "Code review: basahin ang change bago i-merge, simula sa secrets, access sa data, database at dependencies.",
   },
   env_config: {
     module: "env",
