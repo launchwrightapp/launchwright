@@ -70,3 +70,23 @@ export function sendCode(mail: SendEmail, email: string, code: string) {
     text: render(codeText, { code }, false),
   });
 }
+
+// To the launchwright team when someone applies. Plain text only: everything in it was typed
+// by the applicant, so no HTML to escape and nothing that renders as a link but the dashboard.
+export function sendNewApplication(mail: SendEmail, to: string, a: Applicant & { answers: number }) {
+  const who = firstName(a.name) || a.email.split("@")[0].replace(/[^\w.-]/g, "").slice(0, 30);
+  return mail.send({
+    from: FROM,
+    to,
+    subject: `New pilot application: ${who}`,
+    text: [
+      `${who} applied to the launchwright pilot.`,
+      "",
+      `Email: ${a.email}`,
+      `Building: ${(a.building ?? "(not said)").replace(/\s+/g, " ")}`,
+      `Questionnaire answers: ${a.answers}`,
+      "",
+      "Review and accept: https://platform.launchwright.app/applicants",
+    ].join("\n"),
+  });
+}
