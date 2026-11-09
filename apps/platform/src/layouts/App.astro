@@ -179,8 +179,8 @@ const sections = allSections
                     <template>
                       <li><a class={row} data-class="bg-bad-bg font-medium text-bad:isFail" data-attr="href:href">
                         <span class="size-2 flex-none rounded-full border border-dashed border-muted" data-class="bg-bad border-transparent:isFail;bg-orange border-transparent:isWarn" aria-hidden="true"></span>
-                        <span class="truncate" data-bind="title"></span>
-                        <span class="ml-auto text-[12px] font-normal" data-bind="statusLabel"></span>
+                        <span class="min-w-0 truncate" data-bind="title"></span>
+                        <span class="ml-auto flex-none whitespace-nowrap text-[12px] font-normal" data-bind="statusLabel"></span>
                       </a></li>
                     </template>
                   </ul>
@@ -233,7 +233,7 @@ const sections = allSections
               {s.id === "accounts" && (
                 <ul class="flex flex-col" data-each="connections">
                   <template>
-                    <li><a class={row} data-attr="href:href"><span class="truncate" data-bind="name"></span><span class="ml-auto text-[12px] text-muted" data-class="text-ok:connected" data-bind="stateLabel"></span></a></li>
+                    <li><a class={row} data-attr="href:href"><span class="min-w-0 truncate" data-bind="name"></span><span class="ml-auto flex-none whitespace-nowrap text-[12px] text-muted" data-class="text-ok:connected" data-bind="stateLabel"></span></a></li>
                   </template>
                 </ul>
               )}
