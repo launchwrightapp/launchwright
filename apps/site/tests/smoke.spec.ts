@@ -221,6 +221,7 @@ test("the offer and the signup form are in one section, before the FAQ", async (
   await page.goto("/");
   const pilot = page.locator("#pilot");
   await expect(pilot.getByText("Free for the first 10 learners")).toBeVisible();
+  await expect(pilot.getByText("that provider bills you, not us")).toBeVisible();
   await expect(pilot.locator("#waitlist")).toBeVisible();
   const order = await page.evaluate(() => [...document.querySelectorAll("main > section[id]")].map((s) => s.id));
   expect(order.indexOf("pilot")).toBeLessThan(order.indexOf("faq"));
@@ -235,7 +236,7 @@ test("security dashboard tabs switch panels", async ({ page }) => {
   const approvals = trust.getByRole("tab", { name: /Approvals/ });
   await approvals.click();
   await expect(approvals).toHaveAttribute("aria-selected", "true");
-  await expect(trust.locator("[role=tabpanel]:visible")).toContainText("Migration drops a column");
+  await expect(trust.locator("[role=tabpanel]:visible")).toContainText("Deploy my-first-app (main) to production");
   await approvals.press("ArrowRight");
   await expect(trust.locator("[role=tabpanel]:visible")).toContainText("Every tool call");
 });
@@ -293,4 +294,29 @@ test("admin routes are hidden without the admin token", async ({ request }) => {
     const res = await request.fetch(path, { method, headers: { authorization: "Bearer wrong" }, data: method === "POST" ? { email: "a@b.co" } : undefined });
     expect(res.status()).toBe(404);
   }
+});
+
+test("Level 2 is marked as not part of the pilot", async ({ page }) => {
+  await page.goto("/#curriculum");
+  await expect(page.locator("#curriculum").getByText("Level 2 · Not in the pilot")).toBeVisible();
+});
+
+test("walkthrough fits and works on a small phone", async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
+  await page.goto("/#how");
+  const how = page.locator("#how");
+  for (const step of ["Verify", "Learn", "Launch"]) {
+    const tab = how.getByRole("tab", { name: new RegExp(step) });
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true");
+    const panel = how.getByRole("tabpanel");
+    await expect(panel).toBeVisible();
+    const box = await panel.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(360);
+  }
+  await expect(how.getByRole("tabpanel")).toContainText("Production deploys wait for your approval");
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBe(0);
+  await page.close();
 });
