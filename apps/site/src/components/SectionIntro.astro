@@ -1,0 +1,45 @@
+---
+// Section header: two-tone title, a line that leads to a short note.
+// Variants keep sections from looking the same:
+//   "aside"  title pushed right, line points left to the note
+//   "mirror" title on the left, note on the right, line points right
+//   "center" everything centered, note between two lines
+interface Props { id: string; title: string; muted: string; note: string; variant?: "aside" | "mirror" | "center" }
+const { id, title, muted, note, variant = "aside" } = Astro.props;
+---
+{variant === "aside" && (
+  <div class="lg:pl-[29%]">
+    <div class="flex flex-col gap-8" data-reveal>
+      <h2 id={id} class="text-title font-bold leading-[1.05] text-balance">{title}{" "}<br /><span class="intro-muted text-muted">{muted}</span></h2>
+      <div class="flex items-center gap-6">
+        <span class="intro-line relative hidden h-px flex-1 origin-right bg-line md:block" aria-hidden="true">
+          <span class="absolute -left-px -top-[3px] size-[7px] rotate-45 border-b border-l border-line"></span>
+        </span>
+        <p class="max-w-md text-[17px] leading-relaxed text-muted">{note}</p>
+      </div>
+    </div>
+  </div>
+)}
+
+{variant === "mirror" && (
+  <div class="grid items-end gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-16" data-reveal>
+    <h2 id={id} class="text-title font-bold leading-[1.05] text-balance">{title}{" "}<br /><span class="intro-muted text-muted">{muted}</span></h2>
+    <div class="flex flex-col items-start gap-6 lg:pb-3">
+      <p class="max-w-md text-[17px] leading-relaxed text-muted">{note}</p>
+    </div>
+    <span class="intro-line relative hidden h-px origin-left bg-line lg:col-span-2 lg:block" aria-hidden="true">
+      <span class="absolute -right-px -top-[3px] size-[7px] rotate-45 border-r border-t border-line"></span>
+    </span>
+  </div>
+)}
+
+{variant === "center" && (
+  <div class="flex flex-col items-center gap-7 text-center" data-reveal>
+    <h2 id={id} class="text-title max-w-4xl font-bold leading-[1.05] text-balance">{title}{" "}<span class="intro-muted text-muted">{muted}</span></h2>
+    <div class="flex w-full items-center gap-6">
+      <span class="intro-line hidden h-px flex-1 origin-right bg-line md:block" aria-hidden="true"></span>
+      <p class="max-w-xl text-[17px] leading-relaxed text-muted">{note}</p>
+      <span class="intro-line hidden h-px flex-1 origin-left bg-line md:block" aria-hidden="true"></span>
+    </div>
+  </div>
+)}

@@ -5,6 +5,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Check from "../../../../packages/ui/Check.astro";
 import Mark from "../../../../packages/ui/Mark.astro";
 import TermLines, { type Line } from "../components/TermLines.astro";
+import SectionIntro from "../components/SectionIntro.astro";
 
 const CTA = "Join the free pilot";
 
@@ -25,6 +26,14 @@ const heroPath = [
   { pos: "left-[90%] top-[47%]", d: ["M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"] },
 ];
 
+
+// Dashboard preview cards. Sample numbers only.
+const progressCards: { label: string; value: string; of?: string; note: string; icon: string[]; hot?: boolean }[] = [
+  { label: "Readiness checks", value: "8", of: "/8", note: "All passed on your last preview deploy.", icon: ["M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", "m9 12 2 2 4-4"] },
+  { label: "Skills learned", value: "5", of: "/8", note: "Level 1. Next up: Deploy.", icon: ["M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"] },
+  { label: "Lessons done", value: "12", note: "Now on: Preview deploys.", icon: ["M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"], hot: true },
+  { label: "Tool calls", value: "47", note: "Each one came with a short lesson.", icon: ["m4 17 6-6-6-6", "M12 19h8"] },
+];
 
 // The core loop, shown as a walkthrough. Sample output only.
 const loop: { id: string; step: string; file: string; lang: string; code: string[]; title: string; body: string; tools: string[]; term: Line[] }[] = [
@@ -226,7 +235,7 @@ const faq = [
         <span>Free pilot for <b class="font-semibold text-ink">10 learners</b></span>
       </div>
       <div class="flex flex-wrap items-center justify-center gap-6" data-hero-cta>
-        <a class="btn" href="#pilot">{CTA}</a>
+        <a class="btn btn-cta" href="#pilot">{CTA}</a>
         <a class="text-[17px] font-semibold underline-offset-4 hover:underline" href="#how">See how it works</a>
       </div>
       <!-- The path to launch: your code, GitHub, launch, secured, in the cloud. Decorative.
@@ -247,14 +256,13 @@ const faq = [
     </section>
 
     <!-- How it works: the loop, shown inside an editor -->
-    <section id="how" aria-labelledby="how-title" class="backdrop bg-dots-dark gutter scroll-mt-24 bg-night py-20 text-white md:py-28">
+    <section id="how" aria-labelledby="how-title" class="backdrop bg-dots-light gutter scroll-mt-24 border-y border-line bg-surface py-20 text-ink md:py-28">
       <div class="flex max-w-3xl flex-col gap-5">
-        <p class="label text-white/60" data-reveal>How it works</p>
         <h2 id="how-title" data-reveal class="text-title font-bold text-balance">One loop, from first commit to launch.</h2>
-        <p class="text-[21px] text-white/65" data-reveal>Build, verify, learn, launch. Every pass through the loop makes your app safer and you more confident.</p>
+        <p class="text-[21px] text-muted" data-reveal>Build, verify, learn, launch. Every pass through the loop makes your app safer and you more confident.</p>
       </div>
 
-      <div class="mt-12 overflow-hidden rounded-3xl bg-[#111] text-white shadow-2xl shadow-black/40 ring-1 ring-white/10" data-reveal>
+      <div class="mt-12 overflow-hidden rounded-3xl bg-[#111] text-white shadow-2xl shadow-black/20 ring-1 ring-white/10" data-reveal>
         <!-- Title bar -->
         <div class="flex items-center gap-2 border-b border-white/10 px-5 py-3.5">
           <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
@@ -335,120 +343,78 @@ const faq = [
           <span class="ml-auto flex items-center gap-2"><span class="size-1.5 rounded-full bg-lime" aria-hidden="true"></span>Launchwright connected</span>
         </div>
       </div>
-      <p class="label mt-4 text-white/50">Sample output. launchwright v0.1 is still being built.</p>
+      <p class="label mt-4">Sample output. launchwright v0.1 is still being built.</p>
     </section>
 
-    <!-- Preview strip: four mini product cards -->
-    <section aria-label="Product preview" class="gutter pt-20 md:pt-28">
-      <div class="mb-10 flex max-w-3xl flex-col gap-5" data-reveal>
-        <p class="label">In the dashboard</p>
-        <h2 class="text-title font-bold text-balance">Your progress, at a glance.</h2>
-      </div>
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-reveal>
+    <!-- Preview strip: dashboard numbers as staggered cards -->
+    <section aria-labelledby="progress-title" class="gutter pt-20 md:pt-28">
+      <SectionIntro id="progress-title" title="Your progress," muted="at a glance." note="The dashboard counts what you build and learn on your own project. No quizzes, just the work you ship." />
 
-        <!-- Tool call -->
-        <div class="flex sm:min-h-[340px] flex-col gap-6 rounded-3xl bg-blue p-8 text-white">
-          <div class="flex items-center justify-between gap-3">
-            <p class="text-[22px] font-semibold tracking-tight">Every step teaches</p>
-          </div>
-          <ul class="grid gap-2">
-            {["Preview deployed", "Smoke test passed"].map((t) => (
-              <li class="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-[17px]">
-                <span class="grid size-6 flex-none place-items-center rounded-full bg-lime text-night"><Check class="size-3.5" /></span>
-                {t}
-              </li>
-            ))}
-          </ul>
-          <div class="mt-auto rounded-2xl bg-white p-4 text-night">
-            <p class="text-[15px] font-semibold text-blue">Lesson</p>
-            <p class="mt-1 text-[17px] font-medium">Test on a preview first, before you merge to main.</p>
-          </div>
-        </div>
-
-        <!-- Readiness -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-lime p-8 text-night">
-          <div class="flex items-center justify-between gap-3">
-            <p class="text-[22px] font-semibold tracking-tight">Readiness checks</p>
-          </div>
-          <p class="mt-6 text-[clamp(6rem,24vw,8rem)] sm:mt-auto font-bold leading-[0.85] tracking-[-0.035em]">8<span class="opacity-30">/8</span></p>
-          <div class="mt-5 grid grid-cols-8 gap-1.5" aria-hidden="true">
-            {Array.from({ length: 8 }, () => <span class="h-2 rounded-full bg-night"></span>)}
-          </div>
-          <p class="mt-3 text-[17px] font-semibold">All passed</p>
-        </div>
-
-        <!-- Lessons -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-surface-3 p-8 text-ink">
-          <p class="text-[22px] font-semibold tracking-tight">Lessons</p>
-          <ul class="mt-6 grid gap-2 sm:mt-auto">
-            {[["Env & secrets", "Done", "opacity-60"], ["Preview deploys", "Now", "shadow-lg shadow-black/5 ring-1 ring-line"], ["Rollback", "Next", "opacity-60"]].map(([t, st, cls]) => (
-              <li class:list={["flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-[17px]", cls]}>
-                <span class="font-medium">{t}</span>
-                <span class:list={["tag", st === "Now" ? "bg-blue text-white" : st === "Done" ? "tag-ok" : "tag-line"]}>{st}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <!-- Level 1 -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-orange p-8 text-white">
-          <p class="text-[22px] font-semibold tracking-tight">Skills learned</p>
-          <p class="mt-6 text-[clamp(6rem,24vw,8rem)] sm:mt-auto font-bold leading-[0.85] tracking-[-0.035em]">5<span class="opacity-40">/8</span></p>
-          <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/25" aria-hidden="true"><div class="h-full w-5/8 rounded-full bg-white"></div></div>
-          <p class="mt-3 text-[17px] font-semibold">Level 1 · Next: Deploy</p>
-        </div>
-      </div>
-      <p class="label mt-3.5">Preview of v0.1. Sample data only.</p>
-    </section>
-
-    <!-- Learning path -->
-    <section id="curriculum" aria-labelledby="curr-title" class="gutter scroll-mt-24 py-20 md:py-28">
-      <div class="grid items-end gap-6 lg:grid-cols-2 lg:gap-16">
-        <div class="flex flex-col gap-5">
-          <p class="label">Learning path · Level 1</p>
-          <h2 id="curr-title" class="text-title font-bold text-balance">Your path to production.</h2>
-        </div>
-        <p class="text-[21px] leading-relaxed text-muted lg:pb-2">Eight skills in three stages, learned on your own project with managed free tiers. Nothing to memorize up front: each skill shows up when your project needs it.</p>
-      </div>
-
-      <!-- Journey track: one line connecting the stages, outside the cards -->
-      <div class="relative mt-12 hidden grid-cols-4 gap-3 xl:grid" aria-hidden="true">
-        <span class="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-[linear-gradient(to_right,var(--line)_75%,transparent_75%)]"></span>
-        {[0, 1, 2, 3].map((i) => (
-          <div class="relative flex">
-            {i === 0
-              ? <span class="tag bg-blue text-white">Start here</span>
-              : <span class:list={["mt-[9px] size-3 rounded-full", i === 3 ? "border-2 border-line bg-surface" : "bg-line"]}></span>}
-          </div>
-        ))}
-      </div>
-
-      <ol class="mt-5 grid gap-3 max-xl:mt-12 md:grid-cols-2 xl:grid-cols-4">
-        {stages.map((s) => (
-          <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-3xl border border-line bg-surface">
-            <div class="flex flex-col gap-3 border-b border-line p-7">
-              <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">{s.n} /</span> {s.name}</h3>
-              <p class="text-[17px] text-pretty text-muted">{s.blurb}</p>
+      <div class="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-start" data-reveal data-stagger>
+        {progressCards.map((c, i) => (
+          <div class:list={[
+            "lift flex min-h-[280px] flex-col rounded-3xl p-7",
+            c.hot ? "bg-blue text-white shadow-[0_24px_48px_-24px_var(--color-blue)]" : "bg-canvas text-ink ring-1 ring-line",
+            i % 2 === 1 && "xl:mt-16",
+          ]}>
+            <p class:list={["flex items-center gap-2.5 text-[15px] font-medium", c.hot ? "text-white/85" : "text-muted"]}>
+              <span class:list={["size-2 rounded-full", c.hot ? "bg-white" : "bg-blue"]} aria-hidden="true"></span>{c.label}
+            </p>
+            <p class="mt-auto pt-16 text-[clamp(3rem,6vw,3.75rem)] font-bold leading-none tracking-[-0.03em]"><span data-count>{c.value}</span><span class:list={[c.hot ? "text-white/50" : "text-muted"]}>{c.of}</span></p>
+            <div class:list={["mt-5 flex items-end justify-between gap-4 border-t pt-4", c.hot ? "border-white/30" : "border-line"]}>
+              <p class:list={["text-[15px] leading-snug", c.hot ? "text-white/85" : "text-muted"]}>{c.note}</p>
+              <svg viewBox="0 0 24 24" class:list={["size-5 flex-none", c.hot ? "text-white/70" : "text-muted"]} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                {c.icon.map((d) => <path d={d} />)}
+              </svg>
             </div>
-            <ul class="divide-y divide-line px-7">
-              {s.modules.map(([m, d]) => (
-                <li class="py-5">
-                  <div>
-                    <p class="text-[18px] font-semibold">{m}</p>
-                    <p class="mt-0.5 text-base text-muted">{d}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-
-        <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-3xl border border-dashed border-line bg-surface-2">
-          <div class="flex flex-col gap-3 border-b border-line p-7">
-            <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">L2 /</span> Your own VPS</h3>
-            <p class="text-[17px] text-pretty text-muted">Later: run apps on a server you control.</p>
           </div>
-          <div class="flex flex-wrap content-start gap-2 p-7">
+        ))}
+      </div>
+      <p class="label mt-3.5">Sample data. launchwright v0.1 is still being built.</p>
+    </section>
+
+    <!-- Learning path: stages climb left to right, like steps up to production -->
+    <section id="curriculum" aria-labelledby="curr-title" class="gutter scroll-mt-24 py-20 md:py-28">
+      <SectionIntro variant="mirror" id="curr-title" title="Your path" muted="to production." note="Eight skills in three stages, learned on your own project with managed free tiers. Each skill shows up when your project needs it." />
+
+      <ol class="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4 xl:items-start" data-reveal data-stagger>
+        {stages.map((s, i) => {
+          const hot = i === 0;
+          const first = stages.slice(0, i).reduce((n, x) => n + x.modules.length, 0);
+          return (
+            <li class:list={[
+              "lift flex flex-col rounded-3xl p-7",
+              hot ? "bg-blue text-white shadow-[0_24px_48px_-24px_var(--color-blue)]" : "bg-canvas text-ink ring-1 ring-line",
+              ["xl:mt-36", "xl:mt-24", "xl:mt-12"][i],
+            ]}>
+              <p class:list={["flex items-center gap-2.5 text-[15px] font-medium", hot ? "text-white/85" : "text-muted"]}>
+                <span class:list={["size-2 rounded-full", hot ? "bg-white" : "bg-blue"]} aria-hidden="true"></span>Stage {s.n}
+                {hot && <span class="ml-auto rounded-full bg-white px-2.5 py-0.5 text-[13px] font-semibold text-blue">Start here</span>}
+              </p>
+              <h3 class="mt-10 text-[2rem] font-bold leading-tight tracking-[-0.015em]">{s.name}</h3>
+              <p class:list={["mt-1 text-[17px] text-pretty", hot ? "text-white/85" : "text-muted"]}>{s.blurb}</p>
+              <ul class:list={["mt-6 divide-y border-t", hot ? "divide-white/25 border-white/25" : "divide-line border-line"]}>
+                {s.modules.map(([m, d], j) => (
+                  <li class="flex gap-4 py-4">
+                    <span class:list={["pt-0.5 font-mono text-[14px] tabular-nums", hot ? "text-white/60" : "text-muted"]}>{String(first + j + 1).padStart(2, "0")}</span>
+                    <div>
+                      <p class="text-[18px] font-semibold">{m}</p>
+                      <p class:list={["mt-0.5 text-base", hot ? "text-white/80" : "text-muted"]}>{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          );
+        })}
+
+        <li class="lift flex flex-col rounded-3xl border border-dashed border-line p-7">
+          <p class="flex items-center gap-2.5 text-[15px] font-medium text-muted">
+            <span class="size-2 rounded-full border border-muted" aria-hidden="true"></span>Level 2 · Later
+          </p>
+          <h3 class="mt-10 text-[2rem] font-bold leading-tight tracking-[-0.015em]">Your own VPS</h3>
+          <p class="mt-1 text-[17px] text-pretty text-muted">Run apps on a server you control.</p>
+          <div class="mt-6 flex flex-wrap gap-2 border-t border-line pt-5">
             {["Linux", "SSH", "Nginx", "Docker", "TLS", "Backups", "Rollback"].map((t) => (
               <span class="tag tag-line">{t}</span>
             ))}
@@ -457,118 +423,79 @@ const faq = [
       </ol>
     </section>
 
-    <!-- Readiness: status, the one problem, and its fix first. The full list is one click away. -->
-    <section id="readiness" aria-labelledby="ready-title" class="backdrop bg-dots-corner gutter scroll-mt-24 border-t border-line bg-surface-2 py-20 md:py-28">
-      <div class="grid items-end gap-6 lg:grid-cols-2 lg:gap-16">
-        <div class="flex flex-col gap-5">
-          <p class="label">Readiness checks</p>
-          <h2 id="ready-title" class="text-title font-bold text-balance">Know exactly when you're ready to launch.</h2>
-        </div>
-        <p class="text-[21px] leading-relaxed text-muted lg:pb-2">Eight checks run in GitHub Actions on your own repo. Each one tells you what's wrong, why it matters, and how to fix it with your AI tool.</p>
+    <!-- Readiness: eight check cards (the failing one stands out), and the selected check's details below. -->
+    <section id="readiness" aria-labelledby="ready-title" class="backdrop bg-dots-corner gutter scroll-mt-24 border-t border-line bg-canvas py-20 md:py-28">
+      <SectionIntro variant="center" id="ready-title" title="Know when you're" muted="ready to launch." note="Eight checks run in GitHub Actions on your own repo. Each one tells you what's wrong, why it matters, and how to fix it with your AI tool." />
+
+      <div role="tablist" aria-label="Readiness checks" data-tabs data-reveal data-stagger class="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-start">
+        {checks.map((c, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`check-tab-${i}`}
+            aria-controls={`check-panel-${i}`}
+            aria-selected={c.pass ? "false" : "true"}
+            tabindex={c.pass ? -1 : 0}
+            data-check={c.pass ? "pass" : "fail"}
+            class:list={[
+              "lift flex min-h-[200px] cursor-pointer flex-col rounded-3xl p-6 text-left aria-selected:ring-2 aria-selected:ring-ink aria-selected:ring-offset-4 aria-selected:ring-offset-canvas",
+              c.pass ? "bg-surface text-ink ring-1 ring-line" : "bg-blue text-white shadow-[0_24px_48px_-24px_var(--color-blue)]",
+              i % 2 === 1 && "xl:mt-12",
+            ]}
+          >
+            <span class:list={["flex items-center gap-2.5 text-[15px] font-medium", c.pass ? "text-muted" : "text-white/85"]}>
+              <span class:list={["size-2 rounded-full", c.pass ? "bg-blue" : "bg-white"]} aria-hidden="true"></span>Check {String(i + 1).padStart(2, "0")}
+            </span>
+            <span class="mt-8 text-[22px] font-semibold leading-snug tracking-tight">{c.name}</span>
+            <span class:list={["mt-auto flex items-center justify-between gap-3 border-t pt-4 text-[15px]", c.pass ? "border-line text-muted" : "border-white/30 text-white/90"]}>
+              {c.pass ? "Passed" : "Needs attention"}
+              {c.pass
+                ? <span class="grid size-6 flex-none place-items-center rounded-full bg-ok-bg text-ok"><Check class="size-3.5" /></span>
+                : <span class="grid size-6 flex-none place-items-center rounded-full bg-white text-[15px] font-bold text-blue" aria-hidden="true">!</span>}
+            </span>
+          </button>
+        ))}
       </div>
 
-      <div class="mt-12 overflow-hidden rounded-3xl border border-line bg-surface shadow-xl shadow-black/[0.04]">
-        <!-- Title bar -->
-        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-5 py-3.5">
-          <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
-          <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
-          <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
-          <span class="ml-3 truncate rounded-lg bg-surface px-3 py-1 text-[14px] font-medium text-muted ring-1 ring-line">Readiness · my-first-app</span>
-          <span class="ml-auto hidden text-[14px] text-muted sm:inline">Run #48 · on every push</span>
-          <span class="tag tag-line ml-3">Sample</span>
+      <!-- Score + the selected check -->
+      <div data-reveal class="mt-6 grid overflow-hidden rounded-3xl bg-surface ring-1 ring-line lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+        <div class="flex flex-col gap-4 border-b border-line p-7 md:p-9 lg:border-b-0 lg:border-r">
+          <p class="flex items-center justify-between gap-3 text-[15px] font-medium text-muted">Launch readiness · my-first-app <span class="tag tag-line">Sample</span></p>
+          <p class="mt-6 text-[clamp(3rem,6vw,3.75rem)] font-bold leading-none tracking-[-0.03em]"><span data-count>{passing}</span><span class="text-muted">/{checks.length}</span></p>
+          <p class="text-[17px] font-semibold">{passing} of {checks.length} checks passed</p>
+          <div class="mt-auto grid grid-cols-8 gap-1.5 pt-4" aria-hidden="true" data-bars>
+            {checks.map((c) => <span class:list={["h-2 rounded-full", c.pass ? "bg-ink" : "bg-blue"]}></span>)}
+          </div>
+          <p class="text-[15px] text-muted">Run #48 · on every push</p>
         </div>
 
-        <!-- Status first: the score, the one problem, and the next action -->
-        <div class="grid gap-6 bg-lime p-6 text-night md:p-9 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-10">
-          <div class="flex flex-col gap-4">
-            <p class="font-semibold opacity-70">Launch readiness</p>
-            <p class="text-[clamp(2.25rem,3.8vw,3.25rem)] font-bold leading-[1] tracking-[-0.02em]">{passing} of {checks.length} checks passed</p>
-            <div class="mt-auto grid grid-cols-8 gap-1.5 pt-2" aria-hidden="true">
-              {checks.map((c) => <span class:list={["h-2.5 rounded-full", c.pass ? "bg-night" : "bg-orange"]}></span>)}
-            </div>
-            <p class="flex flex-wrap gap-x-4 gap-y-1 text-[15px] font-semibold">
-              <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-night" aria-hidden="true"></span>{passing} passed</span>
-              <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-orange" aria-hidden="true"></span>{checks.length - passing} needs attention</span>
-            </p>
-          </div>
-          {fail && (
-            <div class="flex flex-col gap-4 rounded-3xl bg-surface p-6 text-ink md:p-7">
+        <div>
+          {checks.map((c, i) => (
+            <div role="tabpanel" id={`check-panel-${i}`} aria-labelledby={`check-tab-${i}`} class="step-in flex h-full flex-col gap-6 p-7 md:p-9">
               <div class="flex flex-wrap items-center gap-3">
-                <span class="tag tag-warn">Action needed</span>
-                <span class="text-[15px] text-muted"><code>{fail.affected}</code></span>
+                <span class:list={["tag", c.pass ? "tag-ok" : "bg-blue text-white"]}>{c.pass ? "Passed" : "Action needed"}</span>
+                {c.affected && <code class="text-[14px]">{c.affected}</code>}
               </div>
-              <h3 class="text-[1.75rem] font-bold leading-tight tracking-[-0.015em]">{fail.name}</h3>
-              <p class="text-[17px] text-muted">{fail.why}</p>
-              <div class="rounded-3xl bg-night p-5 text-white">
-                <p class="text-[14px] text-white/55">Suggested fix · ask your AI tool</p>
-                <p class="mt-1.5 text-[17px]"><span class="text-sky-300">you</span> Fix the failing auth check, then show me the diff.</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <!-- The full list, one click away -->
-        <details class="group" data-all-checks>
-          <summary class="flex cursor-pointer items-center justify-between gap-4 border-t border-line px-6 py-5 text-[18px] font-semibold hover:bg-surface-2 md:px-9">
-            <span>View all {checks.length} checks <span class="font-normal text-muted">· {passing} passed, {checks.length - passing} needs attention</span></span>
-            <span class="text-2xl font-normal leading-none text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
-          </summary>
-        <!-- Checks + detail -->
-        <div class="grid border-t border-line lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-          <div role="tablist" aria-label="Readiness checks" aria-orientation="vertical" data-tabs class="flex flex-col gap-1 border-b border-line p-3 lg:border-b-0 lg:border-r">
-            {checks.map((c, i) => (
-              <button
-                type="button"
-                role="tab"
-                id={`check-tab-${i}`}
-                aria-controls={`check-panel-${i}`}
-                aria-selected={c.pass ? "false" : "true"}
-                tabindex={c.pass ? -1 : 0}
-                data-check={c.pass ? "pass" : "fail"}
-                class="flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left text-[17px] font-medium transition hover:bg-surface-2 aria-selected:bg-surface-3"
-              >
-                {c.pass
-                  ? <span class="grid size-6 flex-none place-items-center rounded-full bg-ok-bg text-ok"><Check class="size-3.5" /></span>
-                  : <span class="grid size-6 flex-none place-items-center rounded-full bg-warn-bg text-[15px] font-bold text-warn" aria-hidden="true">!</span>}
-                <span class="flex-1">{c.name}</span>
-                <span class:list={["tag", c.pass ? "tag-ok" : "tag-warn"]}>{c.pass ? "Passed" : "Needs attention"}</span>
-              </button>
-            ))}
-          </div>
-
-          <div>
-            {checks.map((c, i) => (
-              <div role="tabpanel" id={`check-panel-${i}`} aria-labelledby={`check-tab-${i}`} data-panel class="flex h-full flex-col gap-6 p-7 md:p-9">
-                <div class="flex flex-wrap items-center gap-3">
-                  <span class:list={["tag", c.pass ? "tag-ok" : "tag-warn"]}>{c.pass ? "Passed" : "Needs attention"}</span>
-                  <span class="text-[15px] text-muted">Check {i + 1} of {checks.length}</span>
-                </div>
-                <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]">{c.name}</h3>
+              <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]">{c.name}</h3>
+              <div class="grid gap-6 md:grid-cols-2">
                 <div>
                   <p class="font-semibold">Why it matters</p>
                   <p class="mt-1 text-[17px] text-muted">{c.why}</p>
                 </div>
-                {c.affected && (
-                  <div>
-                    <p class="font-semibold">Affected</p>
-                    <p class="mt-2"><code>{c.affected}</code></p>
-                  </div>
-                )}
                 <div>
                   <p class="font-semibold">How to fix</p>
                   <p class="mt-1 text-[17px] text-muted">{c.fix}</p>
                 </div>
-                {!c.pass && (
-                  <div class="mt-auto rounded-3xl bg-night p-5 text-white">
-                    <p class="text-[14px] text-white/55">Ask your AI tool</p>
-                    <p class="mt-1.5 text-[17px]"><span class="text-sky-300">you</span> Fix the failing auth check, then show me the diff.</p>
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+              {!c.pass && (
+                <div class="mt-auto rounded-3xl bg-night p-5 text-white">
+                  <p class="text-[14px] text-white/55">Suggested fix · ask your AI tool</p>
+                  <p class="mt-1.5 text-[17px]"><span class="text-sky-300">you</span> Fix the failing auth check, then show me the diff.</p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-        </details>
       </div>
     </section>
 
@@ -577,7 +504,6 @@ const faq = [
       <div class="flex flex-col gap-8">
         <div class="mb-4 grid items-end gap-6 lg:grid-cols-2 lg:gap-16" data-reveal>
           <div class="flex flex-col gap-6">
-            <p class="label">Security and ownership</p>
             <h2 id="trust-title" class="text-title font-bold text-balance">Your accounts. Your app. Your call.</h2>
           </div>
           <p class="max-w-[36rem] text-[20px] leading-relaxed text-muted lg:justify-self-end">Launchwright does the work in your accounts, with the least access it needs. Here's what you see in your dashboard.</p>
@@ -763,12 +689,12 @@ const faq = [
     </section>
 
     <!-- Pilot application -->
-    <section id="pilot" aria-labelledby="pilot-title" class="backdrop bg-grid-low gutter scroll-mt-24 border-t border-line bg-surface-2 py-20 md:py-28">
+    <section id="pilot" aria-labelledby="pilot-title" class="backdrop bg-grid-low gutter scroll-mt-24 border-t border-line bg-canvas py-20 md:py-28">
       <!-- One container: the offer, the application, and what happens next -->
       <div class="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/[0.05]" data-reveal>
         <div class="grid lg:grid-cols-[5fr_6fr]">
           <!-- Offer -->
-          <div class="flex flex-col gap-6 border-line bg-surface-2/60 p-7 max-lg:border-b md:p-10 lg:border-r">
+          <div class="flex flex-col gap-6 border-line bg-canvas/60 p-7 max-lg:border-b md:p-10 lg:border-r">
             <div class="flex flex-wrap items-center gap-3">
               <span class="tag bg-blue text-white">Applications open</span>
               <span class="text-muted">10 seats</span>
@@ -803,7 +729,7 @@ const faq = [
               <!-- Turnstile bot check (scripts/code-form.ts). The worker fills data-sitekey. -->
               <div data-turnstile data-sitekey="" class="empty:hidden"></div>
               <div class="flex flex-wrap items-center gap-4">
-                <button class="btn" type="submit">Send code</button>
+                <button class="btn btn-cta" type="submit">Send code</button>
                 <p id="waitlist-status" class="m-0 font-medium data-[kind=err]:text-warn" role="status" aria-live="polite"></p>
               </div>
               <p class="text-[15px] text-muted">We email you a 6-digit code to confirm it's you. Then 5 short steps, about 3 minutes. See the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>.</p>
