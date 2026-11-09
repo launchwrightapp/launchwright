@@ -25,7 +25,7 @@
   "ratelimits": [{ "name": "PILOT_LIMIT", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }],
   "vars": {
     // Public Turnstile sitekey for the pilot form. `npm run dev` swaps in Cloudflare's test keys.
-    "TURNSTILE_SITEKEY": "REPLACE_WITH_SITEKEY",
+    "TURNSTILE_SITEKEY": "0x4AAAAAAF5Q-Bz4_B2JNwbU",
     "TURNSTILE_HOSTNAMES": "launchwright.app,www.launchwright.app"
   }
   // Secrets (not in this file): DATABASE_URL, ADMIN_TOKEN, and TURNSTILE_SECRET via `npx wrangler versions secret put <NAME>`
