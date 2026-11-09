@@ -348,3 +348,12 @@ test("walkthrough fits and works on a small phone", async ({ browser }) => {
   expect(overflow).toBe(0);
   await page.close();
 });
+
+test("privacy policy covers what Launchwright keeps when learners use it, with retention", async ({ page }) => {
+  await page.goto("/privacy");
+  await expect(page.getByRole("heading", { name: "When you use Launchwright with your AI tool" })).toBeVisible();
+  await expect(page.getByText(/If you don't use it for 12 months, we delete all of it automatically/)).toBeVisible();
+  await expect(page.getByText(/Activity log entries/)).toBeVisible();
+  // The old blanket claim was wrong once the MCP server reads repos.
+  await expect(page.getByText("we get no access to your code")).toHaveCount(0);
+});

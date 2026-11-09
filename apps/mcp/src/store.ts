@@ -194,6 +194,41 @@ export async function purgeExpired(url: string) {
   return { secrets: secrets.length, approvals: approvals.length };
 }
 
+// The retention periods the privacy policy promises (launchwright.app/privacy, DATA.md).
+// Run once a day by the Worker's cron. Learner data goes when the learner has been inactive
+// for 12 months; the audit log keeps 12 months; used approvals and secret requests go 30 days
+// after they expire (secret values are already wiped within the hour, see purgeExpired);
+// message threads go 2 years after the last message. All in the one shared Neon database.
+export const RETENTION = { inactiveLearner: "12 months", auditLog: "12 months", expiredRequests: "30 days", messageThreads: "2 years" } as const;
+
+const LEARNER_TABLES = ["lesson_progress", "projects", "connections", "secret_names", "approvals", "secret_requests", "audit_log"] as const;
+
+export async function purgeRetention(url: string) {
+  const sql = neon(url);
+  // Last sign of life per learner, across everything we keep about them.
+  const inactive = (await sql`
+    select github_id from (
+      select github_id, created_at as at from audit_log
+      union all select github_id, last_seen_at from lesson_progress
+      union all select github_id, updated_at from projects
+      union all select github_id, updated_at from connections
+      union all select github_id, updated_at from secret_names
+      union all select github_id, created_at from approvals
+      union all select github_id, created_at from secret_requests
+    ) activity
+    group by github_id
+    having max(at) < now() - ${RETENTION.inactiveLearner}::interval`) as { github_id: string }[];
+  const ids = inactive.map((r) => String(r.github_id));
+  const [, , , , , , , audit, approvals, requests, threads] = await sql.transaction((tx) => [
+    ...LEARNER_TABLES.map((t) => tx.query(`delete from ${t} where github_id = any($1::bigint[])`, [ids])),
+    tx`delete from audit_log where created_at < now() - ${RETENTION.auditLog}::interval returning 1`,
+    tx`delete from approvals where expires_at < now() - ${RETENTION.expiredRequests}::interval returning 1`,
+    tx`delete from secret_requests where expires_at < now() - ${RETENTION.expiredRequests}::interval returning 1`,
+    tx`delete from threads where last_message_at < now() - ${RETENTION.messageThreads}::interval returning 1`,
+  ]);
+  return { learners: ids.length, auditLog: audit.length, approvals: approvals.length, secretRequests: requests.length, threads: threads.length };
+}
+
 // In-memory store: local dev without a database, and tests. Seeding helpers are for tests.
 export function memoryStore(opts: { persistent?: boolean } = {}) {
   const lessons = new Map<string, number>();
