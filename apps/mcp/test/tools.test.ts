@@ -206,3 +206,73 @@ describe("MCP tools", () => {
     expect(mem.auditLog.at(-1)).toMatchObject({ tool: "connect_database", outcome: "blocked" });
   });
 });
+
+describe("monorepo with several Cloudflare apps", () => {
+  const extra: Record<string, string> = {
+    "apps/api/wrangler.jsonc": '{ "name": "shop-api", "vars": { "MODE": "api" } }',
+    "apps/api/package.json": JSON.stringify({ scripts: { build: "tsc" } }),
+    "apps/api/src/index.ts": "export default { fetch: (_r: Request, env: { STRIPE_SECRET_KEY: string }) => env.STRIPE_SECRET_KEY };",
+    "apps/api/.env.example": "STRIPE_SECRET_KEY=sk_test_x\n",
+    "examples/demo/wrangler.toml": 'name = "demo"', // not an app: skipped
+  };
+  beforeEach(() => Object.assign(files, extra));
+  afterEach(() => Object.keys(extra).forEach((k) => delete files[k]));
+
+  it("project_status lists the apps instead of guessing a Worker", async () => {
+    const { call, mem } = await connect();
+    const r = await call("project_status", { repo: REPO });
+    expect(r.text).toContain("Cloudflare apps (2");
+    expect(r.text).toContain("`shop-api` (apps/api)");
+    expect(r.text).not.toContain("demo");
+    expect((await mem.store.getProject(1, REPO))?.workerName ?? null).toBeNull();
+  });
+
+  it("tools that touch one Worker ask which app, and reject unknown ones", async () => {
+    const { call } = await connect();
+    const asked = await call("check_env", { repo: REPO });
+    expect(asked.isError).toBe(true);
+    expect(asked.text).toContain("monorepo with 2 Cloudflare apps");
+    expect(asked.text).toContain("`shop` (repo root)");
+    const unknown = await call("check_env", { repo: REPO, app: "web" });
+    expect(unknown.text).toContain('no app called "web"');
+  });
+
+  it("check_env with app reads only that app's code and env files", async () => {
+    const { call } = await connect();
+    const r = await call("check_env", { repo: REPO, app: "api" });
+    expect(r.isError).toBe(false);
+    expect(r.text).toContain("app `shop-api` in apps/api");
+    expect(r.data.used).toEqual(["STRIPE_SECRET_KEY"]);
+    expect(r.data.undocumented).toEqual([]);
+  });
+
+  it("setup_ci adds a per-app deploy workflow that builds in the app's folder, keeping an existing ci.yml", async () => {
+    workflows[".github/workflows/ci.yml"] = "name: CI";
+    const { call } = await connect();
+    const r = await call("setup_ci", { repo: REPO, app: "apps/api" });
+    expect(r.isError).toBe(false);
+    const puts = calls.filter((c) => c.method === "PUT" && c.path.includes("/contents/"));
+    const paths = puts.map((c) => decodeURIComponent(c.path.split("/contents/")[1]));
+    expect(paths).toContain(".github/workflows/launchwright-deploy-shop-api.yml");
+    expect(paths).not.toContain(".github/workflows/ci.yml");
+    const wf = atob((puts.find((c) => c.path.includes("launchwright-deploy-shop-api"))!.body as { content: string }).content);
+    expect(wf).toContain("name: Deploy shop-api");
+    expect(wf).toContain("working-directory: apps/api");
+    expect(wf).toContain("group: deploy-launchwright-deploy-shop-api-");
+    expect(calls.find((c) => c.path.endsWith("/git/refs"))?.body).toMatchObject({ ref: "refs/heads/launchwright/setup-ci-shop-api" });
+    expect(r.text).toContain('run setup_ci again with their app');
+  });
+
+  it("deploy dispatches the app's own workflow", async () => {
+    workflows[".github/workflows/launchwright-deploy-shop-api.yml"] = "on: workflow_dispatch";
+    actionsSecrets = ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"];
+    const { call } = await connect();
+    const missing = await call("deploy", { repo: REPO, app: "shop" });
+    expect(missing.text).toContain("launchwright-deploy-shop.yml");
+    expect(missing.text).toContain('setup_ci with app "shop"');
+    const r = await call("deploy", { repo: REPO, app: "shop-api" });
+    expect(r.isError).toBe(false);
+    expect(r.text).toContain("Preview deploy started for juan/shop shop-api");
+    expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/workflows/launchwright-deploy-shop-api.yml/dispatches"))).toBe(true);
+  });
+});

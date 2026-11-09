@@ -24,8 +24,14 @@ concepts) lives in `packages/core/curriculum.ts`, shared with the dashboard.
 | `get_logs` | CI run logs around the first error, or recent Worker logs; redacted and fenced as untrusted | No |
 | `explain_error` | Plain-words explanation, likely causes and the smallest fix for common errors | No |
 
+**Monorepos:** every `wrangler.jsonc`/`.toml` (outside `node_modules`, `examples/`, `fixtures/`, `tests/`) is one
+Cloudflare app. With more than one, `check_env`, `set_secret`, `connect_database`, `setup_ci`, `deploy` and
+`get_logs` (runtime) take `app` (Worker name or folder, e.g. `api` or `apps/api`); without it they list the apps
+and ask. `check_env` then reads only that app's folder. Each app gets its own `launchwright-deploy-<app>.yml`;
+`setup_ci` for a second app keeps the existing `ci.yml`. A repo with one app works as before.
+
 Prompts (guided lessons): `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
-`lesson-deploy`, `lesson-debug`, `lesson-security`.
+`lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`.
 
 ## Security model
 
