@@ -86,6 +86,8 @@ test("sending needs consent, then posts the answers", async ({ page }) => {
     email: "juan@example.com", role: "shifter", experience: "ai", tools: ["claude-code", "cursor"],
     stage: "building", learn: ["deploy"], hours: "5-10", consent: true,
   });
+  // Locally the page runs Cloudflare's always-pass test widget.
+  expect(req.postDataJSON()["cf-turnstile-response"]).toBeTruthy();
   // The local server has no database, so it answers with the friendly 503.
   await expect(status(page)).toHaveText("Applications aren't being saved yet. Please check back soon.");
 });

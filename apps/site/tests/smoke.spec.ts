@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-const isPreview = !!process.env.BASE_URL;
 
 test("home page renders the hero and every section", async ({ page }) => {
   const errors: string[] = [];
@@ -65,10 +64,19 @@ test.describe("waitlist API", () => {
     expect(res.status()).toBe(200);
   });
 
-  test("valid signup without a database says the waitlist isn't open", async ({ request }) => {
-    test.skip(isPreview, "Would write a real row on a deployed site");
+  test("a valid signup without a Turnstile token is refused", async ({ request }) => {
+    // Safe on the live site too: it stops before the database.
     const res = await request.post("/api/waitlist", { data: { email: "a@example.com", consent: true } });
-    expect(res.status()).toBe(503);
+    expect(res.status()).toBe(403);
+    expect((await res.json()).error).toMatch(/not a bot/);
+  });
+
+  test("posts from another site are refused", async ({ request }) => {
+    const res = await request.post("/api/waitlist", {
+      data: { email: "a@example.com", consent: true },
+      headers: { origin: "https://evil.example" },
+    });
+    expect(res.status()).toBe(403);
   });
 });
 

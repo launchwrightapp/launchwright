@@ -4,7 +4,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8790",
+    "dev": "wrangler dev --port 8790 --var TURNSTILE_SITEKEY:1x00000000000000000000AA --var TURNSTILE_SECRET:1x0000000000000000000000000000000AA",
     "dev:ui": "astro dev",
     "build": "astro build",
     "deploy": "wrangler deploy",

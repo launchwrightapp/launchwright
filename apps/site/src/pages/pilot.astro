@@ -138,6 +138,8 @@ const heading = "text-[1.75rem] font-bold leading-tight tracking-[-0.015em] outl
               <input class="mt-0.5 size-5 flex-none accent-ink" type="checkbox" name="consent" value="yes" required />
               <span>I agree that Launchwright may use my email to contact me about the pilot, as described in the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>. I can ask for it to be deleted at any time.</span>
             </label>
+            <!-- Turnstile bot check; scripts/pilot.ts renders it. The worker fills data-sitekey. -->
+            <div data-turnstile data-sitekey="" class="empty:hidden"></div>
           </section>
 
           <!-- Controls -->

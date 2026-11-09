@@ -22,9 +22,13 @@ function render(template: string, vars: Record<string, string>, html: boolean) {
 
 export interface Applicant { email: string; name: string | null; building: string | null }
 
+// First name only, letters only: the name field can't smuggle links into our emails.
+const firstName = (name: string | null) =>
+  (name?.trim().split(/\s+/)[0] ?? "").replace(/[^\p{L}\p{M}'-]/gu, "").slice(0, 30);
+
 const vars = (a: Applicant) => ({
-  name: a.name?.split(/\s+/)[0] || "there",
-  headline: a.name ? `You're in, ${a.name.split(/\s+/)[0]}.` : "You're in.",
+  name: firstName(a.name) || "there",
+  headline: firstName(a.name) ? `You're in, ${firstName(a.name)}.` : "You're in.",
   building: a.building || "You didn't say yet. Reply and tell us, it helps us review.",
 });
 
