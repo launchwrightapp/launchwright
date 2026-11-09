@@ -67,7 +67,10 @@ if (header && footer) {
     const onFooter = footer.getBoundingClientRect().top < innerHeight * 0.85;
     if (!onFooter || y < lastY) delete header.dataset.hidden;
     else if (y > lastY) header.dataset.hidden = "";
-    lastY = y;
+    // Scrolling down shrinks the bar into a centered pill; scrolling up (or reaching the top) restores it.
+    if (y < 80 || y < lastY - 4) delete header.dataset.compact;
+    else if (y > lastY + 4) header.dataset.compact = "";
+    if (Math.abs(y - lastY) > 4 || y < 80) lastY = y;
   };
   addEventListener("scroll", () => { if (!ticking) (ticking = true), requestAnimationFrame(update); }, { passive: true });
   // Keyboard users: never leave focus inside a hidden header.
@@ -90,6 +93,35 @@ if ("IntersectionObserver" in window && revealables.length && !matchMedia("(pref
   // Anything already on screen (or scrolled past, e.g. a #hash link) shows right away.
   revealables.forEach((el) => (el.getBoundingClientRect().top < innerHeight ? (el.dataset.shown = "") : io.observe(el)));
   document.documentElement.classList.add("reveal-on");
+}
+
+// Count-up: big numbers run from 0 to their value the first time they scroll into view.
+const counters = document.querySelectorAll<HTMLElement>("[data-count]");
+if ("IntersectionObserver" in window && counters.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const run = (el: HTMLElement) => {
+    const end = Number(el.textContent);
+    if (!Number.isFinite(end) || end <= 0) return;
+    const ms = 900 + Math.min(end, 50) * 12;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / ms, 1);
+      el.textContent = String(Math.round(end * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    el.textContent = "0";
+    requestAnimationFrame(tick);
+  };
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        run(e.target as HTMLElement);
+        io.unobserve(e.target);
+      }
+    },
+    { threshold: 0.6 },
+  );
+  counters.forEach((el) => io.observe(el));
 }
 
 // Pilot form on the home page: sends the email code right here, then /pilot/verify.

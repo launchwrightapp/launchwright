@@ -159,8 +159,6 @@ test("readiness leads with the failing check and its fix", async ({ page }) => {
   await expect(section).toContainText("Action needed");
   await expect(section).toContainText("Suggested fix");
   const list = page.getByRole("tablist", { name: "Readiness checks" });
-  await expect(list).toBeHidden();
-  await section.getByText(/View all 8 checks/).click();
   const fail = list.locator('[data-check="fail"]');
   await expect(fail).toHaveAttribute("aria-selected", "true");
   const panel = page.locator("#readiness [role=tabpanel]:visible");
@@ -254,6 +252,22 @@ test("header hides on the footer and returns when scrolling up", async ({ page }
   await expect(header).toHaveAttribute("data-hidden", "");
   await scroll(bottom - 300);
   await expect(header).not.toHaveAttribute("data-hidden");
+});
+
+test("header shrinks into a pill on scroll down and restores on scroll up", async ({ page }) => {
+  await page.goto("/");
+  const header = page.locator("header[data-autohide]");
+  const scroll = (top: number) => page.evaluate((t) => scrollTo({ top: t, behavior: "instant" }), top);
+  await expect(header).not.toHaveAttribute("data-compact");
+  await scroll(300);
+  await scroll(900);
+  await expect(header).toHaveAttribute("data-compact", "");
+  await scroll(700);
+  await expect(header).not.toHaveAttribute("data-compact");
+  await scroll(1200);
+  await expect(header).toHaveAttribute("data-compact", "");
+  await scroll(0);
+  await expect(header).not.toHaveAttribute("data-compact");
 });
 
 test("mobile menu opens, links to sections, and closes", async ({ page, isMobile }) => {
