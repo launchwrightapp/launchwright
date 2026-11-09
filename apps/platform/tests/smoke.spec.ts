@@ -197,7 +197,9 @@ test("lessons list practice exercises under their module, with progress", async 
   await expect(page.getByText("Ship your first web app with production fundamentals.")).toBeVisible();
   const db = page.getByRole("listitem").filter({ has: page.getByText("Database", { exact: true }) });
   await db.getByText("Backup and restore drill").click();
-  await expect(db.getByText("/lesson-practice exercise=backup_restore")).toBeVisible();
+  // The exact command Claude Code accepts: server prefix, then the repo, then the exercise.
+  await expect(db.getByText("/launchwright:lesson-practice juan/barbershop-booking backup_restore", { exact: true })).toBeVisible();
+  await expect(db.getByText("/launchwright:lesson-database juan/barbershop-booking", { exact: true })).toBeVisible();
   await expect(db.getByText(/Counts as done when your default branch has RECOVERY\.md/)).toBeVisible();
   const mon = page.getByRole("listitem").filter({ has: page.getByText("Monitoring", { exact: true }) });
   await expect(mon.getByText("Alerts, owner and runbook").locator("..")).toContainText("Done");
@@ -335,4 +337,13 @@ test("connect page explains tools vs prompts, with the repo as the prompt argume
   await expect(card.getByText("/launchwright:lesson-start octocat/hello-world")).toBeVisible();
   await expect(card.getByText("Use launchwright to review PR #3 on octocat/hello-world")).toBeVisible();
   await expect(page.getByText("Take the tour")).toBeVisible();
+});
+
+test("before a project exists, lesson commands use an owner/repo placeholder", async ({ page }) => {
+  await serveMe(page, { ...me, projects: [] });
+  await page.goto("/lessons");
+  await loaded(page);
+  const db = page.getByRole("listitem").filter({ has: page.getByText("Database", { exact: true }) });
+  await db.getByText("Backup and restore drill").click();
+  await expect(db.getByText("/launchwright:lesson-practice owner/repo backup_restore", { exact: true })).toBeVisible();
 });

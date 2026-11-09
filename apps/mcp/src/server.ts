@@ -183,7 +183,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
           lines.join("\n"),
           rc.snap.truncated ? "\nNote: the repo is very large, so GitHub sent only part of the file list." : "",
           `\nThe dashboard shows the same results: ${dashboard(ctx, "/readiness")}`,
-          `\nThese checks are a baseline, not proof the app is production-ready; that depends on its users, data and failure risks. What they can't verify is practised with the lesson-practice prompt (exercise=<id>). Practice exercises found on ${rc.snap.branch}: ${practiced.length} of ${EXERCISES.length}.`,
+          `\nThese checks are a baseline, not proof the app is production-ready; that depends on its users, data and failure risks. What they can't verify is practised with the lesson-practice prompt, which takes the repo and then the exercise id (in Claude Code: /launchwright:lesson-practice ${rc.snap.repo} <exercise id>). Practice exercises found on ${rc.snap.branch}: ${practiced.length} of ${EXERCISES.length}.`,
           evidence
             .map((e) => {
               const ex = EXERCISES.find((x) => x.id === e.id)!;
