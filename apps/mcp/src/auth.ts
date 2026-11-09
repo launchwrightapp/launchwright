@@ -2,7 +2,7 @@
 // consent page, sign in with GitHub, and come back to /callback, where we issue the MCP grant.
 // GitHub's token lives only in the grant's encrypted props; the AI never sees it.
 import { AuthorizationError, CimdFetchError, OAuthError, authorizationErrorRedirect, type ConsentDescription, type OAuthHelpers } from "@cloudflare/workers-oauth-provider";
-import { PAGE_CSS, page, escape } from "./page";
+import { PAGE_CSP, PAGE_CSS, consentPage, page, escape } from "./page";
 
 export interface AuthEnv {
   OAUTH_KV: KVNamespace;
@@ -23,35 +23,15 @@ const UA = "launchwright-mcp";
 const html = (body: string, status = 200, headers = new Headers()) => {
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-store");
-  headers.set("content-security-policy", "default-src 'none'; style-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+  headers.set("content-security-policy", PAGE_CSP);
   return new Response(body, { status, headers });
 };
 const problem = (msg: string, status = 400) =>
-  html(page("Couldn't connect", `<h1>Couldn't connect</h1><p>${escape(msg)}</p><p>Go back to your AI tool and start connecting again.</p>`), status);
+  html(page("Couldn't connect", `<div><h1>Couldn't connect</h1><p class="lead">${escape(msg)}</p></div><p>Go back to your AI tool and start connecting again.</p>`, "error"), status);
 
 async function s256(verifier: string) {
   const d = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
   return btoa(String.fromCharCode(...d)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function consentPage(d: ConsentDescription, handle: string) {
-  const who = d.clientDomain
-    ? `Published by <strong>${escape(d.clientDomain)}</strong>.`
-    : "This app registered itself, so its name isn't verified.";
-  return page(
-    `Connect ${d.clientName}`,
-    `<h1>Connect <span class="name">${escape(d.clientName)}</span> to launchwright?</h1>
-<p>${who} After you sign in with GitHub, access goes to <strong>${escape(d.redirectHost)}</strong>.</p>
-${d.redirectIsLoopback ? '<p class="warn">This sends access to an app on your computer. Continue only if you just started connecting from your AI tool.</p>' : ""}
-<p>It will be able to read your GitHub repos through launchwright and teach you as it works. It can't see your GitHub password or token.</p>
-<form method="post" action="/authorize">
-  <input type="hidden" name="handle" value="${escape(handle)}">
-  <div class="actions">
-    <button name="decision" value="approve" class="primary">Continue with GitHub</button>
-    <button name="decision" value="deny">Cancel</button>
-  </div>
-</form>`,
-  );
 }
 
 async function githubUser(token: string) {

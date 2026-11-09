@@ -7,7 +7,7 @@
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { createMcpHandler } from "agents/mcp";
 import { handleAuth, refreshUpstream, type AuthEnv, type Props } from "./auth";
-import { PAGE_CSS, homePage } from "./page";
+import { PAGE_CSP, PAGE_CSS, PAGE_JS, homePage } from "./page";
 import { buildServer } from "./server";
 import { neonProgress, noProgress } from "./progress";
 
@@ -34,11 +34,14 @@ const site = {
     if (url.pathname === "/page.css") {
       return new Response(PAGE_CSS, { headers: { "content-type": "text/css; charset=utf-8", "cache-control": "public, max-age=3600" } });
     }
+    if (url.pathname === "/page.js") {
+      return new Response(PAGE_JS, { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    }
     if (url.pathname === "/" && req.method === "GET") {
       return new Response(homePage(url.origin), {
         headers: {
           "content-type": "text/html; charset=utf-8",
-          "content-security-policy": "default-src 'none'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'",
+          "content-security-policy": PAGE_CSP,
           "x-content-type-options": "nosniff",
         },
       });
