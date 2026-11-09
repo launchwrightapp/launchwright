@@ -34,6 +34,9 @@ jobs:
 
   test:
     name: Typecheck + E2E (local)
+    # main requires PR branches to be up to date and this check to pass, so the merged
+    # commit was already tested. Pushes to main go straight to deploy + smoke test.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,7 +126,7 @@ jobs:
   deploy:
     name: Deploy production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [secrets, test]
+    needs: [secrets]
     runs-on: ubuntu-latest
     concurrency:
       group: production
