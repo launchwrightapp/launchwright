@@ -11,6 +11,7 @@ import { apiAuth, checkUrl, securityHeaders, uptime } from "../src/live";
 import { openSealedBox, sealedBox } from "../src/sealedbox";
 import { looksLikeSecret, redact, untrustedBlock } from "../../../packages/core/untrusted";
 import { seal, unseal } from "../../../packages/core/seal";
+import { httpsRedirect, secure, withSecurityHeaders } from "../../../packages/core/security-headers";
 import { CONCEPTS, EXERCISES, LESSONS, MODULES, evidenceFiles, exerciseEvidence, exercisesDoneIn, progress } from "../../../packages/core/curriculum";
 
 describe("check_env analysis", () => {
@@ -339,5 +340,39 @@ describe("review_pr", () => {
   it("tells specific secret formats apart from code", () => {
     expect(looksLikeSecret("ghp_abcdefghijklmnopqrstuvwxyz123456")).toBe(true);
     expect(looksLikeSecret("password: z.string()")).toBe(false);
+  });
+});
+
+describe("security headers middleware", () => {
+  const app = secure(async (req: Request) => (new URL(req.url).pathname === "/page" ? new Response("<p>hi</p>", { headers: { "content-type": "text/html", "content-security-policy": "default-src 'self'" } }) : Response.json({ ok: true })));
+
+  it("redirects visitors who came over plain http to https", () => {
+    const res = httpsRedirect(new Request("http://example.com/a?b=1", { headers: { "cf-visitor": '{"scheme":"http"}' } }));
+    expect(res?.status).toBe(301);
+    expect(res?.headers.get("location")).toBe("https://example.com/a?b=1");
+    expect(httpsRedirect(new Request("http://example.com/", { headers: { "x-forwarded-proto": "http" } }))?.status).toBe(301);
+    expect(httpsRedirect(new Request("http://example.com/", { headers: { "cf-visitor": '{"scheme":"https"}' } }))).toBeNull();
+    // wrangler dev: an http URL with no edge headers is local, not a visitor
+    expect(httpsRedirect(new Request("http://example.com/"))).toBeNull();
+  });
+
+  it("fills in missing headers and keeps a page's own CSP", async () => {
+    const data = await app(new Request("https://example.com/api"));
+    expect(data.headers.get("strict-transport-security")).toMatch(/max-age=31536000/);
+    expect(data.headers.get("content-security-policy")).toContain("default-src 'none'");
+    expect(data.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(await data.json()).toEqual({ ok: true });
+    const page = await app(new Request("https://example.com/page"));
+    expect(page.headers.get("content-security-policy")).toBe("default-src 'self'");
+    expect(withSecurityHeaders(page)).toBe(page);
+  });
+
+  it("passes the readiness check's HTTPS and security headers test", async () => {
+    const fake = ((input: RequestInfo | URL) => {
+      const url = String(input);
+      return app(new Request(url, { headers: { "cf-visitor": JSON.stringify({ scheme: new URL(url).protocol.slice(0, -1) }) } }));
+    }) as typeof fetch;
+    const check = await securityHeaders(fake, new URL("https://example.com"));
+    expect(check.status, check.detail).toBe("pass");
   });
 });

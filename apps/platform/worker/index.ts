@@ -4,6 +4,7 @@ import { handleApplicantsApi, type ApplicantsEnv } from "./applicants";
 import { handleFunnelApi } from "./funnel";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
+import { secure } from "../../../packages/core/security-headers";
 
 interface Env extends ApplicantsEnv, LearnerEnv {
   ASSETS: Fetcher;
@@ -96,7 +97,7 @@ function personalize(res: Response, user: User, admin: boolean) {
     .transform(res);
 }
 
-export default {
+const app = {
   async fetch(req, env, ctx): Promise<Response> {
     const url = new URL(req.url);
     // For the uptime workflow. Says only whether sign-in and storage are configured.
@@ -151,3 +152,6 @@ export default {
     await handleInboundEmail(message, env);
   },
 } satisfies ExportedHandler<Env>;
+
+// Every response: http redirects to https, and missing security headers are filled in.
+export default { ...app, fetch: secure(app.fetch) } satisfies ExportedHandler<Env>;

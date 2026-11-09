@@ -10,6 +10,7 @@ import { handleAuth, refreshUpstream, type AuthEnv, type Props } from "./auth";
 import { PAGE_CSP, PAGE_CSS, PAGE_JS, homePage } from "./page";
 import { buildServer, VERSION } from "./server";
 import { memoryStore, neonStore, purgeExpired } from "./store";
+import { secure } from "../../../packages/core/security-headers";
 
 interface Env extends AuthEnv {
   DATABASE_URL?: string;
@@ -96,7 +97,7 @@ function provider(origin: string) {
   return p;
 }
 
-export default {
+const app = {
   fetch(req, env, ctx) {
     return provider(new URL(req.url).origin).fetch(req, env, ctx);
   },
@@ -107,3 +108,6 @@ export default {
     if (n.secrets || n.approvals) console.log("purged expired", n);
   },
 } satisfies ExportedHandler<Env>;
+
+// Every response: http redirects to https, and missing security headers are filled in.
+export default { ...app, fetch: secure(app.fetch) } satisfies ExportedHandler<Env>;

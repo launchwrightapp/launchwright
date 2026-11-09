@@ -5,6 +5,7 @@ import { crossSite, underLimit } from "./guard";
 import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
 import { report as funnelReport, track, type FunnelEnv } from "./funnel";
 import { checkCode, clearSession, endSession, hasSessionCookie, requestCode, sessionEmail, type VerifyEnv } from "./verify";
+import { secure } from "../../../packages/core/security-headers";
 
 interface Env extends VerifyEnv, FunnelEnv {
   ASSETS: Fetcher;
@@ -189,7 +190,7 @@ const POST_ROUTES: Record<string, Route> = {
   "/api/funnel": track,
 };
 
-export default {
+const app = {
   async fetch(req, env, ctx): Promise<Response> {
     const url = new URL(req.url);
 
@@ -237,3 +238,6 @@ export default {
     return env.ASSETS.fetch(req);
   },
 } satisfies ExportedHandler<Env>;
+
+// Every response: http redirects to https, and missing security headers are filled in.
+export default { ...app, fetch: secure(app.fetch) } satisfies ExportedHandler<Env>;
