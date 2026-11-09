@@ -398,7 +398,7 @@ const faq = [
               <ul class:list={["mt-6 divide-y border-t", hot ? "divide-white/25 border-white/25" : "divide-line border-line"]}>
                 {s.modules.map(([m, d], j) => (
                   <li class="flex gap-4 py-4">
-                    <span class:list={["pt-0.5 font-mono text-[14px] tabular-nums", hot ? "text-white/60" : "text-muted"]}>{String(first + j + 1).padStart(2, "0")}</span>
+                    <span class:list={["pt-0.5 font-mono text-[14px] tabular-nums", hot ? "text-white/80" : "text-muted"]}>{String(first + j + 1).padStart(2, "0")}</span>
                     <div>
                       <p class="text-[18px] font-semibold">{m}</p>
                       <p class:list={["mt-0.5 text-base", hot ? "text-white/80" : "text-muted"]}>{d}</p>

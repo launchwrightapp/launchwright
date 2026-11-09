@@ -283,8 +283,9 @@ const sections = allSections
               <svg class="size-4 rotate-180 transition in-aria-expanded:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
           </div>
-          <div id="panel-body" class="h-28 overflow-y-auto px-4 pb-2 [@media(min-height:1000px)]:h-40">
-            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-0.5 text-[13px]" data-each="toolCalls">
+          <div id="panel-body" tabindex="0" role="region" aria-label="Panel contents" class="h-28 overflow-y-auto px-4 pb-2 [@media(min-height:1000px)]:h-40">
+            <div id="pp-calls" role="tabpanel" aria-labelledby="pt-calls">
+            <ol class="flex flex-col gap-0.5 text-[13px]" data-each="toolCalls">
               <template>
                 <li class="grid grid-cols-[3.5rem_9.5rem_7rem_minmax(0,1fr)] gap-3">
                   <span class="tabular-nums text-white/45" data-bind="time"></span>
@@ -296,7 +297,9 @@ const sections = allSections
               <li class="mt-1" hidden data-unless="toolCalls"><span class="text-white/55">No tool calls yet. Connect your AI tool and ask it to check your project.</span></li>
               <li class="mt-1"><span class="inline-block h-4 w-2 translate-y-0.5 bg-white/60 motion-safe:animate-pulse" aria-hidden="true"></span><span class="sr-only">Waiting for the next tool call</span></li>
             </ol>
-            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-0.5 text-[13px]" data-each="attention">
+            </div>
+            <div id="pp-problems" role="tabpanel" aria-labelledby="pt-problems">
+            <ul class="flex flex-col gap-0.5 text-[13px]" data-each="attention">
               <template>
                 <li>
                   <a data-attr="href:href" class="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-0.5 text-white/85 no-underline hover:bg-white/5">
@@ -306,6 +309,7 @@ const sections = allSections
                 </li>
               </template>
             </ul>
+            </div>
           </div>
         </section>
 )}
