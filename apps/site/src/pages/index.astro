@@ -24,13 +24,6 @@ const heroPath = [
   { pos: "left-[70%] top-[31%]", d: ["M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", "m9 12 2 2 4-4"] },
   { pos: "left-[90%] top-[47%]", d: ["M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"] },
 ];
-const heroPoints = [
-  "Use the AI tool you already have: Claude Code, Codex, or Cursor.",
-  "Every step comes with a short lesson: what happened, and why.",
-  "Your cloud accounts, your app. We never host it.",
-  "CI, tests, security, and monitoring, like real production.",
-  "The pilot is free for the first 10 learners.",
-];
 
 
 // The core loop, shown as a walkthrough. Sample output only.
@@ -214,7 +207,7 @@ const faq = [
   <SiteHeader home />
 
   <main>
-    <!-- Hero: centered. The product showcase follows right below it. -->
+    <!-- Hero: text centered in the space above; the launch path sits on the dome at the bottom. -->
     <section aria-labelledby="hero-title" class="gutter relative isolate flex min-h-[calc(100svh-84px)] overflow-hidden flex-col items-center justify-center gap-[clamp(10px,2.2vh,28px)] py-[clamp(8px,2.5vh,64px)] text-center">
       <!-- Soft dome behind the launch path (decorative) -->
       <svg class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[clamp(120px,22vh,240px)] w-full" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
@@ -226,25 +219,8 @@ const faq = [
         </defs>
         <path d="M120 200 Q500 -10 880 200 Z" fill="url(#hero-dome)" class="dark:opacity-[2.2]" />
       </svg>
-      <h1 id="hero-title" class="text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
+      <h1 id="hero-title" class="mt-auto text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
       <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">From your first commit to a secure, deployed app, guided step by step.</p>
-      <div class="w-full max-w-[44rem] overflow-hidden rounded-[28px] border border-line bg-surface text-left shadow-xl shadow-black/[0.04] max-sm:order-2">
-        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-[clamp(7px,1.1vh,12px)]">
-          <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
-          <span class="size-3 rounded-full bg-[#febc2e]" aria-hidden="true"></span>
-          <span class="size-3 rounded-full bg-[#28c840]" aria-hidden="true"></span>
-          <span class="ml-3 rounded-lg bg-surface px-3 py-1 text-[14px] font-medium text-muted ring-1 ring-line">why-launchwright.md</span>
-        </div>
-        <ul class="py-[clamp(4px,0.9vh,12px)] text-[clamp(16px,2.6vh,19px)]">
-          {heroPoints.map((t, i) => (
-            <li class="flex items-center gap-4 px-5 py-[clamp(4px,0.8vh,9px)] hover:bg-surface-2">
-              <span class="w-5 flex-none select-none text-right text-[14px] text-muted/60" aria-hidden="true">{i + 1}</span>
-              <span class="grid size-[22px] flex-none place-items-center rounded-md bg-ink text-on-ink"><Check class="size-3.5" /></span>
-              <span class="text-ink/80">{t}{i === heroPoints.length - 1 && <span class="ml-1 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] bg-blue motion-safe:animate-pulse" aria-hidden="true"></span>}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
       <div class="flex items-center gap-2.5 text-muted max-sm:order-1 sm:[@media(max-height:780px)]:hidden">
         <span class="flex gap-1" aria-hidden="true">{Array.from({ length: 10 }, () => <i class="size-2.5 rounded-full bg-ink opacity-20"></i>)}</span>
         <span><b class="font-semibold text-ink">10 seats</b> in the pilot cohort</span>
@@ -255,7 +231,7 @@ const faq = [
       </div>
       <!-- The path to launch: your code, GitHub, launch, secured, in the cloud. Decorative.
            The tiles float gently (theme.css .float); still for reduced motion. -->
-      <div class="relative -mb-[clamp(8px,2.5vh,64px)] mt-[clamp(8px,2vh,20px)] aspect-[5/1] w-full max-w-[44rem] max-sm:order-3 sm:aspect-[7/1] lg:max-w-[56rem]" aria-hidden="true">
+      <div class="relative -mb-[clamp(8px,2.5vh,64px)] mt-auto aspect-[5/1] w-full max-w-[44rem] max-sm:order-3 sm:aspect-[7/1] lg:max-w-[56rem]" aria-hidden="true">
 
         <svg class="absolute inset-0 size-full overflow-visible" viewBox="0 0 1000 200" preserveAspectRatio="none" fill="none">
           <path d="M100 94.8 Q500 5.2 900 94.8" class="stroke-blue/40 dark:stroke-[#9a90ff]/45" stroke-width="1.5" vector-effect="non-scaling-stroke" />
@@ -813,19 +789,24 @@ const faq = [
           <div class="flex flex-col">
             <div class="flex items-center justify-between gap-3 border-b border-line px-7 py-5 md:px-10">
               <p class="text-[19px] font-semibold">Your application</p>
-              <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">About 3 minutes</p>
+              <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">About 4 minutes</p>
             </div>
-            <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/pilot" method="get" novalidate>
+            <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/api/pilot/code" method="post" novalidate>
               <p class="text-[19px] leading-relaxed text-muted">A few short questions about you and what you want to ship. It helps us pick a cohort we can really help.</p>
               <label class="block">
                 <span class="mb-2 block font-medium">Email</span>
                 <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
               </label>
+              <div class="absolute -left-[9999px] size-px overflow-hidden" aria-hidden="true">
+                <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+              </div>
+              <!-- Turnstile bot check (scripts/code-form.ts). The worker fills data-sitekey. -->
+              <div data-turnstile data-sitekey="" class="empty:hidden"></div>
               <div class="flex flex-wrap items-center gap-4">
-                <button class="btn" type="submit">Continue</button>
+                <button class="btn" type="submit">Send code</button>
                 <p id="waitlist-status" class="m-0 font-medium data-[kind=err]:text-warn" role="status" aria-live="polite"></p>
               </div>
-              <p class="text-[15px] text-muted">5 short steps, about 3 minutes. Nothing is saved until you send it.</p>
+              <p class="text-[15px] text-muted">We email you a 6-digit code to confirm it's you. Then 5 short steps, about 3 minutes. See the <a class="font-medium text-ink underline underline-offset-4" href="/privacy">privacy policy</a>.</p>
             </form>
           </div>
         </div>

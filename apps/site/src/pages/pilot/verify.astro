@@ -1,0 +1,63 @@
+---
+// Pilot, part 2 of 3: enter the 6-digit code from the email (scripts/pilot-verify.ts).
+// The right code sets the session cookie and continues to /pilot/apply.
+import Pilot from "../../layouts/Pilot.astro";
+---
+<Pilot
+  title="Check your email · Launchwright"
+  noindex
+  part={2}
+  heading="Check your email"
+  intro="We sent you a 6-digit code. Enter it here to confirm the email is yours."
+>
+  <ul slot="side" class="grid gap-3 text-[17px] text-muted">
+    <li>Can't find it? Look in Spam or Promotions. It comes from hello@launchwright.app.</li>
+    <li>The code works for 10 minutes. You can ask for a new one.</li>
+  </ul>
+
+  <form id="pilot-verify" class="flex flex-col gap-6 p-6 md:p-10" action="/api/pilot/verify" method="post" novalidate>
+    <div class="flex flex-col gap-2">
+      <h2 class="text-[1.75rem] font-bold leading-tight tracking-[-0.015em]">Enter your code</h2>
+      <p class="text-muted">Sent to <b class="break-all font-semibold text-ink" data-email>your email</b>. <a class="font-medium text-ink underline underline-offset-4" href="/pilot" data-change>Change email</a></p>
+    </div>
+    <input type="hidden" name="email" />
+
+    <label class="flex flex-col gap-2">
+      <span class="font-medium">6-digit code</span>
+      <span class="group relative block max-w-[26rem]" data-otp>
+        <input class="input text-center font-mono text-[24px] tracking-[0.4em] group-data-[ready]:absolute group-data-[ready]:inset-0 group-data-[ready]:h-full group-data-[ready]:cursor-text group-data-[ready]:opacity-0" type="text" name="code" required inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" spellcheck="false" />
+        <span class="hidden grid-cols-6 gap-2 group-data-[ready]:grid sm:gap-3" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span data-cell={i} class="grid aspect-[4/5] place-items-center rounded-2xl border border-line bg-surface font-mono text-[clamp(1.5rem,5vw,2rem)] font-semibold tabular-nums transition data-[filled]:border-muted group-data-[bad]:border-warn! group-data-[ok]:border-ok! group-data-[ok]:bg-ok-bg group-focus-within:data-[active]:border-transparent group-focus-within:data-[active]:outline-2 group-focus-within:data-[active]:outline-(--focus)"></span>
+          ))}
+        </span>
+      </span>
+    </label>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <button class="btn" type="submit" data-submit>Verify</button>
+      <p id="pilot-status" class="m-0 font-medium data-[kind=err]:text-warn data-[kind=ok]:text-ok" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="flex flex-col gap-3 border-t border-line pt-6">
+      <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
+        Didn't get it?
+        <button type="button" class="cursor-pointer rounded-full font-medium text-ink underline underline-offset-4 disabled:cursor-default disabled:text-muted disabled:no-underline" data-resend>Send a new code</button>
+      </p>
+      <div data-turnstile data-sitekey="" class="empty:hidden"></div>
+    </div>
+  </form>
+
+  <!-- Shown instead of the form when this email already applied -->
+  <div data-applied hidden class="flex flex-col gap-5 p-6 md:p-10">
+    <span class="tag tag-ok self-start">Email confirmed</span>
+    <h2 class="text-[1.75rem] font-bold leading-tight tracking-[-0.015em]">You've already applied</h2>
+    <p class="text-[19px] leading-relaxed text-muted">We have your application from this email. There's nothing else to do. If you're in, we'll email you a link to get started.</p>
+    <p class="text-muted">Want to change your answers? Reply to your confirmation email, or write to <a class="font-medium text-ink underline underline-offset-4" href="mailto:hello@launchwright.app">hello@launchwright.app</a>.</p>
+    <p><a class="btn btn-outline" href="/">Back to the home page</a></p>
+  </div>
+</Pilot>
+
+<script>
+  import "../../scripts/pilot-verify.ts";
+</script>

@@ -1,112 +1,65 @@
 import { neon } from "@neondatabase/serverless";
 import { sendAcknowledgement, sendAcceptance, type Applicant } from "./emails";
 import { cleanAnswers } from "./options";
-import { crossSite, underLimit, verifyTurnstile, type GuardEnv } from "./guard";
+import { crossSite, underLimit } from "./guard";
+import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
+import { checkCode, clearSession, endSession, hasSessionCookie, requestCode, sessionEmail, type VerifyEnv } from "./verify";
 
-interface Env extends GuardEnv {
+interface Env extends VerifyEnv {
   ASSETS: Fetcher;
-  DATABASE_URL?: string;
-  EMAIL?: SendEmail; // Cloudflare Email Sending, from hello@launchwright.app
   ADMIN_TOKEN?: string; // secret; enables /api/admin/* (unset = those routes 404)
 }
 
 const PILOT_SEATS = 10;
-// At most this many acknowledgement emails per hour, so a flood of fake signups
-// can't use us to email strangers. Applications are still saved past the cap.
+// At most this many acknowledgement emails per hour. Applicants have verified their
+// email by now, so this is a backstop. Applications are still saved past the cap.
 const ACKS_PER_HOUR = 30;
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_BODY = 8192; // the pilot questionnaire (src/pages/pilot.astro) fits well under this
-
-const SECURITY_HEADERS = {
-  "x-content-type-options": "nosniff",
-  "cache-control": "no-store",
-};
-
-function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8", ...SECURITY_HEADERS, ...extra },
-  });
-}
-
-function clean(value: unknown, max: number): string {
-  return typeof value === "string" ? value.trim().slice(0, max) : "";
-}
-
-async function readBody(req: Request): Promise<{ data: Record<string, unknown>; isForm: boolean } | null> {
-  const length = Number(req.headers.get("content-length") ?? 0);
-  if (length > MAX_BODY) return null;
-  const type = req.headers.get("content-type") ?? "";
-  const text = await req.text();
-  if (text.length > MAX_BODY) return null;
-
-  if (type.includes("application/json")) {
-    try {
-      return { data: JSON.parse(text), isForm: false };
-    } catch {
-      return null;
-    }
-  }
-  if (type.includes("application/x-www-form-urlencoded")) {
-    // Checkbox groups send the same name more than once; keep every value.
-    const data: Record<string, unknown> = {};
-    for (const [k, v] of new URLSearchParams(text)) {
-      const prev = data[k];
-      data[k] = prev === undefined ? v : Array.isArray(prev) ? [...prev, v] : [prev, v];
-    }
-    return { data, isForm: true };
-  }
-  return null;
-}
-
+// The questionnaire. Needs a verified email (worker/verify.ts); the email comes from
+// the session, not the form.
 async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext): Promise<Response> {
   const parsed = await readBody(req);
   if (!parsed) return json({ error: "Invalid request." }, 400);
   const { data, isForm } = parsed;
 
   const done = () =>
-    isForm ? Response.redirect(`${url.origin}/pilot/thanks`, 303) : json({ ok: true });
+    isForm
+      ? seeOther("/pilot/thanks", { "set-cookie": clearSession(url) })
+      : json({ ok: true }, 200, { "set-cookie": clearSession(url) });
+  const unverified = (error: string) =>
+    isForm ? seeOther("/pilot?expired=1") : json({ error, verify: true }, 401);
 
   // Honeypot: bots fill hidden fields. Pretend it worked.
   if (clean(data.website, 200)) return done();
 
-  const email = clean(data.email, 254).toLowerCase();
   const name = clean(data.name, 100);
   const building = clean(data.building, 280);
   const consent = data.consent === true || data.consent === "yes";
   // Everything else from the questionnaire: known choices and short text only.
   const answers = cleanAnswers(data);
 
-  if (!EMAIL_RE.test(email)) return json({ error: "Please check your email address." }, 400);
   if (!consent) return json({ error: "Please give consent to join." }, 400);
+  if (!hasSessionCookie(req)) return unverified("Please verify your email first.");
 
   if (!(await underLimit(req, env))) {
     return json({ error: "Too many tries. Please wait a minute and try again." }, 429, { "retry-after": "60" });
   }
-  const verdict = await verifyTurnstile(data["cf-turnstile-response"], req, env);
-  if (verdict === "misconfigured") {
-    console.error("TURNSTILE_SITEKEY and TURNSTILE_SECRET must both be set");
-    return json({ error: "Applications are paused for a moment. Please try again later." }, 503);
-  }
-  if (verdict === "failed") {
-    return json({
-      error: "We couldn't confirm you're not a bot. Please try again, or email hello@launchwright.app.",
-    }, 403);
-  }
-
   if (!env.DATABASE_URL) {
     return json({ error: "Applications aren't being saved yet. Please check back soon." }, 503);
   }
 
   try {
     const sql = neon(env.DATABASE_URL);
+    const email = await sessionEmail(req, sql);
+    if (!email) return unverified("Your email check has expired. Please verify your email again.");
+
     const rows = await sql`
       insert into waitlist (email, name, building, answers, consent_at)
       values (${email}, ${name || null}, ${building || null}, ${answers ? JSON.stringify(answers) : null}::jsonb, now())
       on conflict (email) do nothing
       returning id
     `;
+    await endSession(sql, email);
     // New applicants get the acknowledgement once. Sending happens after the response,
     // and a failed send never fails the signup.
     const [{ sent }] = rows.length && env.EMAIL
@@ -185,27 +138,58 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
   return json({ error: "Not found." }, 404);
 }
 
+const SITEKEY_PAGES = new Set(["/", "/index.html", "/pilot", "/pilot/", "/pilot/verify"]);
+
+type Route = (req: Request, env: Env, url: URL, ctx: ExecutionContext) => Promise<Response>;
+const POST_ROUTES: Record<string, Route> = {
+  "/api/pilot/code": requestCode,
+  "/api/pilot/verify": checkCode,
+  "/api/waitlist": waitlist,
+};
+
 export default {
   async fetch(req, env, ctx): Promise<Response> {
     const url = new URL(req.url);
 
-    if (url.pathname === "/api/waitlist") {
+    const post = POST_ROUTES[url.pathname];
+    if (post) {
       if (req.method !== "POST") return json({ error: "Method not allowed." }, 405, { allow: "POST" });
       if (crossSite(req, url)) return json({ error: "Forbidden." }, 403);
-      return waitlist(req, env, url, ctx);
+      return post(req, env, url, ctx);
     }
 
     if (url.pathname.startsWith("/api/admin/")) return admin(req, env, url);
 
     if (url.pathname.startsWith("/api/")) return json({ error: "Not found." }, 404);
 
-    // The pilot page gets the Turnstile sitekey for this deployment (test key locally).
-    if (url.pathname === "/pilot" || url.pathname === "/pilot/") {
+    // Pages with a "Send code" form get the Turnstile sitekey for this deployment (test key locally).
+    if (SITEKEY_PAGES.has(url.pathname)) {
       const page = await env.ASSETS.fetch(req);
       const key = env.TURNSTILE_SITEKEY ?? "";
       return new HTMLRewriter()
         .on("[data-turnstile]", { element: (el) => { el.setAttribute("data-sitekey", key); } })
         .transform(page);
+    }
+
+    // The questionnaire needs a verified email. Locally there's no database, so the page
+    // shows without one; sending still needs a session (see waitlist()).
+    if (url.pathname === "/pilot/apply" || url.pathname === "/pilot/apply/") {
+      if (!env.DATABASE_URL) return env.ASSETS.fetch(req);
+      let email: string | null = null;
+      try {
+        email = hasSessionCookie(req) ? await sessionEmail(req, neon(env.DATABASE_URL)) : null;
+      } catch (err) {
+        console.error("pilot session check failed", err);
+      }
+      if (!email) return seeOther(hasSessionCookie(req) ? "/pilot?expired=1" : "/pilot");
+      const verified = email;
+      const page = await new HTMLRewriter()
+        .on("[data-verified]", { element: (el) => { el.removeAttribute("hidden"); } })
+        .on("[data-verified-email]", { element: (el) => { el.setInnerContent(verified); } })
+        .transform(await env.ASSETS.fetch(req));
+      const res = new Response(page.body, page);
+      res.headers.set("cache-control", "private, no-store");
+      return res;
     }
 
     return env.ASSETS.fetch(req);
