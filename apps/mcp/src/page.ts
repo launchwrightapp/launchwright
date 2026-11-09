@@ -80,7 +80,7 @@ const DARK = `--canvas: #050505; --surface: #0d0d0d; --surface-2: #141414; --ink
   --muted: #a3a39d; --line: #2a2a27; --warn: #ff8a5c; --warn-bg: #2e1810; --ok: #4ade80; --focus: #d6ff3d;`;
 
 export const PAGE_CSS = `:root {
-  color-scheme: light; --canvas: #f4f4f1; --surface: #ffffff; --surface-2: #f8f8f6; --ink: #0b0b0b; --on-ink: #ffffff;
+  color-scheme: light; --canvas: #f3f4f6; --surface: #ffffff; --surface-2: #f8f8f6; --ink: #0b0b0b; --on-ink: #ffffff;
   --muted: #62625e; --line: #e6e5e0; --warn: #b4410e; --warn-bg: #fdeae1; --ok: #15803d; --blue: #2a17ff;
   --night: #0b0b0b; --focus: #2a17ff;
 }

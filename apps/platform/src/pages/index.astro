@@ -17,9 +17,9 @@ const connected = connections.filter((c) => c.on).length;
 
 // Tailwind only generates classes it can see written out in full.
 const cols: Record<number, string> = { 3: "grid-cols-3", 4: "grid-cols-4", 8: "grid-cols-8" };
-const card = "rounded-xl border border-line bg-surface p-5 dark:bg-surface-2";
+const card = "rounded-xl border border-line bg-surface p-4 dark:bg-surface-2";
 const level = "text-[12px] font-semibold uppercase tracking-[0.08em] text-muted";
-const stat = "group flex h-full flex-col gap-1 rounded-xl border border-line bg-surface px-4 py-3.5 text-ink no-underline transition hover:border-ink/30 dark:bg-surface-2";
+const stat = "group flex h-full flex-col gap-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-ink no-underline transition hover:border-ink/30 dark:bg-surface-2";
 const kinds: { id: EventKind | "all"; label: string }[] = [
   { id: "all", label: "All" },
   { id: "action", label: "Actions" },
@@ -31,12 +31,12 @@ const kindDot: Record<EventKind, string> = { action: "bg-ok", approval: "bg-oran
 const kindName: Record<EventKind, string> = { action: "Action", approval: "Approval", problem: "Problem", lesson: "Lesson" };
 ---
 <App title="Overview" page="overview">
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-4">
     <!-- Project identity -->
     <div>
       <p class="text-muted">Good afternoon, <span data-user-first>{project.user.first}</span>.</p>
-      <h1 class="mt-0.5 text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.03em]">{project.name}</h1>
-      <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted">
+      <h1 class="mt-0.5 text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.03em]">{project.name}</h1>
+      <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-muted">
         <span>{project.framework}</span><span aria-hidden="true">·</span>
         <span>{project.branch}</span><span aria-hidden="true">·</span>
         <span>{project.stack}</span><span aria-hidden="true">·</span>
@@ -53,7 +53,7 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         <li>
           <a class={stat} href="/readiness">
             <span class="text-[14px] text-muted">Readiness</span>
-            <span class="text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums">{passing}<span class="text-muted">/{checks.length}</span></span>
+            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums">{passing}<span class="text-muted">/{checks.length}</span></span>
             <span class="text-[14px] text-muted">checks passed</span>
           </a>
         </li>
@@ -74,14 +74,14 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         <li>
           <a class={stat} href="/security">
             <span class="text-[14px] text-muted">Accounts</span>
-            <span class="text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums">{connected}<span class="text-muted">/{connections.length}</span></span>
+            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums">{connected}<span class="text-muted">/{connections.length}</span></span>
             <span class="text-[14px] text-muted">connected</span>
           </a>
         </li>
       </ul>
 
       <!-- The one thing to do next -->
-      <section id="next-up" class="grid scroll-mt-4 grid-cols-1 gap-5 rounded-[14px] bg-blue p-5 text-white @4xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] @4xl:p-6" aria-labelledby="next-title">
+      <section id="next-up" class="grid scroll-mt-4 grid-cols-1 gap-4 rounded-xl bg-blue p-4 text-white @4xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] @4xl:p-5" aria-labelledby="next-title">
         <div class="flex flex-col gap-3">
           <p class="flex flex-wrap items-center gap-2">
             <span class="tag bg-white text-night">Next up</span>
@@ -89,7 +89,7 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
           </p>
           <h3 id="next-title" class="text-[clamp(1.375rem,2.2vw,1.75rem)] font-bold leading-tight tracking-[-0.02em]">Fix {next.name.replace(/^./, (c) => c.toLowerCase())}</h3>
           <p class="text-white/90"><Explain simple={next.simple} tech={next.tech} /></p>
-          <p class="text-[15px] text-white/75"><b class="font-semibold text-white">Why it matters:</b> {next.why}</p>
+          <p class="text-[14px] text-white/75"><b class="font-semibold text-white">Why it matters:</b> {next.why}</p>
         </div>
         <div class="flex flex-col gap-3">
           <CopyBox tone="dark" label="Paste this into your AI tool" text={next.fix!.prompt} />
@@ -108,42 +108,42 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         <!-- Approval -->
         <div id="approval" class:list={[card, "scroll-mt-4 border-orange/40 @3xl:col-span-2 @6xl:col-span-1"]}>
           <div class="flex items-center justify-between gap-3">
-            <h3 class="text-lg font-semibold">Needs your approval</h3>
+            <h3 class="text-base font-semibold">Needs your approval</h3>
             <span class="tag tag-warn">Waiting · {approval.ago}</span>
           </div>
-          <p class="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{approval.title}</p>
-          <p class="text-[15px] text-muted">Asked by <b class="text-ink">{approval.client}</b> via <code>{approval.tool}</code></p>
-          <dl class="mt-3 flex flex-col gap-2.5 text-[15px]">
+          <p class="mt-1.5 text-[16px] font-semibold tracking-[-0.01em]">{approval.title}</p>
+          <p class="text-[14px] text-muted">Asked by <b class="text-ink">{approval.client}</b> via <code>{approval.tool}</code></p>
+          <dl class="mt-3 flex flex-col gap-2.5 text-[14px]">
             <div><dt class="font-semibold">What it does</dt><dd class="text-muted"><Explain simple={approval.simple} tech={approval.tech} /></dd></div>
             <div><dt class="font-semibold">Why we ask</dt><dd class="text-muted">It deletes data. Launchwright always asks you before anything that can't be undone.</dd></div>
             <div><dt class="font-semibold">If you approve</dt><dd class="text-muted">The change runs on production and is saved to your audit log.</dd></div>
           </dl>
-          <pre id="approval-diff" hidden class="term mt-3 rounded-lg bg-warn-bg px-4 py-3 text-warn">{approval.diff}</pre>
+          <pre id="approval-diff" hidden class="term mt-3 rounded-lg bg-warn-bg px-4 py-2.5 text-warn">{approval.diff}</pre>
           <div class="mt-3 flex flex-wrap gap-2">
             <button class="btn btn-sm flex-1" type="button" value="approve" data-decide="decision-status">Approve</button>
             <button class="btn btn-sm btn-outline flex-1" type="button" data-toggle="approval-diff" aria-controls="approval-diff" aria-expanded="false">Inspect change</button>
             <button class="btn btn-sm btn-outline flex-1" type="button" value="reject" data-decide="decision-status">Reject</button>
           </div>
-          <p id="decision-status" class="mt-3 text-[15px] text-muted empty:hidden" role="status"></p>
+          <p id="decision-status" class="mt-3 text-[14px] text-muted empty:hidden" role="status"></p>
         </div>
 
         <!-- Readiness -->
         <div class={card}>
           <div class="flex items-start justify-between gap-3">
-            <h3 id="checks-title" class="text-lg font-semibold">Readiness checks</h3>
-            <a class="text-[15px] font-medium text-muted hover:text-ink" href="/readiness">All details</a>
+            <h3 id="checks-title" class="text-base font-semibold">Readiness checks</h3>
+            <a class="text-[14px] font-medium text-muted hover:text-ink" href="/readiness">All details</a>
           </div>
           <p class="mt-2.5 flex flex-wrap gap-1.5">
             <span class="tag tag-ok"><Check class="size-3.5" />{passing} passed</span>
             <span class="tag tag-bad">{failing} failed</span>
             <span class="tag tag-line">{notStarted} not started</span>
           </p>
-          <ul class:list={["mt-4 grid gap-1 @2xl:gap-2", cols[8]]} aria-labelledby="checks-title">
+          <ul class:list={["mt-3 grid gap-1 @2xl:gap-2", cols[8]]} aria-labelledby="checks-title">
             {checks.map((c) => (
               <li>
                 <a href={`/readiness#check-${c.id}`} class="group flex flex-col items-center gap-2 text-ink no-underline" aria-label={`${c.name}: ${c.status === "pass" ? "passed" : c.status === "fail" ? "failed" : "not started"}`}>
                   <span class:list={[
-                    "block h-16 w-full max-w-7 rounded-full transition group-hover:opacity-80",
+                    "block h-12 w-full max-w-7 rounded-full transition group-hover:opacity-80",
                     c.status === "pass" && "bg-ok",
                     c.status === "fail" && "bg-bad",
                     c.status === "pending" && "border-2 border-dashed border-line",
@@ -159,12 +159,12 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         <div class={card}>
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h3 class="text-lg font-semibold">Lesson progress</h3>
-              <p class="text-[15px] text-muted">{modulesDone} of {modules.length} Level 1 modules · {conceptsCovered} concepts covered</p>
+              <h3 class="text-base font-semibold">Lesson progress</h3>
+              <p class="text-[14px] text-muted">{modulesDone} of {modules.length} Level 1 modules · {conceptsCovered} concepts covered</p>
             </div>
-            <a class="text-[15px] font-medium text-muted hover:text-ink" href="/lessons">Lessons</a>
+            <a class="text-[14px] font-medium text-muted hover:text-ink" href="/lessons">Lessons</a>
           </div>
-          <ul class="mt-4 flex flex-col gap-2">
+          <ul class="mt-3 flex flex-col gap-2">
             {modules.map((m) => (
               <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.25rem] items-center gap-3">
                 <span class:list={["truncate text-[14px]", m.status === "next" ? "text-muted" : "text-ink", m.status === "current" && "font-semibold"]}>{m.name}</span>
@@ -192,14 +192,14 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
       <div class="rounded-xl border border-line bg-surface dark:bg-surface-2">
         <ol id="activity-list" class="flex flex-col">
           {events.map((e) => (
-            <li data-kind={e.kind} class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-5 py-3 first:border-t-0">
+            <li data-kind={e.kind} class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2.5 first:border-t-0">
               <span class:list={["mt-2 size-2 rounded-full", kindDot[e.kind]]} aria-hidden="true"></span>
               <span><span class="sr-only">{kindName[e.kind]}: </span><Explain simple={e.simple} tech={e.tech} /></span>
               <span class="text-[14px] tabular-nums text-muted">{e.time}</span>
             </li>
           ))}
         </ol>
-        <p data-filter-empty hidden class="px-5 py-3 text-[15px] text-muted">Nothing here yet.</p>
+        <p data-filter-empty hidden class="px-4 py-2.5 text-[14px] text-muted">Nothing here yet.</p>
       </div>
       <p class="hidden text-[14px] text-muted lg:block">The exact tool calls are in the panel below.</p>
     </section>

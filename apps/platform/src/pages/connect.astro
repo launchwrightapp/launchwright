@@ -1,6 +1,5 @@
 ---
 import App from "../layouts/App.astro";
-import Explain from "../components/Explain.astro";
 import CopyBox from "../components/CopyBox.astro";
 
 // Sample: the MCP server isn't live yet. URL and commands show the planned setup.
@@ -20,39 +19,36 @@ const steps = [
   <div class="flex flex-col gap-4">
     <div>
       <p class="flex items-center gap-2"><span class="label">Connect AI tool</span><span class="tag tag-line">Sample</span></p>
-      <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">Keep using the AI tool you have</h1>
-      <p class="mt-1 max-w-[70ch] text-muted">
-        <Explain simple="Launchwright plugs into Claude Code, Cursor, or Codex. You keep your own subscription. We add the lessons and the safety checks." tech={`Remote MCP server over Streamable HTTP at ${url}. OAuth 2.1 sign-in; tools: project_status, check_readiness, deploy, set_secret, get_logs, and more.`} />
-      </p>
+      <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Keep using the AI tool you have</h1>
     </div>
 
     <ol class="grid grid-cols-1 gap-3 @3xl:grid-cols-3">
       {steps.map((s, i) => (
-        <li class="card rounded-xl flex flex-col gap-1.5 p-5">
-          <span class="grid size-9 place-items-center rounded-full bg-ink text-[15px] font-semibold text-on-ink">{i + 1}</span>
-          <p class="text-lg font-semibold">{s.t}</p>
+        <li class="card rounded-xl flex flex-col gap-1.5 p-4">
+          <span class="grid size-9 place-items-center rounded-full bg-ink text-[14px] font-semibold text-on-ink">{i + 1}</span>
+          <p class="text-base font-semibold">{s.t}</p>
           <p class="text-muted">{s.d}</p>
         </li>
       ))}
     </ol>
 
     <div class="card rounded-xl p-0">
-      <div role="tablist" aria-label="AI tool" data-tabs class="tabs px-5 pt-5">
+      <div role="tablist" aria-label="AI tool" data-tabs class="tabs px-4 pt-4">
         {tools.map((t, i) => (
           <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">{t.label}</button>
         ))}
       </div>
       {tools.map((t) => (
-        <div id={`panel-${t.id}`} role="tabpanel" aria-labelledby={`tab-${t.id}`} class="flex flex-col gap-4 p-5">
+        <div id={`panel-${t.id}`} role="tabpanel" aria-labelledby={`tab-${t.id}`} class="flex flex-col gap-4 p-4">
           <CopyBox label={t.where} text={t.text} />
-          <p class="text-[15px] text-muted">Then restart {t.label}. You'll see <code>launchwright</code> in its list of tools.</p>
+          <p class="text-[14px] text-muted">Then restart {t.label}. You'll see <code>launchwright</code> in its list of tools.</p>
         </div>
       ))}
     </div>
 
-    <div class="card rounded-xl flex flex-wrap items-center justify-between gap-4 p-6">
+    <div class="card rounded-xl flex flex-wrap items-center justify-between gap-4 p-4">
       <div>
-        <p class="text-lg font-semibold">Waiting for your first connection</p>
+        <p class="text-base font-semibold">Waiting for your first connection</p>
         <p class="text-muted">This page updates on its own once your AI tool connects.</p>
       </div>
       <span class="tag tag-line"><span class="size-2 rounded-full bg-muted" aria-hidden="true"></span>Not connected yet</span>

@@ -1,57 +1,101 @@
 ---
 // Pilot applicants (team only; the worker returns 404 for everyone else).
 import App from "../layouts/App.astro";
+
+import { OPTIONS } from "../../../site/worker/options";
+import Dropdown from "../../../../packages/ui/Dropdown.astro";
+import { seg, segGroup, control, toolbar, searchIcon } from "../data/ui";
+
+const statuses = [
+  { id: "waiting", label: "Waiting" },
+  { id: "accepted", label: "Accepted" },
+  { id: "all", label: "All" },
+];
+const columns = [
+  { id: "name", label: "Name", hide: "" },
+  { id: "email", label: "Email", hide: "hidden @2xl:table-cell" },
+  { id: "building", label: "Building", hide: "hidden @4xl:table-cell" },
+  { id: "applied", label: "Applied", hide: "hidden @xl:table-cell" },
+  { id: "status", label: "Status", hide: "" },
+];
+
+const sections = [
+  { id: "about", label: "About you" },
+  { id: "experience", label: "Experience" },
+  { id: "project", label: "Your project" },
+  { id: "goals", label: "Goals" },
+];
 ---
 <App title="Applicants" page="applicants">
   <script src="../scripts/applicants.ts"></script>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col gap-4">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="label">Operations</p>
-        <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">Pilot applicants</h1>
-        <p class="mt-1 max-w-[70ch] text-muted">Everyone who applied at launchwright.app. Accepting sends the "You're in" email from hello@launchwright.app.</p>
+        <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Pilot applicants</h1>
       </div>
-      <p data-seats class="tag tag-line text-[15px]" aria-live="polite">Loading seats…</p>
+      <p data-seats class="tag tag-line text-[14px]" aria-live="polite">Loading seats…</p>
     </div>
 
-    <p class="rounded-xl border border-line bg-warn-bg px-4 py-3 text-[15px] text-warn">The acceptance email says people can start right away. Accept only once the workspace works end to end.</p>
-
-    <div role="tablist" aria-label="Filter applicants" data-filter class="tabs">
-      <button type="button" role="tab" aria-selected="true" data-show="waiting" class="tab">Waiting <span data-count="waiting" class="count"></span></button>
-      <button type="button" role="tab" aria-selected="false" data-show="accepted" class="tab">Accepted <span data-count="accepted" class="count"></span></button>
-      <button type="button" role="tab" aria-selected="false" data-show="all" class="tab">All <span data-count="all" class="count"></span></button>
-    </div>
-
-    <p data-applicants-empty hidden class="rounded-xl border border-dashed border-line px-5 py-6 text-muted"></p>
-    <div class="overflow-x-auto rounded-xl border border-line bg-surface">
-      <table class="w-full border-collapse text-left text-[15px]">
-        <thead class="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
+    <!-- One card: toolbar (status, filters, search), then the table. -->
+    <!-- No overflow-hidden here: it would clip the filter menus. The toolbar rounds its own top corners. -->
+    <div class="rounded-md border border-line bg-surface dark:bg-surface-2">
+      <div class:list={[toolbar, "relative z-10 rounded-t-md"]}>
+        <div role="group" aria-label="Status" data-filter class={segGroup}>
+          {statuses.map((s, i) => (
+            <button type="button" data-show={s.id} aria-pressed={i === 0 ? "true" : "false"} class={seg}>{s.label} <span data-count={s.id} class="tabular-nums text-muted"></span></button>
+          ))}
+        </div>
+        <Dropdown id="filter-role" name="applicants-role" label="Role" size="sm" align="left" value="" options={[{ value: "", label: "Any" }, ...OPTIONS.role.map(([value, label]) => ({ value, label }))]} />
+        <Dropdown id="filter-stage" name="applicants-stage" label="Stage" size="sm" align="left" value="" options={[{ value: "", label: "Any" }, ...OPTIONS.stage.map(([value, label]) => ({ value, label }))]} />
+        <div class="relative ml-auto w-full @2xl:w-64">
+          <label class="sr-only" for="applicant-search">Search applicants</label>
+          <Fragment set:html={searchIcon} />
+          <input id="applicant-search" type="search" data-search placeholder="Search name, email, project…" autocomplete="off" class={`${control} w-full pl-8`} />
+        </div>
+      </div>
+      <div class="overflow-x-auto rounded-b-md">
+      <table class="w-full border-collapse text-left text-[14px]">
+        <thead class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
           <tr class="border-b border-line">
-            <th scope="col" class="px-3 py-3 @xl:px-5 font-semibold">Name</th>
-            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @2xl:table-cell">Email</th>
-            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @4xl:table-cell">Building</th>
-            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @xl:table-cell">Applied</th>
-            <th scope="col" class="px-3 py-3 @xl:px-5 font-semibold">Status</th>
-            <th scope="col" class="px-3 py-3 @xl:px-5"><span class="sr-only">Details</span></th>
+            {columns.map((c) => (
+              <th scope="col" data-col={c.id} aria-sort={c.id === "applied" ? "descending" : undefined} class:list={["px-3 py-2 @xl:px-4 font-semibold", c.hide]}>
+                <button type="button" data-sort={c.id} class="group inline-flex items-center gap-1 uppercase tracking-[0.06em] hover:text-ink">
+                  {c.label}<span data-sort-icon class="text-[10px] opacity-0 group-hover:opacity-60" aria-hidden="true">▲</span>
+                </button>
+              </th>
+            ))}
+            <th scope="col" class="px-3 py-2 @xl:px-4"><span class="sr-only">Details</span></th>
           </tr>
         </thead>
         <tbody data-applicants aria-busy="true" aria-live="polite"></tbody>
       </table>
+      </div>
     </div>
   </div>
 
   <dialog data-sheet aria-labelledby="sheet-title" class="sheet">
-    <div class="mx-auto flex w-full flex-col gap-5 px-5 pb-8 pt-3 md:px-10">
+    <div class="mx-auto flex w-full flex-col gap-4 px-4 pb-8 pt-3 md:px-10">
       <span class="mx-auto h-1.5 w-12 rounded-full bg-line" aria-hidden="true"></span>
       <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1">
           <h2 id="sheet-title" data-sheet-name class="truncate text-2xl font-bold tracking-[-0.01em]"></h2>
-          <p data-sheet-meta class="break-words text-[15px] text-muted"></p>
+          <p data-sheet-meta class="break-words text-[14px] text-muted"></p>
         </div>
         <span data-sheet-status class="tag flex-none text-[13px]"></span>
-        <button type="button" data-sheet-close aria-label="Close" class="grid size-10 flex-none cursor-pointer place-items-center rounded-full border border-line text-xl leading-none hover:border-ink">&times;</button>
+        <button type="button" data-sheet-close aria-label="Close" class="grid size-8 flex-none cursor-pointer place-items-center rounded-md border border-line text-xl leading-none hover:border-ink">&times;</button>
       </div>
-      <dl data-sheet-answers class="grid grid-cols-1 gap-x-6 gap-y-1 text-[15px] md:grid-cols-[minmax(10rem,auto)_minmax(0,1fr)]"></dl>
+      <!-- Same steps as the pilot form (apps/site/src/pages/pilot/apply.astro). -->
+      <div>
+        <div role="tablist" aria-label="Application" data-tabs class="tabs">
+          {sections.map((s, i) => (
+            <button type="button" role="tab" id={`sheet-tab-${s.id}`} aria-controls={`sheet-panel-${s.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">{s.label}</button>
+          ))}
+        </div>
+        {sections.map((s) => (
+          <dl id={`sheet-panel-${s.id}`} role="tabpanel" aria-labelledby={`sheet-tab-${s.id}`} data-sheet-section={s.id} class="grid min-h-32 grid-cols-1 content-start gap-x-6 gap-y-1 pt-4 text-[14px] md:grid-cols-[minmax(10rem,auto)_minmax(0,1fr)]"></dl>
+        ))}
+      </div>
       <div class="flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <button type="button" data-sheet-accept class="btn btn-sm"></button>
         <p data-sheet-note role="status" class="text-[14px] text-muted"></p>

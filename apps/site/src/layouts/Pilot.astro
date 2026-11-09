@@ -33,7 +33,7 @@ const state = (i: number) => (i + 1 < part ? "done" : i + 1 === part ? "current"
         <slot name="side" />
       </div>
 
-      <div class="overflow-hidden rounded-[32px] border border-line bg-surface shadow-2xl shadow-black/[0.05]">
+      <div class="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/[0.05]">
         <!-- The journey: three parts, this page highlighted -->
         <ol class="flex items-center gap-2 border-b border-line bg-surface-2/60 px-6 py-4 md:px-10" aria-label="Application progress">
           {parts.map((p, i) => (

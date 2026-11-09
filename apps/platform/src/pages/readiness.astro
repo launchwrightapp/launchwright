@@ -15,10 +15,7 @@ const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], p
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="label">Readiness</p>
-        <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">{passing} of {checks.length} checks passed</h1>
-        <p class="mt-1 max-w-[70ch] text-muted">
-          <Explain simple="These are the things real teams check before they call an app production-ready. Fix them one at a time." tech="Checks run in GitHub Actions on your repo (run #48, 13:48). Results are read back over the GitHub API." />
-        </p>
+        <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">{passing} of {checks.length} checks passed</h1>
       </div>
       <button class="btn btn-sm" type="button">Run checks again</button>
     </div>
@@ -27,7 +24,7 @@ const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], p
       {sorted.map((c) => (
         <li id={`check-${c.id}`} class="scroll-mt-28">
           <details class="card rounded-xl group p-0" open={c.status !== "pass"}>
-            <summary class="flex cursor-pointer items-center gap-4 px-5 py-3.5">
+            <summary class="flex cursor-pointer items-center gap-4 px-4 py-2.5">
               <span class:list={["grid size-9 flex-none place-items-center rounded-full", c.status === "pass" ? "bg-ok-bg text-ok" : c.status === "fail" ? "bg-warn-bg text-warn" : "bg-surface-3 text-muted"]} aria-hidden="true">
                 {c.status === "pass" ? <Check class="size-4" /> : c.status === "fail" ? "!" : "–"}
               </span>
@@ -35,7 +32,7 @@ const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], p
               <span class={tag[c.status][0]}>{tag[c.status][1]}</span>
               <svg class="size-5 flex-none text-muted transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </summary>
-            <div class="grid grid-cols-1 gap-6 border-t border-line px-5 py-4 @3xl:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4 border-t border-line px-4 py-2.5 @3xl:grid-cols-2">
               <div class="flex flex-col gap-4">
                 <div>
                   <p class="label">What we checked</p>
@@ -47,14 +44,14 @@ const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], p
                 </div>
               </div>
               {c.fix ? (
-                <div class="flex flex-col gap-4 rounded-[14px] bg-surface p-5">
+                <div class="flex flex-col gap-4 rounded-xl bg-surface p-4">
                   <p class="label">How to fix</p>
                   <p>{c.fix.simple}</p>
                   <CopyBox label="Paste into your AI tool" text={c.fix.prompt} />
-                  <p class="text-[15px] text-muted">Or run the tool directly: <code>{c.fix.command}</code></p>
+                  <p class="text-[14px] text-muted">Or run the tool directly: <code>{c.fix.command}</code></p>
                 </div>
               ) : (
-                <div class="flex items-start gap-3 rounded-[14px] bg-surface p-5 text-muted">
+                <div class="flex items-start gap-3 rounded-xl bg-surface p-4 text-muted">
                   <Check class="mt-1 size-4 text-ok" />
                   <p>Nothing to do. We'll check again on every push.</p>
                 </div>

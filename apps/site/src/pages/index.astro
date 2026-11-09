@@ -238,7 +238,7 @@ const faq = [
         </svg>
         {heroPath.map((t, i) => (
           <span class:list={["absolute -translate-x-1/2 -translate-y-1/2", t.pos]}>
-            <span class:list={["float grid place-items-center", `float-${i}`, t.main ? "size-14 rounded-[18px] bg-blue text-white shadow-[0_14px_36px_-6px_rgb(42_23_255/0.55)] sm:size-[72px] sm:rounded-[22px]" : "size-10 rounded-[14px] bg-surface text-blue shadow-[0_10px_28px_-10px_rgb(42_23_255/0.35),0_0_0_1px_rgb(42_23_255/0.06)] sm:size-14 sm:rounded-[16px] dark:bg-surface-2 dark:text-[#9a90ff] dark:shadow-[0_10px_28px_-10px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.08)]"]}>
+            <span class:list={["float grid place-items-center", `float-${i}`, t.main ? "size-14 rounded-xl bg-blue text-white shadow-[0_14px_36px_-6px_rgb(42_23_255/0.55)] sm:size-[72px] sm:rounded-xl" : "size-10 rounded-xl bg-surface text-blue shadow-[0_10px_28px_-10px_rgb(42_23_255/0.35),0_0_0_1px_rgb(42_23_255/0.06)] sm:size-14 sm:rounded-xl dark:bg-surface-2 dark:text-[#9a90ff] dark:shadow-[0_10px_28px_-10px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.08)]"]}>
               <svg class:list={[t.main ? "size-7 sm:size-9" : "size-5 sm:size-7"]} viewBox="0 0 24 24" fill={t.fill ? "currentColor" : "none"} stroke={t.fill ? "none" : "currentColor"} stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{t.d.map((d) => <path d={d} />)}</svg>
             </span>
           </span>
@@ -254,7 +254,7 @@ const faq = [
         <p class="text-[21px] text-white/65" data-reveal>Build, verify, learn, launch. Every pass through the loop makes your app safer and you more confident.</p>
       </div>
 
-      <div class="mt-12 overflow-hidden rounded-[44px] bg-[#111] text-white shadow-2xl shadow-black/40 ring-1 ring-white/10" data-reveal>
+      <div class="mt-12 overflow-hidden rounded-3xl bg-[#111] text-white shadow-2xl shadow-black/40 ring-1 ring-white/10" data-reveal>
         <!-- Title bar -->
         <div class="flex items-center gap-2 border-b border-white/10 px-5 py-3.5">
           <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
@@ -347,7 +347,7 @@ const faq = [
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-reveal>
 
         <!-- Tool call -->
-        <div class="flex sm:min-h-[340px] flex-col gap-6 rounded-[44px] bg-blue p-8 text-white">
+        <div class="flex sm:min-h-[340px] flex-col gap-6 rounded-3xl bg-blue p-8 text-white">
           <div class="flex items-center justify-between gap-3">
             <p class="text-[22px] font-semibold tracking-tight">Every step teaches</p>
           </div>
@@ -366,7 +366,7 @@ const faq = [
         </div>
 
         <!-- Readiness -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-lime p-8 text-night">
+        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-lime p-8 text-night">
           <div class="flex items-center justify-between gap-3">
             <p class="text-[22px] font-semibold tracking-tight">Readiness checks</p>
           </div>
@@ -378,7 +378,7 @@ const faq = [
         </div>
 
         <!-- Lessons -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-surface-3 p-8 text-ink">
+        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-surface-3 p-8 text-ink">
           <p class="text-[22px] font-semibold tracking-tight">Lessons</p>
           <ul class="mt-6 grid gap-2 sm:mt-auto">
             {[["Env & secrets", "Done", "opacity-60"], ["Preview deploys", "Now", "shadow-lg shadow-black/5 ring-1 ring-line"], ["Rollback", "Next", "opacity-60"]].map(([t, st, cls]) => (
@@ -391,7 +391,7 @@ const faq = [
         </div>
 
         <!-- Level 1 -->
-        <div class="flex sm:min-h-[340px] flex-col rounded-[44px] bg-orange p-8 text-white">
+        <div class="flex sm:min-h-[340px] flex-col rounded-3xl bg-orange p-8 text-white">
           <p class="text-[22px] font-semibold tracking-tight">Skills learned</p>
           <p class="mt-6 text-[clamp(6rem,24vw,8rem)] sm:mt-auto font-bold leading-[0.85] tracking-[-0.035em]">5<span class="opacity-40">/8</span></p>
           <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/25" aria-hidden="true"><div class="h-full w-5/8 rounded-full bg-white"></div></div>
@@ -425,7 +425,7 @@ const faq = [
 
       <ol class="mt-5 grid gap-3 max-xl:mt-12 md:grid-cols-2 xl:grid-cols-4">
         {stages.map((s) => (
-          <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-[40px] border border-line bg-surface">
+          <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-3xl border border-line bg-surface">
             <div class="flex flex-col gap-3 border-b border-line p-7">
               <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">{s.n} /</span> {s.name}</h3>
               <p class="text-[17px] text-pretty text-muted">{s.blurb}</p>
@@ -443,7 +443,7 @@ const faq = [
           </li>
         ))}
 
-        <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-[40px] border border-dashed border-line bg-surface-2">
+        <li class="row-span-2 grid grid-rows-subgrid gap-0 overflow-hidden rounded-3xl border border-dashed border-line bg-surface-2">
           <div class="flex flex-col gap-3 border-b border-line p-7">
             <h3 class="text-[2rem] font-bold leading-tight tracking-[-0.015em]"><span class="text-muted">L2 /</span> Your own VPS</h3>
             <p class="text-[17px] text-pretty text-muted">Later: run apps on a server you control.</p>
@@ -467,7 +467,7 @@ const faq = [
         <p class="text-[21px] leading-relaxed text-muted lg:pb-2">Eight checks run in GitHub Actions on your own repo. Each one tells you what's wrong, why it matters, and how to fix it with your AI tool.</p>
       </div>
 
-      <div class="mt-12 overflow-hidden rounded-[40px] border border-line bg-surface shadow-xl shadow-black/[0.04]">
+      <div class="mt-12 overflow-hidden rounded-3xl border border-line bg-surface shadow-xl shadow-black/[0.04]">
         <!-- Title bar -->
         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-5 py-3.5">
           <span class="size-3 rounded-full bg-[#ff5f57]" aria-hidden="true"></span>
@@ -492,7 +492,7 @@ const faq = [
             </p>
           </div>
           {fail && (
-            <div class="flex flex-col gap-4 rounded-[32px] bg-surface p-6 text-ink md:p-7">
+            <div class="flex flex-col gap-4 rounded-3xl bg-surface p-6 text-ink md:p-7">
               <div class="flex flex-wrap items-center gap-3">
                 <span class="tag tag-warn">Action needed</span>
                 <span class="text-[15px] text-muted"><code>{fail.affected}</code></span>
@@ -590,7 +590,7 @@ const faq = [
             ["Your infrastructure", "Your GitHub, Cloudflare, and database. We never host your app."],
             ["Your approval", "Anything risky waits for you. Every action is logged."],
           ].map(([t, d], i) => (
-            <li class="flex gap-4 rounded-[28px] border border-line p-6">
+            <li class="flex gap-4 rounded-2xl border border-line p-6">
               <span class="grid size-9 flex-none place-items-center rounded-full bg-ink text-[14px] font-bold text-on-ink">{i + 1}</span>
               <div>
                 <p class="text-[19px] font-semibold">{t}</p>
@@ -601,12 +601,12 @@ const faq = [
         </ul>
 
         <!-- One dashboard window that shows every promise at once -->
-        <figure class="m-0 overflow-hidden rounded-[28px] border border-line bg-canvas shadow-2xl shadow-black/[0.08]" data-reveal>
+        <figure class="m-0 overflow-hidden rounded-2xl border border-line bg-canvas shadow-2xl shadow-black/[0.08]" data-reveal>
           <!-- Same shell as the platform: title bar, activity bar, explorer, editor tab, status bar -->
           <div class="flex h-12 items-center gap-3 bg-night px-4 text-white">
             <span class="logo inline-flex items-center gap-[0.3em] text-[17px] text-white"><Mark class="h-[0.95em] w-auto" />launchwright</span>
             <span class="hidden truncate text-[14px] text-white/55 sm:inline">/ my-first-app / <span class="text-white/85">Security</span></span>
-            <span class="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-[13px] text-white/80">Sample</span>
+            <span class="ml-auto rounded-md bg-white/10 px-2.5 py-0.5 text-[13px] text-white/80">Sample</span>
             <span class="grid size-7 place-items-center rounded-full bg-lime text-[11px] font-semibold text-night" aria-hidden="true">JD</span>
           </div>
 
@@ -666,14 +666,14 @@ const faq = [
                     class="-mb-px flex flex-none cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 pb-3 pt-1 text-[16px] font-medium text-muted hover:text-ink max-sm:px-2 aria-selected:border-ink aria-selected:text-ink"
                   >
                     {label}
-                    {badge && <span class="rounded-full bg-warn-bg px-2 text-[13px] font-semibold text-warn">{badge}</span>}
+                    {badge && <span class="rounded-md bg-warn-bg px-2 text-[13px] font-semibold text-warn">{badge}</span>}
                   </button>
                 ))}
               </div>
 
               <div class="lg:min-h-[330px]">
                 <!-- Accounts -->
-                <div role="tabpanel" id="sec-panel-accounts" aria-labelledby="sec-tab-accounts" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                <div role="tabpanel" id="sec-panel-accounts" aria-labelledby="sec-tab-accounts" data-panel class="flex min-w-0 flex-col rounded-2xl border border-line bg-surface">
                   <header class="border-b border-line px-5 py-4">
                     <p class="font-semibold">Connected accounts</p>
                     <p class="text-[15px] text-muted">Your app runs here. It stays yours, even if you leave.</p>
@@ -692,7 +692,7 @@ const faq = [
                 </div>
 
                 <!-- Secrets -->
-                <div role="tabpanel" id="sec-panel-secrets" aria-labelledby="sec-tab-secrets" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                <div role="tabpanel" id="sec-panel-secrets" aria-labelledby="sec-tab-secrets" data-panel class="flex min-w-0 flex-col rounded-2xl border border-line bg-surface">
                   <header class="border-b border-line px-5 py-4">
                     <p class="font-semibold">Secrets</p>
                     <p class="text-[15px] text-muted">Encrypted. Your AI can use them, never read them.</p>
@@ -710,7 +710,7 @@ const faq = [
                 </div>
 
                 <!-- Approval -->
-                <div role="tabpanel" id="sec-panel-approvals" aria-labelledby="sec-tab-approvals" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                <div role="tabpanel" id="sec-panel-approvals" aria-labelledby="sec-tab-approvals" data-panel class="flex min-w-0 flex-col rounded-2xl border border-line bg-surface">
                   <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
                     <div><p class="font-semibold">Needs your approval</p><p class="text-[15px] text-muted">Risky actions wait for you.</p></div>
                     <span class="tag tag-warn">1 pending</span>
@@ -728,7 +728,7 @@ const faq = [
                 </div>
 
                 <!-- Audit log -->
-                <div role="tabpanel" id="sec-panel-audit" aria-labelledby="sec-tab-audit" data-panel class="flex min-w-0 flex-col rounded-[24px] border border-line bg-surface">
+                <div role="tabpanel" id="sec-panel-audit" aria-labelledby="sec-tab-audit" data-panel class="flex min-w-0 flex-col rounded-2xl border border-line bg-surface">
                   <header class="border-b border-line px-5 py-4">
                     <p class="font-semibold">Audit log</p>
                     <p class="text-[15px] text-muted">Every tool call: what ran, when, and what it touched.</p>
@@ -755,7 +755,7 @@ const faq = [
             <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime"></span>Live · a41f9c2</span>
             <span>7/8 checks</span>
             <span>1 approval waiting</span>
-            <span class="ml-auto rounded-full bg-white/15 px-2">Sample data</span>
+            <span class="ml-auto rounded-md bg-white/15 px-2">Sample data</span>
           </div>
         </figure>
         <p class="label text-center">Sample dashboard. Accounts, keys, and logs are examples.</p>
@@ -765,7 +765,7 @@ const faq = [
     <!-- Pilot application -->
     <section id="pilot" aria-labelledby="pilot-title" class="backdrop bg-grid-low gutter scroll-mt-24 border-t border-line bg-surface-2 py-20 md:py-28">
       <!-- One container: the offer, the application, and what happens next -->
-      <div class="overflow-hidden rounded-[40px] border border-line bg-surface shadow-2xl shadow-black/[0.05]" data-reveal>
+      <div class="overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl shadow-black/[0.05]" data-reveal>
         <div class="grid lg:grid-cols-[5fr_6fr]">
           <!-- Offer -->
           <div class="flex flex-col gap-6 border-line bg-surface-2/60 p-7 max-lg:border-b md:p-10 lg:border-r">
