@@ -18,6 +18,49 @@ if (form) {
   const field = (name: string) => form.elements.namedItem(name);
   let current = 1;
 
+  // Turnstile bot check, loaded when the visitor reaches the last step.
+  // "interaction-only" stays invisible unless Cloudflare needs the visitor to click.
+  type Turnstile = {
+    render(el: HTMLElement, o: Record<string, unknown>): string;
+    reset(id: string): void;
+  };
+  const slot = form.querySelector<HTMLElement>("[data-turnstile]");
+  const sitekey = slot?.dataset.sitekey ?? "";
+  let widget: string | undefined;
+  let token = "";
+  let waiting: ((t: string) => void) | undefined;
+  function startTurnstile() {
+    if (!slot || !sitekey || widget !== undefined || document.querySelector("script[data-turnstile-api]")) return;
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    s.async = true;
+    s.dataset.turnstileApi = "";
+    s.addEventListener("load", () => {
+      const ts = (window as unknown as { turnstile: Turnstile }).turnstile;
+      widget = ts.render(slot, {
+        sitekey,
+        action: "pilot",
+        appearance: "interaction-only",
+        callback: (t: string) => { token = t; waiting?.(t); },
+        "expired-callback": () => { token = ""; },
+        "error-callback": () => { token = ""; },
+      });
+    });
+    document.head.appendChild(s);
+  }
+  // Wait for a token, up to 15 seconds.
+  const getToken = () =>
+    token || !sitekey
+      ? Promise.resolve(token)
+      : new Promise<string>((done) => {
+          waiting = done;
+          setTimeout(() => done(token), 15_000);
+        });
+  function resetTurnstile() {
+    token = "";
+    if (widget !== undefined) (window as unknown as { turnstile: Turnstile }).turnstile.reset(widget);
+  }
+
   const show = (msg: string, kind: "err" | "" = "") => {
     statusEl.textContent = msg;
     statusEl.dataset.kind = kind;
@@ -50,7 +93,10 @@ if (form) {
       if (i === n) li.setAttribute("aria-current", "step");
       else li.removeAttribute("aria-current");
     });
-    if (n === last) fillReview();
+    if (n === last) {
+      fillReview();
+      startTurnstile();
+    }
     show("");
     if (focus) {
       const h = steps[n - 1].querySelector<HTMLElement>("h2")!;
@@ -185,6 +231,12 @@ if (form) {
 
     submit.disabled = true;
     show("Sending...");
+    const botToken = await getToken();
+    if (sitekey && !botToken) {
+      show("Still checking you're not a bot. Please try again in a moment.", "err");
+      submit.disabled = false;
+      return;
+    }
     const fd = new FormData(form);
     const data: Record<string, unknown> = {};
     for (const key of new Set(fd.keys())) {
@@ -195,13 +247,14 @@ if (form) {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...data, consent: true }),
+        body: JSON.stringify({ ...data, consent: true, "cf-turnstile-response": botToken }),
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(body.error || "Something went wrong. Please try again.");
       location.assign("/pilot/thanks");
     } catch (err) {
       show((err as Error).message, "err");
+      resetTurnstile(); // tokens work once; get a fresh one for the retry
       submit.disabled = false;
     }
   });

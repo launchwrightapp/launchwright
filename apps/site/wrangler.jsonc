@@ -12,7 +12,7 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/pilot", "/pilot/"]
   },
   "routes": [
     { "pattern": "launchwright.app", "custom_domain": true },
@@ -20,6 +20,13 @@
   ],
   "observability": { "enabled": true },
   // Pilot emails (acknowledgement on signup, acceptance from the admin command).
-  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@launchwright.app"] }]
-  // Secrets (not in this file): DATABASE_URL and ADMIN_TOKEN via `npx wrangler versions secret put <NAME>`
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@launchwright.app"] }],
+  // Pilot form: 5 tries per minute per IP, checked before Turnstile and the database.
+  "ratelimits": [{ "name": "PILOT_LIMIT", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }],
+  "vars": {
+    // Public Turnstile sitekey for the pilot form. `npm run dev` swaps in Cloudflare's test keys.
+    "TURNSTILE_SITEKEY": "REPLACE_WITH_SITEKEY",
+    "TURNSTILE_HOSTNAMES": "launchwright.app,www.launchwright.app"
+  }
+  // Secrets (not in this file): DATABASE_URL, ADMIN_TOKEN, and TURNSTILE_SECRET via `npx wrangler versions secret put <NAME>`
 }

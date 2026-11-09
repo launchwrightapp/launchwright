@@ -1,8 +1,9 @@
 import { neon } from "@neondatabase/serverless";
 import { sendAcknowledgement, sendAcceptance, type Applicant } from "./emails";
 import { cleanAnswers } from "./options";
+import { crossSite, underLimit, verifyTurnstile, type GuardEnv } from "./guard";
 
-interface Env {
+interface Env extends GuardEnv {
   ASSETS: Fetcher;
   DATABASE_URL?: string;
   EMAIL?: SendEmail; // Cloudflare Email Sending, from hello@launchwright.app
@@ -10,6 +11,9 @@ interface Env {
 }
 
 const PILOT_SEATS = 10;
+// At most this many acknowledgement emails per hour, so a flood of fake signups
+// can't use us to email strangers. Applications are still saved past the cap.
+const ACKS_PER_HOUR = 30;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY = 8192; // the pilot questionnaire (src/pages/pilot.astro) fits well under this
@@ -77,6 +81,20 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
   if (!EMAIL_RE.test(email)) return json({ error: "Please check your email address." }, 400);
   if (!consent) return json({ error: "Please give consent to join." }, 400);
 
+  if (!(await underLimit(req, env))) {
+    return json({ error: "Too many tries. Please wait a minute and try again." }, 429, { "retry-after": "60" });
+  }
+  const verdict = await verifyTurnstile(data["cf-turnstile-response"], req, env);
+  if (verdict === "misconfigured") {
+    console.error("TURNSTILE_SITEKEY and TURNSTILE_SECRET must both be set");
+    return json({ error: "Applications are paused for a moment. Please try again later." }, 503);
+  }
+  if (verdict === "failed") {
+    return json({
+      error: "We couldn't confirm you're not a bot. Please try again, or email hello@launchwright.app.",
+    }, 403);
+  }
+
   if (!env.DATABASE_URL) {
     return json({ error: "Applications aren't being saved yet. Please check back soon." }, 503);
   }
@@ -91,7 +109,10 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
     `;
     // New applicants get the acknowledgement once. Sending happens after the response,
     // and a failed send never fails the signup.
-    if (rows.length && env.EMAIL) {
+    const [{ sent }] = rows.length && env.EMAIL
+      ? await sql`select count(*)::int as sent from waitlist where acknowledged_at > now() - interval '1 hour'`
+      : [{ sent: 0 }];
+    if (rows.length && env.EMAIL && sent < ACKS_PER_HOUR) {
       const mail = env.EMAIL;
       ctx.waitUntil(
         sendAcknowledgement(mail, { email, name: name || null, building: building || null })
@@ -170,12 +191,22 @@ export default {
 
     if (url.pathname === "/api/waitlist") {
       if (req.method !== "POST") return json({ error: "Method not allowed." }, 405, { allow: "POST" });
+      if (crossSite(req, url)) return json({ error: "Forbidden." }, 403);
       return waitlist(req, env, url, ctx);
     }
 
     if (url.pathname.startsWith("/api/admin/")) return admin(req, env, url);
 
     if (url.pathname.startsWith("/api/")) return json({ error: "Not found." }, 404);
+
+    // The pilot page gets the Turnstile sitekey for this deployment (test key locally).
+    if (url.pathname === "/pilot" || url.pathname === "/pilot/") {
+      const page = await env.ASSETS.fetch(req);
+      const key = env.TURNSTILE_SITEKEY ?? "";
+      return new HTMLRewriter()
+        .on("[data-turnstile]", { element: (el) => { el.setAttribute("data-sitekey", key); } })
+        .transform(page);
+    }
 
     return env.ASSETS.fetch(req);
   },
