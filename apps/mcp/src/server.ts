@@ -584,7 +584,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
   // ---------------------------------------------------------------- guided lessons (prompts)
   const lesson = (name: string, title: string, description: string, text: (repo: string) => string) =>
     server.registerPrompt(name, { title, description, argsSchema: repoArg }, ({ repo }) => ({
-      messages: [{ role: "user", content: { type: "text", text: `${text(repo)}\n\nGround rules: explain each step in plain words before doing it, wait for me before moving on, and never print or ask me to paste secrets into the chat.` } }],
+      messages: [{ role: "user", content: { type: "text", text: `${text(repo)}\n\nGround rules: explain each step in plain words before doing it, in Taglish (casual Tagalog-English, technical terms in English) unless I write in another language; wait for me before moving on; and never print or ask me to paste secrets into the chat.` } }],
     }));
 
   lesson("lesson-readiness", "Lesson: is my app ready for production?", "Check the repo, then fix the readiness gaps one at a time.", (r) =>
@@ -612,7 +612,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
           role: "user",
           content: {
             type: "text",
-            text: `Help me connect ${provider ? `my ${provider} account` : "my Cloudflare account, then a database (ask me: Neon or Supabase)"} to launchwright for ${repo}. First run launchwright project_status to see what's connected. For each account that isn't: explain what it's for and what least privilege means, then walk me through it one step at a time: I create the key in the provider's own dashboard with only the permissions it needs (explain each one), then I paste it into the secure form at ${config.platformOrigin}/security#accounts. (For Launchwright's Supabase connection I don't create or paste a key: I click Connect on that page and approve the requested access on Supabase.) Never ask me to paste anything here. When I say I'm done, run project_status again to confirm it's connected (without showing any key), then tell me what I can do next.`,
+            text: `Help me connect ${provider ? `my ${provider} account` : "my Cloudflare account, then a database (ask me: Neon or Supabase)"} to launchwright for ${repo}. First run launchwright project_status to see what's connected. For each account that isn't: explain what it's for and what least privilege means, then walk me through it one step at a time: I create the key in the provider's own dashboard with only the permissions it needs (explain each one), then I paste it into the secure form at ${config.platformOrigin}/security#accounts. (For Launchwright's Supabase connection I don't create or paste a key: I click Connect on that page and approve the requested access on Supabase.) Never ask me to paste anything here. When I say I'm done, run project_status again to confirm it's connected (without showing any key), then tell me what I can do next. Explain in Taglish (casual Tagalog-English, technical terms in English) unless I write in another language.`,
           },
         },
       ],
