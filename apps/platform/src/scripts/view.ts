@@ -59,6 +59,9 @@ const greeting = (h = new Date().getHours()) => (h < 12 ? "Good morning" : h < 1
 export function view(me: Me, now = Date.now()) {
   const project = me.projects[0] ?? null;
   const repo = project?.repo ?? "your repo";
+  // Prompt commands as Claude Code takes them: /server:prompt, then the arguments in order,
+  // separated by spaces. The repo comes first; a placeholder until the learner has a project.
+  const slash = (prompt: string, ...args: string[]) => ["/launchwright:" + prompt, project?.repo ?? "owner/repo", ...args].join(" ");
   const fromServer = new Map((project?.checks ?? []).map((c) => [c.id, c]));
   const checks = CHECKS.map((def) => {
     const c = fromServer.get(def.id);
@@ -83,7 +86,8 @@ export function view(me: Me, now = Date.now()) {
       lessonTitle: lesson.title,
       why: lesson.full,
       prompt: def.prompt.replace("REPO", repo),
-      ariaLabel: `${c?.title ?? def.title}: ${STATUS[status] ?? status}`,
+      // Starts with the short name shown under the bar, so the spoken name matches what's on screen.
+      ariaLabel: `${def.short}: ${c?.title ?? def.title}, ${STATUS[status] ?? status}`,
     };
   });
   const order: Record<string, number> = { fail: 0, warn: 1, not_checked: 2, pass: 3, skip: 4 };
@@ -104,12 +108,12 @@ export function view(me: Me, now = Date.now()) {
     ariaLabel: `${m.done} of ${m.total} done${m.status === "current" ? ", in progress" : ""}`,
     bars: [...m.concepts, ...m.exercises].map((c) => ({ done: c.done, doneCurrent: c.done && m.status === "current", doneOther: c.done && m.status !== "current" })),
     concepts: m.concepts.map((c) => ({ ...c, state: c.done ? "Covered" : "Not yet" })),
-    promptCommand: m.prompt ? `/${m.prompt}` : null,
+    promptCommand: m.prompt ? slash(m.prompt) : null,
     hasExercises: m.exercises.length > 0,
     exercises: m.exercises.map((e) => ({
       title: e.title, why: e.why, done: e.done, state: e.done ? "Done" : "Not yet",
       doneWhen: `Counts as done when your default branch has ${e.doneWhen.map((n) => n.what).join(" and ")}, and you run check_readiness.`,
-      command: `/lesson-practice exercise=${e.id}`,
+      command: slash("lesson-practice", e.id),
     })),
   }));
   const current = modules.find((m) => m.isCurrent) ?? null;

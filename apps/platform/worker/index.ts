@@ -89,9 +89,11 @@ function personalize(res: Response, user: User, admin: boolean) {
     .on("[data-user-login]", { element: (e) => void e.setInnerContent(`@${user.login}`) })
     .on("[data-user-avatar]", {
       element: (e) => {
-        e.setAttribute("aria-label", user.name);
-        if (avatarOk) e.setInnerContent(`<img src="${user.avatar.replace(/[&"<>]/g, (c) => `&#${c.charCodeAt(0)};`)}&amp;s=64" alt="" class="size-full rounded-full object-cover">`, { html: true });
-        else e.setInnerContent(initials);
+        // The picture or initials are decoration; screen readers hear the hidden text instead
+        // (an aria-label that doesn't contain the visible initials fails WCAG 2.5.3).
+        const esc = (s: string) => s.replace(/[&"<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+        const face = avatarOk ? `<img src="${esc(user.avatar)}&amp;s=64" alt="" class="size-full rounded-full object-cover">` : `<span aria-hidden="true">${esc(initials)}</span>`;
+        e.setInnerContent(`${face}<span class="sr-only">Account menu for ${esc(user.name)}</span>`, { html: true });
       },
     })
     .transform(res);

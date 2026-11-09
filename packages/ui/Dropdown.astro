@@ -32,8 +32,7 @@ const labelHide = { sm: "max-sm:hidden", md: "max-md:hidden", lg: "max-lg:hidden
     aria-label={`${label}: ${current.label}`}
     class:list={["flex cursor-pointer items-center rounded-lg border font-semibold", sizing, trigger]}
   >
-    <span class:list={["font-normal opacity-60", hideLabelBelow && labelHide[hideLabelBelow]]}>{label}</span>
-    <span data-dropdown-value>{current.label}</span>
+    <span class:list={["font-normal opacity-60", hideLabelBelow && labelHide[hideLabelBelow]]}>{label}</span>{" "}<span data-dropdown-value>{current.label}</span>
     <svg class="size-3.5 opacity-70 transition in-aria-expanded:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
   </button>
 
