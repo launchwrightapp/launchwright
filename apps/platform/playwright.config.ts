@@ -7,6 +7,8 @@ const baseURL = process.env.BASE_URL ?? "http://localhost:8792";
 
 export default defineConfig({
   testDir: "./tests",
+  fullyParallel: true,
+  workers: process.env.CI ? 4 : undefined,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL },

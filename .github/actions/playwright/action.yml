@@ -1,0 +1,14 @@
+name: Install Playwright Chromium
+description: Cached browser download. Skips apt-get because GitHub's Ubuntu runners already ship Chrome's system libraries.
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: echo "v=$(node -p 'require("@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.version.outputs.v }}
+    - shell: bash
+      run: npx playwright install chromium
