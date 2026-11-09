@@ -193,6 +193,15 @@ export async function runLogs(token: string, repo: string, runId: number, maxJob
   );
 }
 
+// The commit a branch points at right now (production approvals are tied to it).
+export async function branchHead(token: string, repo: string, ref: string): Promise<{ sha: string; message: string }> {
+  const r = await api(token)(`/repos/${repo}/commits/${enc(ref)}`);
+  if (r.status === 404 || r.status === 422) throw new RepoError(`${repo} has no branch called ${ref}.`);
+  if (!r.ok) throw explain(r.status, repo, `reading the latest commit on ${ref}`);
+  const c = (await r.json()) as { sha: string; commit?: { message?: string } };
+  return { sha: c.sha, message: (c.commit?.message ?? "").split("\n")[0].slice(0, 120) };
+}
+
 export async function dispatchWorkflow(token: string, repo: string, workflow: string, ref: string, inputs: Record<string, string>) {
   const r = await api(token)(`/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, { method: "POST", body: { ref, inputs } });
   if (r.status === 404) throw new RepoError(`${repo} has no .github/workflows/${workflow} on ${ref} yet. Run setup_ci and merge its pull request first.`);
