@@ -12,6 +12,7 @@ import { LEVEL_1 } from "../../../../packages/core/curriculum";
       <p class="label">Lessons · Level 1</p>
       <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]" data-bind="lessonsHeading">Lessons</h1>
       <p class="mt-1 text-[14px] text-muted">Lessons happen inside your AI tool: every launchwright tool call explains what it did and why. The first time you meet a concept you get the full lesson; after that, one line. <span data-bind="conceptsCovered">0</span> concepts covered and <span data-bind="exercisesDone">0</span> of <span data-bind="exercisesTotal">6</span> practice exercises done so far.</p>
+      <p class="mt-1 text-[14px] text-muted">The commands below are for Claude Code: paste one into it as is. In Cursor, Codex and other tools, pick the same lesson (like <code>lesson-practice</code>) from the prompt menu and fill in your repo and the exercise. <a href="/connect#tools-and-prompts">How lessons and tools differ</a></p>
       <p class="mt-1 text-[14px] text-muted"><span class="font-semibold text-ink">{LEVEL_1.promise}</span> Passing the checks is a baseline. The practice exercises cover what no check can verify for you, like a restore drill or testing who can see whose data. An exercise counts once its result is in your repo; that shows the work landed, not that it's perfect. Whether a specific app is production-ready depends on its users, its data and what happens if it fails.</p>
     </div>
 
@@ -70,13 +71,13 @@ import { LEVEL_1 } from "../../../../packages/core/curriculum";
                     </summary>
                     <p class="pb-1 pl-4 text-[14px] text-muted" data-bind="why"></p>
                     <p class="pb-1 pl-4 text-[13px] text-muted" data-bind="doneWhen"></p>
-                    <p class="pb-2 pl-4 text-[13px] text-muted">In your AI tool: <code data-bind="command"></code></p>
+                    <p class="pb-2 pl-4 text-[13px] text-muted">Start it in Claude Code: <code class="[overflow-wrap:anywhere]" data-bind="command"></code></p>
                   </details>
                 </li>
               </template>
             </ul>
           </div>
-          <p hidden data-if="promptCommand" class="text-[13px] text-muted">Guided lesson: <code data-bind="promptCommand"></code></p>
+          <p hidden data-if="promptCommand" class="text-[13px] text-muted">Guided lesson in Claude Code: <code class="[overflow-wrap:anywhere]" data-bind="promptCommand"></code></p>
         </li>
       </template>
     </ol>
