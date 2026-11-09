@@ -203,7 +203,7 @@ const redirect = (to: string, cookies: string[] = []) => {
 
 export async function handleLearnerAuth(req: Request, url: URL, env: LearnerEnv, user: User): Promise<Response | null> {
   if (url.pathname !== "/auth/supabase" && url.pathname !== "/auth/supabase/callback") return null;
-  const back = (q: string) => redirect(`/security?${q}#accounts`, [cookie(SUPA_COOKIE, "", 0)]);
+  const back = (q: string) => redirect(`/security?${q}#connect-supabase`, [cookie(SUPA_COOKIE, "", 0)]);
   if (!env.SUPABASE_CLIENT_ID || !env.SUPABASE_CLIENT_SECRET || !env.DATABASE_URL || !env.TOKEN_KEY) return back("error=supabase_unavailable");
   const origin = env.PUBLIC_ORIGIN ?? url.origin;
   const redirectUri = `${origin}/auth/supabase/callback`;

@@ -51,13 +51,13 @@ const steps = [
         <p class="text-base font-semibold"><span data-unless="mcp.connected">Waiting for your first connection</span><span hidden data-if="mcp.connected">Your AI tool is connected</span></p>
         <p class="text-muted"><span data-unless="mcp.connected">Once your AI tool makes its first launchwright call, it shows up here (refresh the page).</span><span hidden data-if="mcp.connected" data-bind="mcp.lastSeen"></span></p>
       </div>
-      <span class="tag tag-line" data-class="tag-ok:mcp.connected"><span class="size-2 rounded-full bg-muted" data-class="bg-ok:mcp.connected" aria-hidden="true"></span><span data-bind="mcp.label">Not connected yet</span></span>
+      <span class="tag tag-line" data-class="tag-ok:mcp.connected;tag-line:mcp.notConnected"><span class="size-2 rounded-full bg-muted" data-class="bg-ok:mcp.connected" aria-hidden="true"></span><span data-bind="mcp.label">Not connected yet</span></span>
     </div>
 
     <div class="card rounded-xl flex flex-col gap-2 p-4">
       <p class="text-base font-semibold">Then connect your accounts</p>
       <p class="text-muted">Deploys, secrets and databases need your own Cloudflare account and a Neon or Supabase database (free tiers are enough). Your AI tool never sees their keys.</p>
-      <a class="btn btn-sm self-start" href="/security#accounts">Connect accounts</a>
+      <a class="btn btn-sm self-start" href="/security#connect-cloudflare">Connect accounts</a>
     </div>
 
     <div class="card rounded-xl flex flex-col gap-2 p-4">

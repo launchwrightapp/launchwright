@@ -228,7 +228,7 @@ const sections = allSections
               {s.id === "accounts" && (
                 <ul class="flex flex-col" data-each="connections">
                   <template>
-                    <li><a class={row} href="/security#accounts"><span class="truncate" data-bind="name"></span><span class="ml-auto text-[12px] text-muted" data-class="text-ok:connected" data-bind="stateLabel"></span></a></li>
+                    <li><a class={row} data-attr="href:href"><span class="truncate" data-bind="name"></span><span class="ml-auto text-[12px] text-muted" data-class="text-ok:connected" data-bind="stateLabel"></span></a></li>
                   </template>
                 </ul>
               )}

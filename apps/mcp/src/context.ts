@@ -1,6 +1,7 @@
 // What every tool call shares: who the learner is, where state lives, how to reach their accounts,
 // and the wrapper that adds the lesson, writes the audit log, and turns errors into plain words.
 import { refreshSupabaseToken } from "../../../packages/core/supabase-oauth";
+import { connectCoaching, type ProviderId } from "../../../packages/core/connect-guides";
 import { deliver, type Delivered } from "./lessons";
 import type { Concept } from "../../../packages/core/curriculum";
 import { RepoError, readRepo, type Snapshot } from "./github";
@@ -104,8 +105,9 @@ export async function databaseFor(ctx: Ctx, provider: "neon" | "supabase"): Prom
   return supabaseProvider(token);
 }
 
-export function notConnected(ctx: Ctx, name: string, why: string): never {
-  throw new UserError(`${name} isn't connected yet. ${why} Ask the learner to connect it here (it takes a minute, and the AI never sees the key): ${dashboard(ctx, "/security#accounts")}`, "blocked");
+// The learner connects accounts themselves; the AI coaches (packages/core/connect-guides.ts).
+export function notConnected(ctx: Ctx, provider: ProviderId, why: string): never {
+  throw new UserError(connectCoaching(provider, why, dashboard(ctx, `/security#connect-${provider}`)), "blocked");
 }
 
 // --- The repo -------------------------------------------------------------------------------

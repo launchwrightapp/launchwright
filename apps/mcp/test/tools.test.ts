@@ -92,7 +92,7 @@ describe("MCP tools", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["check_env", "check_readiness", "connect_database", "deploy", "explain_error", "get_logs", "project_status", "set_secret", "setup_ci"]);
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security"]));
+    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect"]));
   });
 
   it("project_status saves the project, teaches once in full, then short, and audits", async () => {
@@ -173,7 +173,11 @@ describe("MCP tools", () => {
     const { call } = await connect();
     expect((await call("deploy", { repo: REPO })).text).toContain("Run setup_ci");
     workflows[".github/workflows/launchwright-deploy.yml"] = "x";
-    expect((await call("deploy", { repo: REPO })).text).toContain("Cloudflare isn't connected yet");
+    const coach = (await call("deploy", { repo: REPO })).text;
+    expect(coach).toContain("Cloudflare isn't connected yet");
+    expect(coach).toContain("Workers Scripts: Edit");
+    expect(coach).toContain("not Manage Account → Account API Tokens");
+    expect(coach).toContain("run project_status to confirm");
   });
 
   it("get_logs redacts secrets and fences the log as untrusted", async () => {
@@ -195,7 +199,10 @@ describe("MCP tools", () => {
     const { call, mem } = await connect();
     const r = await call("connect_database", { repo: REPO, provider: "neon" });
     expect(r.isError).toBe(true);
-    expect(r.text).toContain("https://platform.test/security#accounts");
+    expect(r.text).toContain("https://platform.test/security#connect-neon");
+    expect(r.text).toContain("Coach the learner");
+    expect(r.text).toContain("must not ask them to paste it here");
+    expect(r.text).toContain("Create a key named launchwright");
     expect(mem.auditLog.at(-1)).toMatchObject({ tool: "connect_database", outcome: "blocked" });
   });
 });

@@ -130,7 +130,8 @@ test("security: approvals, accounts, secrets and the audit log", async ({ page }
   await expect(main.getByRole("tabpanel").locator("tbody tr")).toHaveCount(5);
   await main.getByRole("tab", { name: /Accounts/ }).click();
   await expect(main.getByRole("tabpanel")).toContainText("Juan's account");
-  await expect(main.getByRole("link", { name: /Cloudflare's token page/ })).toHaveAttribute("href", /dash\.cloudflare\.com\/profile\/api-tokens/);
+  // Connected, so its steps are folded away, but the token link is still there to replace the key.
+  await expect(main.locator("#connect-cloudflare a[href*='dash.cloudflare.com/profile/api-tokens']")).toHaveCount(1);
 });
 
 test("connecting Cloudflare sends the token once and clears the field", async ({ page }) => {
@@ -262,4 +263,42 @@ test("health endpoint answers without signing in", async ({ request }) => {
   const res = await request.get("/health");
   expect(res.status()).toBe(200);
   expect(await res.json()).toMatchObject({ ok: true });
+});
+
+test("a deep link opens the Accounts tab at that provider's steps", async ({ page }) => {
+  await serveMe(page, { ...me, connections: [] });
+  await page.goto("/security#connect-neon");
+  await loaded(page);
+  const neon = page.locator("#connect-neon");
+  await expect(neon).toBeInViewport();
+  await expect(neon.getByText("Create a key named launchwright")).toBeVisible();
+  await expect(neon.getByRole("link", { name: /Open Neon's API keys page/ })).toHaveAttribute("target", "_blank");
+  await expect(neon.getByText("Never paste the key into your AI chat")).toBeVisible();
+  await expect(page.getByLabel("Neon API key")).toHaveAttribute("type", "password");
+});
+
+test("a connected account shows its limits and how to revoke; steps fold away", async ({ page }) => {
+  await serveMe(page);
+  await page.goto("/security#connect-cloudflare");
+  await loaded(page);
+  const cf = page.locator("#connect-cloudflare");
+  await expect(cf.getByText("Connected:")).toBeVisible();
+  const tag = cf.locator("header .tag");
+  await expect(tag).toHaveClass(/tag-ok/);
+  await expect(tag).not.toHaveClass(/tag-line/);
+  await expect(cf.getByText("The token can't touch your domains or DNS")).toBeVisible();
+  await expect(cf.getByText(/My Profile → API Tokens → launchwright/)).toBeVisible();
+  await expect(cf.getByRole("button", { name: "Disconnect" })).toBeVisible();
+  await expect(cf.locator("details")).not.toHaveAttribute("open", "");
+  await cf.getByText("Replace the key").click();
+  await expect(cf.getByText("Workers Scripts: Edit")).toBeVisible();
+  // Not-connected providers stay open.
+  await expect(page.locator("#connect-neon details")).toHaveAttribute("open", "");
+});
+
+test("coming back from Supabase says what happened", async ({ page }) => {
+  await serveMe(page);
+  await page.goto("/security?error=supabase_cancelled#connect-supabase");
+  await loaded(page);
+  await expect(page.locator("#supabase-status")).toHaveText(/You cancelled on Supabase/);
 });

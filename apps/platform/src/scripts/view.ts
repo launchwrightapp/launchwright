@@ -108,8 +108,9 @@ export function view(me: Me, now = Date.now()) {
 
   const connections = PROVIDERS.map((p) => {
     const c = me.connections.find((x) => x.provider === p.id);
-    return { ...p, connected: !!c, notConnected: !c, label: c?.label ?? p.why, scopes: c?.scopes ?? "Not connected", connectedAgo: c ? `Connected ${ago(c.connectedAt, now)}` : "", stateLabel: c ? "Connected" : "Not connected" };
+    return { ...p, href: `/security#connect-${p.id}`, connected: !!c, notConnected: !c, label: c?.label ?? p.why, scopes: c?.scopes ?? "Not connected", connectedAgo: c ? `Connected ${ago(c.connectedAt, now)}` : "", stateLabel: c ? "Connected" : "Not connected" };
   });
+  const account = Object.fromEntries(connections.map((c) => [c.id, c]));
   const hasDatabase = connections.some((c) => (c.id === "neon" || c.id === "supabase") && c.connected);
   const cloudflareConnected = connections[0].connected;
 
@@ -138,8 +139,8 @@ export function view(me: Me, now = Date.now()) {
 
   const onboarding = [
     { n: 1, title: "Connect your AI tool", detail: "One line in Claude Code, Cursor or Codex.", href: "/connect", done: me.mcp.connected, cta: "Connect" },
-    { n: 2, title: "Connect Cloudflare", detail: "Where your app runs. You create a limited token; the AI never sees it.", href: "/security#accounts", done: cloudflareConnected, cta: "Connect" },
-    { n: 3, title: "Connect a database", detail: "Neon or Supabase, both have free tiers.", href: "/security#accounts", done: hasDatabase, cta: "Connect" },
+    { n: 2, title: "Connect Cloudflare", detail: "Where your app runs. You create a limited token; the AI never sees it.", href: "/security#connect-cloudflare", done: cloudflareConnected, cta: "Connect" },
+    { n: 3, title: "Connect a database", detail: "Neon or Supabase, both have free tiers.", href: "/security#connect-neon", done: hasDatabase, cta: "Connect" },
     { n: 4, title: "Check your project", detail: "Ask your AI tool: \"Use launchwright project_status on owner/repo\".", href: "/connect", done: !!project, cta: "How" },
   ].map((s) => ({ ...s, todo: !s.done, label: `Step ${s.n}: ${s.title}${s.done ? " (done)" : ""}` }));
   const setupDone = onboarding.filter((s) => s.done).length;
@@ -187,11 +188,13 @@ export function view(me: Me, now = Date.now()) {
     conceptsCovered: me.conceptsSeen.length,
     lessonsHeading: `${modules.filter((m) => m.isDone).length} of ${modules.length} modules done`,
     connections,
+    account,
     connectedCount: connections.filter((c) => c.connected).length,
     cloudflareConnected,
     approvals,
     approvalCount: approvals.length,
     hasApprovals: approvals.length > 0,
+    noApprovals: approvals.length === 0,
     approvalBadge: approvals.length ? String(approvals.length) : null,
     approvalsLabel: approvals.length === 1 ? "1 approval waiting" : `${approvals.length} approvals waiting`,
     audit,
@@ -200,7 +203,7 @@ export function view(me: Me, now = Date.now()) {
     toolCalls: audit.filter((a) => a.actor === "ai").slice(0, 12),
     secrets: me.secrets.map((s) => ({ ...s, where: s.target === "github_actions" ? "GitHub Actions" : "Cloudflare Worker", updated: ago(s.updatedAt, now) })),
     hasSecrets: me.secrets.length > 0,
-    mcp: { ...me.mcp, label: me.mcp.connected ? `${me.mcp.client ?? "AI tool"} connected` : "AI tool not connected", lastSeen: me.mcp.lastSeen ? `Last tool call ${ago(me.mcp.lastSeen, now)}` : "" },
+    mcp: { ...me.mcp, notConnected: !me.mcp.connected, label: me.mcp.connected ? `${me.mcp.client ?? "AI tool"} connected` : "AI tool not connected", lastSeen: me.mcp.lastSeen ? `Last tool call ${ago(me.mcp.lastSeen, now)}` : "" },
     onboarding,
     setupDone,
     setupTotal: onboarding.length,

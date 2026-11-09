@@ -127,6 +127,20 @@ async function secretPage(form: HTMLFormElement) {
   });
 }
 
+// Back from Supabase's approval screen (/security?connected=supabase or ?error=supabase_*).
+const SUPABASE_RESULT: Record<string, string> = {
+  "connected=supabase": "Connected. Supabase access is stored encrypted; your AI tool never sees it.",
+  "error=supabase_cancelled": "You cancelled on Supabase, so nothing was connected. Try again whenever you're ready.",
+  "error=supabase_expired": "That sign-in took too long or was opened twice. Click Connect Supabase again.",
+  "error=supabase_failed": "Supabase didn't finish the sign-in. Please try again in a minute.",
+  "error=supabase_unavailable": "Supabase sign-in isn't switched on for this server yet. Use Neon for now.",
+};
+{
+  const q = new URLSearchParams(location.search);
+  const key = q.has("connected") ? `connected=${q.get("connected")}` : `error=${q.get("error")}`;
+  if (SUPABASE_RESULT[key]) say("supabase-status", SUPABASE_RESULT[key]);
+}
+
 const secretForm = document.querySelector<HTMLFormElement>("form[data-secret-form]");
 if (secretForm) void secretPage(secretForm);
 else if (document.querySelector("[data-learner-page]")) void load();
