@@ -66,7 +66,7 @@ export function buildServer(learner: Learner, store: ProgressStore) {
           `Package manager: ${s.packageManager ?? "not detected"}`,
           `Database: ${s.database ?? "none detected"}`,
           `Hosting config: ${s.hosting ?? "none found"}`,
-          s.monorepo ? "Monorepo: yes (only the root package.json was read)" : "",
+          s.monorepo ? `Monorepo: yes (read ${Object.keys(snap.files).filter((f) => f.endsWith("package.json") && f !== "package.json").length} workspace package.json files)` : "",
           `Readiness: ${status.readiness.passed}/${status.readiness.total} checks pass`,
           status.nextStep ? `Next step: ${status.nextStep.title}. ${status.nextStep.detail}` : "Next step: every repo check passes. Deploy checks come next.",
           snap.truncated ? "Note: the repo is very large, so GitHub sent only part of the file list." : "",

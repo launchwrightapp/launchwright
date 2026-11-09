@@ -33,6 +33,43 @@ export function workflowFiles(paths: string[]) {
   return paths.filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/i.test(p));
 }
 
+// Workspace globs from package.json "workspaces" (array or { packages }) or pnpm-workspace.yaml.
+export function workspaceGlobs(rootPkg: string | undefined, pnpmYaml: string | undefined): string[] {
+  const globs: string[] = [];
+  try {
+    const ws = (JSON.parse(rootPkg ?? "{}") as { workspaces?: unknown }).workspaces;
+    const list = Array.isArray(ws) ? ws : ws && typeof ws === "object" ? (ws as { packages?: unknown }).packages : [];
+    if (Array.isArray(list)) globs.push(...list.filter((g): g is string => typeof g === "string"));
+  } catch {
+    /* not JSON: ignore */
+  }
+  if (pnpmYaml) {
+    let inPackages = false;
+    for (const line of pnpmYaml.split("\n")) {
+      if (/^packages\s*:/.test(line)) inPackages = true;
+      else if (/^\S/.test(line)) inPackages = false;
+      else if (inPackages) {
+        const m = line.match(/^\s*-\s*["']?([^"'#\s]+)["']?/);
+        if (m) globs.push(m[1]);
+      }
+    }
+  }
+  return globs.filter((g) => !g.startsWith("!"));
+}
+
+// The package.json of every workspace package, shallowest first. Only `*` and `**` globs.
+export function workspacePackageFiles(paths: string[], globs: string[]): string[] {
+  const res = globs.map((g) => {
+    const src = g.replace(/^\.\//, "").replace(/\/+$/, "").split("/").map((seg) =>
+      seg === "**" ? "(?:[^/]+/)*?" : seg.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*") + "/",
+    ).join("");
+    return new RegExp(`^${src}package\\.json$`);
+  });
+  return paths
+    .filter((p) => !p.includes("node_modules/") && p !== "package.json" && res.some((r) => r.test(p)))
+    .sort((a, b) => a.split("/").length - b.split("/").length);
+}
+
 export function dependencies(files: Record<string, string>): Set<string> {
   const deps = new Set<string>();
   for (const [path, text] of Object.entries(files)) {
