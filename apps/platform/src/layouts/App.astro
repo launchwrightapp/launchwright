@@ -93,8 +93,8 @@ const sections = allSections
         <ThemeToggle tone="dark" compact />
         <!-- Account (filled in by the worker for the signed-in person) -->
         <div class="relative hidden lg:block" data-popover>
-          <button type="button" data-popover-trigger aria-expanded="false" aria-controls="account-menu" aria-label="Account" class="grid size-8 cursor-pointer place-items-center overflow-hidden rounded-full bg-lime text-[12px] font-semibold text-night hover:ring-2 hover:ring-white/40">
-            <span data-user-avatar class="grid size-full place-items-center" role="img" aria-label="Account"></span>
+          <button type="button" data-popover-trigger aria-expanded="false" aria-controls="account-menu" class="grid size-8 cursor-pointer place-items-center overflow-hidden rounded-full bg-lime text-[12px] font-semibold text-night hover:ring-2 hover:ring-white/40">
+            <span data-user-avatar class="grid size-full place-items-center"><span class="sr-only">Account menu</span></span>
           </button>
           <div id="account-menu" data-popover-panel hidden class="absolute right-0 top-[calc(100%+10px)] z-30 w-64 rounded-xl border border-line bg-surface p-2 text-ink shadow-2xl shadow-black/20">
             <p class="px-3 pb-2 pt-1.5"><span class="block truncate font-semibold" data-user-name></span><span class="block truncate text-[14px] text-muted" data-user-login></span></p>

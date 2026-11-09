@@ -86,7 +86,8 @@ export function view(me: Me, now = Date.now()) {
       lessonTitle: lesson.title,
       why: lesson.full,
       prompt: def.prompt.replace("REPO", repo),
-      ariaLabel: `${c?.title ?? def.title}: ${STATUS[status] ?? status}`,
+      // Starts with the short name shown under the bar, so the spoken name matches what's on screen.
+      ariaLabel: `${def.short}: ${c?.title ?? def.title}, ${STATUS[status] ?? status}`,
     };
   });
   const order: Record<string, number> = { fail: 0, warn: 1, not_checked: 2, pass: 3, skip: 4 };
