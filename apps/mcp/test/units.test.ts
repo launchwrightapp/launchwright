@@ -6,7 +6,7 @@ import { ciFiles, plan } from "../src/ci";
 import { ciSummary, diffText, reviewFlags } from "../src/review";
 import type { PullFile } from "../src/github";
 import { focusLog } from "../src/logs";
-import { apiRoutes, type RepoSnapshot } from "../src/readiness";
+import { apiRoutes, routeCodeFiles, type RepoSnapshot } from "../src/readiness";
 import { apiAuth, checkUrl, securityHeaders, uptime } from "../src/live";
 import { openSealedBox, sealedBox } from "../src/sealedbox";
 import { looksLikeSecret, redact, untrustedBlock } from "../../../packages/core/untrusted";
@@ -201,6 +201,21 @@ describe("live checks", () => {
     expect(apiRoutes(["app/api/bookings/route.ts", "src/app/api/(admin)/users/route.ts", "app/api/items/[id]/route.ts", "pages/api/health.ts", "src/pages/api/orders/index.ts"])).toEqual(["/api/bookings", "/api/health", "/api/orders", "/api/users"]);
   });
 
+  it("finds API routes written in Worker and Hono code", () => {
+    const files = {
+      "worker/index.ts": `if (url.pathname === "/api/me") return me(); if (path.startsWith("/api/admin/")) return admin(); fetch(\`/api/items/\${id}\`);`,
+      "src/index.ts": `app.get("/api/orders", list); app.get("/api/orders/:id", one); app.post('/api/bookings', add); app.all("/api/*", nope);`,
+      "tests/api.spec.ts": `request.get("/api/secret-test-only")`,
+      "src/components/Menu.tsx": `fetch("/api/menu")`,
+    };
+    expect(apiRoutes(Object.keys(files), files)).toEqual(["/api/admin", "/api/bookings", "/api/me", "/api/orders"]);
+  });
+  it("picks server code files to read for routes", () => {
+    const paths = ["apps/platform/worker/index.ts", "src/index.ts", "server/routes.ts", "src/components/Menu.tsx", "worker/index.test.ts", "node_modules/hono/dist/index.js", "worker/types.d.ts", "functions/api/users.js"];
+    expect(routeCodeFiles(paths)).toEqual(["server/routes.ts", "src/index.ts", "functions/api/users.js", "apps/platform/worker/index.ts"]);
+    expect(routeCodeFiles(["worker/big.ts"], { "worker/big.ts": 200_000 })).toEqual([]);
+  });
+
   const base = new URL("https://shop.example.com/");
   const fake = (routes: Record<string, () => Response>) => (async (input: RequestInfo | URL) => {
     const u = String(input);
@@ -216,6 +231,13 @@ describe("live checks", () => {
       "https://shop.example.com/api/menu": () => new Response("no", { status: 401 }),
     });
     expect((await apiAuth(f, base, s)).status).toBe("fail");
+  });
+  it("passes when routes found in Worker code refuse requests without login", async () => {
+    const s: RepoSnapshot = { paths: ["worker/index.ts"], files: { "worker/index.ts": `if (p === "/api/me") ...; if (p === "/api/health") ...` } };
+    const f = fake({ "https://shop.example.com/api/me": () => Response.json({ error: "Sign in" }, { status: 401 }) });
+    const c = await apiAuth(f, base, s);
+    expect(c.status).toBe("pass");
+    expect(c.files).toEqual(["GET /api/me"]);
   });
   it("checks headers and the https redirect", async () => {
     const good = new Headers({ "strict-transport-security": "max-age=31536000", "content-security-policy": "default-src 'self'; frame-ancestors 'none'", "x-content-type-options": "nosniff" });
