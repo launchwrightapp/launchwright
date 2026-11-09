@@ -94,10 +94,12 @@ export interface PullRequest {
 }
 
 // Commit files to a new branch off the default branch and open a pull request.
+// `executable` files (git hooks) get a follow-up commit setting mode 100755: the contents API
+// always writes 100644, and git ignores a hook that isn't executable.
 export async function openPullRequest(
   token: string,
   snap: Snapshot,
-  pr: { branch: string; title: string; body: string; message: string; files: { path: string; content: string }[] },
+  pr: { branch: string; title: string; body: string; message: string; files: { path: string; content: string; executable?: boolean }[] },
 ): Promise<PullRequest> {
   const gh = api(token);
   const ref = await gh(`/repos/${snap.repo}/git/ref/heads/${enc(snap.branch)}`);
@@ -112,6 +114,8 @@ export async function openPullRequest(
   }
   if (!made.ok) throw explain(made.status, snap.repo, "creating a branch");
 
+  let last: { commit: string; tree: string } | null = null;
+  const exec: { path: string; blob: string }[] = [];
   for (const f of pr.files) {
     const existing = await gh(`/repos/${snap.repo}/contents/${enc(f.path)}?ref=${encodeURIComponent(branch)}`);
     const fileSha = existing.ok ? ((await existing.json()) as { sha?: string }).sha : undefined;
@@ -120,6 +124,17 @@ export async function openPullRequest(
       body: { message: pr.message, content: utf8b64(f.content), branch, ...(fileSha ? { sha: fileSha } : {}) },
     });
     if (!put.ok) throw explain(put.status, snap.repo, `writing ${f.path} (workflow files need the Workflows permission)`);
+    const out = (await put.json().catch(() => ({}))) as { content?: { sha?: string }; commit?: { sha?: string; tree?: { sha?: string } } };
+    if (out.commit?.sha && out.commit.tree?.sha) last = { commit: out.commit.sha, tree: out.commit.tree.sha };
+    if (f.executable && out.content?.sha) exec.push({ path: f.path, blob: out.content.sha });
+  }
+  if (exec.length && last) {
+    const tree = await gh(`/repos/${snap.repo}/git/trees`, { method: "POST", body: { base_tree: last.tree, tree: exec.map((e) => ({ path: e.path, mode: "100755", type: "blob", sha: e.blob })) } });
+    if (!tree.ok) throw explain(tree.status, snap.repo, "marking the git hook executable");
+    const commit = await gh(`/repos/${snap.repo}/git/commits`, { method: "POST", body: { message: `Make ${exec.map((e) => e.path).join(", ")} executable`, tree: ((await tree.json()) as { sha: string }).sha, parents: [last.commit] } });
+    if (!commit.ok) throw explain(commit.status, snap.repo, "marking the git hook executable");
+    const moved = await gh(`/repos/${snap.repo}/git/refs/heads/${enc(branch)}`, { method: "PATCH", body: { sha: ((await commit.json()) as { sha: string }).sha } });
+    if (!moved.ok) throw explain(moved.status, snap.repo, "marking the git hook executable");
   }
 
   const opened = await gh(`/repos/${snap.repo}/pulls`, { method: "POST", body: { title: pr.title, head: branch, base: snap.branch, body: pr.body } });
@@ -214,4 +229,103 @@ export async function setVariable(token: string, repo: string, name: string, val
   let r = await gh(`/repos/${repo}/actions/variables`, { method: "POST", body: { name, value } });
   if (r.status === 409) r = await gh(`/repos/${repo}/actions/variables/${encodeURIComponent(name)}`, { method: "PATCH", body: { name, value } });
   if (!r.ok) throw explain(r.status, repo, `saving the ${name} variable`);
+}
+
+// Is the branch protected, and does it require a pull request and passing checks? Rulesets are
+// fully visible with read access; classic branch protection only says "protected" (its details
+// need the Administration permission, which Launchwright doesn't ask for). null: couldn't tell.
+export interface Protection {
+  protected: boolean;
+  requiresPr: boolean | null; // null: classic protection, details hidden
+  requiredChecks: string[] | null;
+}
+
+export async function branchProtection(token: string, repo: string, branch: string): Promise<Protection | null> {
+  const gh = api(token);
+  try {
+    const [b, r] = await Promise.all([gh(`/repos/${repo}/branches/${enc(branch)}`), gh(`/repos/${repo}/rules/branches/${enc(branch)}`)]);
+    if (!b.ok) return null;
+    const classic = !!((await b.json()) as { protected?: boolean }).protected;
+    const rules = r.ok ? ((await r.json()) as { type: string; parameters?: { required_status_checks?: { context: string }[] } }[]) : [];
+    const checks = rules.filter((x) => x.type === "required_status_checks").flatMap((x) => x.parameters?.required_status_checks?.map((c) => c.context) ?? []);
+    const pr = rules.some((x) => x.type === "pull_request");
+    if (pr || checks.length) return { protected: true, requiresPr: pr, requiredChecks: checks };
+    if (classic) return { protected: true, requiresPr: null, requiredChecks: null };
+    return { protected: rules.length > 0, requiresPr: false, requiredChecks: [] };
+  } catch {
+    return null;
+  }
+}
+
+export interface PullInfo {
+  number: number;
+  title: string;
+  body: string;
+  state: string; // open, closed
+  merged: boolean;
+  draft: boolean;
+  author: string;
+  base: string;
+  head: { ref: string; sha: string; repo: string | null };
+  additions: number;
+  deletions: number;
+  changedFiles: number;
+  url: string;
+}
+
+export async function pullRequest(token: string, repo: string, n: number): Promise<PullInfo> {
+  const r = await api(token)(`/repos/${repo}/pulls/${n}`);
+  if (r.status === 404) throw new RepoError(`${repo} has no pull request #${n}.`);
+  if (!r.ok) throw explain(r.status, repo, `reading pull request #${n}`);
+  const p = (await r.json()) as Record<string, any>;
+  return {
+    number: p.number,
+    title: String(p.title ?? ""),
+    body: String(p.body ?? ""),
+    state: p.state,
+    merged: !!p.merged,
+    draft: !!p.draft,
+    author: String(p.user?.login ?? ""),
+    base: String(p.base?.ref ?? ""),
+    head: { ref: String(p.head?.ref ?? ""), sha: String(p.head?.sha ?? ""), repo: p.head?.repo?.full_name ?? null },
+    additions: p.additions ?? 0,
+    deletions: p.deletions ?? 0,
+    changedFiles: p.changed_files ?? 0,
+    url: p.html_url,
+  };
+}
+
+export interface PullFile {
+  path: string;
+  status: string; // added, modified, removed, renamed...
+  additions: number;
+  deletions: number;
+  patch: string | null; // null: binary or too big for GitHub to show
+}
+
+// The files a pull request changes, with their diffs. GitHub lists at most 3000; we read `max`.
+export async function pullFiles(token: string, repo: string, n: number, max = 300): Promise<PullFile[]> {
+  const gh = api(token);
+  const out: PullFile[] = [];
+  for (let page = 1; out.length < max; page++) {
+    const r = await gh(`/repos/${repo}/pulls/${n}/files?per_page=100&page=${page}`);
+    if (!r.ok) throw explain(r.status, repo, `reading the files of pull request #${n}`);
+    const batch = (await r.json()) as { filename: string; status: string; additions: number; deletions: number; patch?: string }[];
+    out.push(...batch.map((f) => ({ path: f.filename, status: f.status, additions: f.additions, deletions: f.deletions, patch: f.patch ?? null })));
+    if (batch.length < 100) break;
+  }
+  return out.slice(0, max);
+}
+
+export async function openPulls(token: string, repo: string): Promise<{ number: number; title: string; branch: string; author: string }[]> {
+  const r = await api(token)(`/repos/${repo}/pulls?state=open&per_page=15`);
+  if (!r.ok) throw explain(r.status, repo, "listing pull requests");
+  return ((await r.json()) as Record<string, any>[]).map((p) => ({ number: p.number, title: String(p.title ?? ""), branch: String(p.head?.ref ?? ""), author: String(p.user?.login ?? "") }));
+}
+
+// Workflow runs for one commit (the PR's latest), newest first.
+export async function runsForCommit(token: string, repo: string, sha: string): Promise<Run[]> {
+  const r = await api(token)(`/repos/${repo}/actions/runs?head_sha=${encodeURIComponent(sha)}&per_page=20`);
+  if (!r.ok) throw explain(r.status, repo, "listing workflow runs");
+  return ((await r.json()) as { workflow_runs: Record<string, unknown>[] }).workflow_runs.map(toRun);
 }
