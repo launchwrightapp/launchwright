@@ -46,9 +46,9 @@ export interface Module {
 
 export const MODULES: Module[] = [
   { id: "git", n: "01", name: "Git and GitHub", blurb: "Know your stack, work in pull requests.", prompt: null },
-  { id: "env", n: "02", name: "Env and secrets", blurb: "Settings outside the code, keys the AI never sees.", prompt: "lesson-secrets" },
+  { id: "env", n: "02", name: "Env and secrets", blurb: "Settings outside the code, secrets entered securely.", prompt: "lesson-secrets" },
   { id: "database", n: "03", name: "Database", blurb: "Neon or Supabase, connection strings, migrations.", prompt: "lesson-database" },
-  { id: "cicd", n: "04", name: "CI/CD", blurb: "Checks on every push, secret scanning.", prompt: "lesson-ci" },
+  { id: "cicd", n: "04", name: "CI/CD", blurb: "Checks on PRs and pushes to main, secret scanning.", prompt: "lesson-ci" },
   { id: "testing", n: "05", name: "Testing", blurb: "Playwright on a preview deploy.", prompt: "lesson-ci" },
   { id: "deploy", n: "06", name: "Deploy", blurb: "Previews, production with approval, rollback.", prompt: "lesson-deploy" },
   { id: "monitoring", n: "07", name: "Monitoring", blurb: "Logs, reading errors, uptime.", prompt: "lesson-debug" },
@@ -65,8 +65,8 @@ export const LESSONS: Record<Concept, Lesson> = {
   pull_requests: {
     module: "git",
     title: "Working in pull requests",
-    full: "A pull request (PR) proposes merging the changes on one branch into another, usually main. It's where you read the change and see CI's results before deciding. A PR alone doesn't stop anyone pushing straight to main: branch protection does, by requiring a PR and passing checks before anything merges. Launchwright never pushes to your main branch. It opens a PR and you decide.",
-    short: "PRs: changes land on a branch first; branch protection makes review and checks required.",
+    full: "A pull request (PR) proposes merging the changes on one branch into another, usually main. It's where you read the change and see CI's results before deciding. A PR alone doesn't stop anyone pushing straight to main. Turn on branch protection to require a PR, a review and passing checks, and check who is allowed to bypass it. Launchwright never pushes to your main branch: it opens a PR and you decide.",
+    short: "PRs: use branch protection to require review and passing checks.",
   },
   env_config: {
     module: "env",
@@ -95,7 +95,7 @@ export const LESSONS: Record<Concept, Lesson> = {
   database: {
     module: "database",
     title: "Connecting a database",
-    full: "A managed Postgres database (Neon or Supabase) runs on someone else's servers. Your app reaches it with a connection string: a URL that includes a password, so treat it as a secret and keep it out of the code. How you connect depends on your driver: serverless apps using a normal Postgres client should use the provider's pooled connection, while HTTP-based drivers handle this for you. Migration tools sometimes need the direct connection instead.",
+    full: "A managed Postgres database (Neon or Supabase) runs on someone else's servers. Your app reaches it with a connection string: a URL that includes a password, so treat it as a secret and keep it out of the code. How you connect depends on your driver: serverless apps using a normal Postgres client should use the provider's pooled connection, and some HTTP-based drivers manage pooling for you. Follow your driver's and provider's guide. Migration tools sometimes need the direct connection instead.",
     short: "Database: the connection string is a secret; pick the connection mode your driver needs.",
   },
   migrations: {
@@ -107,8 +107,8 @@ export const LESSONS: Record<Concept, Lesson> = {
   ci: {
     module: "cicd",
     title: "Continuous integration",
-    full: "CI is a computer that runs your checks automatically on the events you choose, usually every pull request and every push to main. With GitHub Actions it's a YAML file in .github/workflows. A failed check flags the change, but it only blocks merging if branch protection requires it. Turn that on so broken changes can't reach main.",
-    short: "CI: checks run on every PR and push to main; require them before merging.",
+    full: "CI is a computer that runs your checks automatically on the events you choose, usually every pull request and every push to main. With GitHub Actions it's a YAML file in .github/workflows. A failed check flags the change, but it only blocks merging if branch protection requires it. Turn that on so changes with failing checks can't be merged. Tests can still miss bugs.",
+    short: "CI: run checks on PRs and pushes to main, and require them before merging.",
   },
   secret_scanning: {
     module: "cicd",
@@ -125,31 +125,31 @@ export const LESSONS: Record<Concept, Lesson> = {
   preview_deploys: {
     module: "testing",
     title: "Preview deploys",
-    full: "A preview deploy gives a pull request's change its own URL, so you (and your E2E tests) can try it before production. If the preview is broken, you fix it before merging. Preview URLs are usually public unless you protect them, and a preview may still talk to the same database as production, so use test data where you can.",
-    short: "Previews: test a change at its own URL first; it may be public and share your data.",
+    full: "A preview deploy gives a pull request's change its own URL, so you (and your E2E tests) can try it before production. If the preview is broken, you fix it before merging. A separate URL doesn't mean separate data. Before testing, make sure the preview uses a test database and storage, and test keys for anything that sends emails or takes payments. Preview URLs are usually public, so protect them if the content should be private.",
+    short: "Previews: test at a separate URL with test data; protect access when needed.",
   },
   deploy: {
     module: "deploy",
     title: "Deploying",
-    full: "Deploying means building your app and putting that build where users can reach it. Deploying from CI (not your laptop) means every deploy runs the same steps, from a commit everyone can see, and it can be set to wait for the checks to pass first. Pin your dependencies with a lockfile so builds stay the same. The deploy log shows what happened.",
-    short: "Deploy from CI: the same steps every time, from a known commit, after the checks pass.",
+    full: "Deploying means building your app and putting that build where users can reach it. Deploying from CI (not your laptop) means every deploy runs the same steps, from a commit everyone can see, and it can be set to wait for the checks to pass first. A lockfile and pinned runtime and tool versions make builds more repeatable. The deploy log shows what happened.",
+    short: "Deploy from CI: a known commit, after its required checks pass.",
   },
   production_approval: {
     module: "deploy",
     title: "Approving production changes",
-    full: "Launchwright asks a human before production deploys, rollbacks and replacing a saved secret. Your AI tool can prepare the change, but you approve it on the dashboard. Each approval works once, for that one action, and expires after a day. It gives you a chance to look at what's about to happen before it runs. Teams call this a change gate.",
-    short: "Production changes wait for your approval on the dashboard; each approval works once.",
+    full: "Launchwright asks a human before production deploys, rollbacks and replacing a secret that's already saved (including your database connection). Your AI tool can prepare the change, but you approve it on the dashboard. Each approval works once, for that one action (a production deploy covers one exact commit), and expires after a day. It gives you a chance to look at what's about to happen before it runs. Teams call this a change gate.",
+    short: "Gated changes wait for your approval on the dashboard; each approval covers one action.",
   },
   rollback: {
     module: "deploy",
     title: "Rollback",
-    full: "A rollback puts a previous version of your app's code back. On Cloudflare every deploy is a version, so it's fast. It doesn't undo database changes: if the new version changed the schema or data, the old code may not work with it any more. When the old version is still compatible, roll back first and debug calmly; when it isn't, ship a careful fix forward instead.",
+    full: "A rollback puts a previous version of your app's code back. Cloudflare keeps your uploaded Worker versions, so it can deploy an earlier one again quickly. It doesn't undo database changes or changed bindings: if the new version changed the schema, data or resources, the old code may not work with them any more. When the old version is still compatible, roll back first and debug calmly; when it isn't, ship a careful fix forward instead.",
     short: "Rollback: restore the last good version, if it still works with your current data.",
   },
   logs: {
     module: "monitoring",
     title: "Reading logs",
-    full: "Logs are what your app and your CI wrote while running. Find the failing run or request, then start at its first error, not the last line: later errors are often caused by the first one. Logs can hold user data and even secrets, so don't log them. Launchwright hides anything that looks like a key before showing logs, but that's a safety net, not a guarantee.",
+    full: "Logs are what your app and your CI wrote while running. Find the failing run or request, then start at its first error, not the last line: later errors are often caused by the first one. Logs can hold user data and even secrets, so don't log them. Launchwright tries to hide recognized secret patterns before showing logs, but that's a safety net, not a guarantee.",
     short: "Logs: find the failing run, then read from its first error down.",
   },
   reading_errors: {
@@ -161,8 +161,8 @@ export const LESSONS: Record<Concept, Lesson> = {
   uptime: {
     module: "monitoring",
     title: "Uptime checks",
-    full: "An uptime check visits your site from outside every few minutes and alerts you when it stops answering. Without one, your users notice outages before you do. The one Launchwright adds checks your production URL every 15 minutes, and GitHub emails you when it fails. A page that answers doesn't prove every feature works, so keep your smoke tests too.",
-    short: "Uptime: something outside your app checks it every few minutes and alerts you.",
+    full: "An uptime check visits your site from outside every few minutes and alerts you when it stops answering. Without one, your users notice outages before you do. The one Launchwright adds is scheduled every 15 minutes in GitHub Actions, which may run it late or skip a run when busy. Turn on GitHub's failure notifications for Actions and test that the alert reaches you. A page that answers doesn't prove every feature works, so keep your smoke tests too.",
+    short: "Uptime: schedule outside checks and make sure failure alerts reach you.",
   },
   readiness: {
     module: "security",
@@ -173,7 +173,7 @@ export const LESSONS: Record<Concept, Lesson> = {
   api_auth: {
     module: "security",
     title: "Auth on API routes",
-    full: "Every API route that reads or changes private data must check two things on the server: who is asking (authentication), and whether they're allowed to do this to this exact record (authorization). If a route only checks that someone is logged in, any user can change the ID in the request and read someone else's data. Hiding a button in the frontend isn't access control.",
+    full: "Every API route that reads or changes private data must check two things on the server: who is asking (authentication), and whether they're allowed to do this to this exact record (authorization). If a route only checks that someone is logged in, a user may be able to change the ID in the request and get someone else's data. Hiding a button in the frontend isn't access control.",
     short: "API auth: on the server, check who is asking and whether they may touch this record.",
   },
   security_headers: {
@@ -185,14 +185,14 @@ export const LESSONS: Record<Concept, Lesson> = {
   least_privilege: {
     module: "security",
     title: "Least privilege",
-    full: "Give every key and every app only the access it needs, nothing more. A Cloudflare token that can only edit Workers can't delete your DNS, so if it leaks, less can go wrong. Launchwright asks for the smallest scopes it can. Disconnecting an account in Launchwright removes our copy; to cancel a key completely, revoke it with the provider too.",
+    full: "Give every key and every app only the access it needs, nothing more. A Cloudflare token that can only edit Workers can't delete your DNS, so if it leaks, less can go wrong. Launchwright asks only for the permissions its tools use. Disconnecting an account in Launchwright deletes our stored copy (keys and OAuth tokens); to cancel a key completely, revoke it with the provider too.",
     short: "Least privilege: smallest scopes; revoke keys at the provider when done.",
   },
   data_privacy: {
     module: "security",
     title: "The Data Privacy Act (RA 10173)",
-    full: "If your app collects personal data (names, emails, phone numbers) and you or your users are in the Philippines, the Data Privacy Act likely applies. The basics: have a valid reason to process it (consent is the common one, not the only one), explain it in a privacy notice, collect only what you need, protect it, and respect people's rights to access and delete it. If a breach could cause serious harm, such as leaked sensitive data, you must tell the NPC and the affected people within 72 hours of finding out. Your database, logs and third-party services all count.",
-    short: "RA 10173: a valid reason, a clear notice, minimal data, protection, and 72-hour breach reports.",
+    full: "If your app processes personal data (names, emails, phone numbers) covered by the Data Privacy Act, you need an applicable lawful basis for it (consent is one; sensitive personal information has stricter rules), a privacy notice explaining it, only the data you need, protection, and respect for people's rights under the law, like access and correction. If a breach must be notified (generally: sensitive or identity-fraud-enabling data, reasonably believed to have been taken by someone unauthorized, with a real risk of serious harm), tell the NPC and the affected people within 72 hours of knowing or reasonably believing it happened. Your database, logs and third-party services all count.",
+    short: "RA 10173: a lawful basis, a clear notice, minimal data, protection, and 72-hour notice of notifiable breaches.",
   },
 };
 
