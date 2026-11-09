@@ -103,9 +103,9 @@ describe("MCP tools", () => {
     const first = await call("project_status", { repo: REPO });
     expect(first.text).toContain("Framework: Astro");
     expect(first.text).toContain("Worker `shop`");
-    expect(first.text).toContain("Knowing your stack. Before changing anything");
+    expect(first.text).toContain("Knowing your stack. Bago ka magbago ng kahit ano");
     const second = await call("project_status", { repo: REPO });
-    expect(second.text).toContain("Stack first:");
+    expect(second.text).toContain("Stack muna:");
     expect(await mem.store.getProject(1, REPO)).toMatchObject({ framework: "Astro", workerName: "shop" });
     expect(mem.auditLog.map((a) => a.tool)).toEqual(["project_status", "project_status"]);
   });
