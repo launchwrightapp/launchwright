@@ -126,7 +126,7 @@ export const LESSONS: Record<Concept, Lesson> = {
     module: "testing",
     title: "Preview deploys",
     full: "Ang preview deploy ay nagbibigay ng sariling URL sa change ng isang pull request, para masubukan mo (at ng E2E tests mo) bago mag-production. Kapag sira ang preview, aayusin mo bago mag-merge. Pero ang hiwalay na URL ay hindi nangangahulugang hiwalay ang data. Bago mag-test, siguraduhing test database at storage ang gamit ng preview, at test keys para sa kahit anong nagse-send ng email o tumatanggap ng bayad. Kadalasan public ang preview URLs, kaya i-protect ang mga ito kung dapat private ang laman.",
-    short: "Previews: mag-test sa hiwalay na URL gamit ang test data; i-protect ang access kung kailangan.",
+    short: "Previews: mag-test sa hiwalay na URL gamit ang hiwalay na test database at storage; i-protect ang access kung kailangan.",
   },
   deploy: {
     module: "deploy",
@@ -143,8 +143,8 @@ export const LESSONS: Record<Concept, Lesson> = {
   rollback: {
     module: "deploy",
     title: "Rollback",
-    full: "Ang rollback ay pagbalik ng dating version ng code ng app mo. Tinatago ng Cloudflare ang mga na-upload mong Worker versions, kaya mabilis nitong mai-deploy ulit ang dati. Pero hindi nito binabawi ang database changes o binagong bindings: kung binago ng bagong version ang schema, data o resources, baka hindi na gumana ang lumang code sa mga iyon. Kung compatible pa ang lumang version, mag-rollback muna at mag-debug nang kalmado; kung hindi na, mag-ship na lang ng maingat na fix forward.",
-    short: "Rollback: ibalik ang huling maayos na version, kung gumagana pa ito sa current data mo.",
+    full: "Ang rollback ay pag-deploy ulit ng dating Worker version, kasama ang code at configuration nito. Mabilis ito kasi tinatago ng Cloudflare ang mga na-upload mong versions. Pero hindi nito ibinabalik ang dating data o state ng nakakabit na database at storage. I-check muna kung available pa ang resources na kailangan ng lumang version at kung compatible pa ito sa current schema at data; may resource changes na puwedeng humarang sa rollback. Kung compatible pa ang lumang version, mag-rollback muna at mag-debug nang kalmado; kung hindi na, mag-ship na lang ng maingat na fix forward.",
+    short: "Rollback: ibalik ang compatible na dating version; hindi nito nire-restore ang data.",
   },
   logs: {
     module: "monitoring",
@@ -174,7 +174,7 @@ export const LESSONS: Record<Concept, Lesson> = {
     module: "security",
     title: "Auth on API routes",
     full: "Bawat API route na nagbabasa o nagbabago ng private data ay dapat mag-check ng dalawang bagay sa server: sino ang nagtatanong (authentication), at kung allowed ba siyang gawin ito sa eksaktong record na ito (authorization). Kung login lang ang chine-check ng route, baka mapalitan ng user ang ID sa request at makuha ang data ng iba. Ang pagtago ng button sa frontend ay hindi access control.",
-    short: "API auth: sa server, i-check kung sino ang nagtatanong at kung puwede niyang galawin ang record na ito.",
+    short: "API auth: sa server, i-check kung sino ang humihiling at kung allowed ang hinihinging access o action.",
   },
   security_headers: {
     module: "security",
@@ -191,8 +191,8 @@ export const LESSONS: Record<Concept, Lesson> = {
   data_privacy: {
     module: "security",
     title: "The Data Privacy Act (RA 10173)",
-    full: "Kung nagpo-process ang app mo ng personal data (names, emails, phone numbers) na sakop ng Data Privacy Act, kailangan mo ng applicable na lawful basis para dito (isa ang consent; mas mahigpit ang rules para sa sensitive personal information), privacy notice na nag-e-explain nito, data na kailangan lang, proteksyon, at respeto sa rights ng tao ayon sa batas, gaya ng access at correction. Kung breach na kailangang i-report (karaniwan: sensitive o pang-identity-fraud na data, na makatwirang pinaniniwalaang nakuha ng hindi awtorisado, at may totoong risk ng seryosong pinsala), sabihan ang NPC at ang mga apektadong tao within 72 hours mula nang malaman mo o makatwiran mong paniwalaang nangyari ito. Kasama rito ang database, logs at third-party services mo.",
-    short: "RA 10173: lawful basis, malinaw na notice, kaunting data, proteksyon, at report within 72 hours para sa notifiable breaches.",
+    full: "Kung nagpo-process ang app mo ng personal data (names, emails, phone numbers) na sakop ng Data Privacy Act, kailangan mo ng applicable na lawful basis para dito. Isa ang consent, at mas mahigpit ang rules para sa sensitive personal information. Kailangan mo rin ng privacy notice na nag-e-explain nito, data na kailangan lang, proteksyon, at respeto sa rights ng tao ayon sa batas, gaya ng access at correction. May breaches na kailangang i-report: karaniwan, kapag sensitive data o data na puwedeng gamitin sa identity fraud ang makatwirang pinaniniwalaang nakuha ng hindi awtorisado, at may totoong risk ng seryosong pinsala. Sa ganoon, sabihan ang NPC at ang mga apektadong tao within 72 hours mula nang malaman mo o makatwiran mong paniwalaang nangyari ito. Kasama rito ang database, logs at third-party services mo.",
+    short: "RA 10173: lawful basis, malinaw na notice, data na kailangan lang, proteksyon, at report within 72 hours para sa notifiable breaches.",
   },
 };
 
