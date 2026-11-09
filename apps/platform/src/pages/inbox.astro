@@ -13,13 +13,13 @@ import Composer from "../components/Composer.astro";
     </div>
 
     <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-[18rem_minmax(0,1fr)]">
-      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-[22px] border border-line bg-surface p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
+      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-xl border border-line bg-surface p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
         <p data-threads-empty hidden class="px-3 py-4 text-muted">No messages yet.</p>
         <ul data-threads aria-busy="true" class="flex flex-col gap-0.5"></ul>
       </nav>
 
       <section aria-label="Conversation" class="flex min-w-0 flex-col gap-4">
-        <p data-pane-empty class="rounded-[22px] border border-dashed border-line px-5 py-6 text-muted">Pick a conversation.</p>
+        <p data-pane-empty class="rounded-xl border border-dashed border-line px-5 py-6 text-muted">Pick a conversation.</p>
         <div data-pane hidden class="flex flex-col gap-4">
           <div>
             <h2 data-pane-title class="text-xl font-bold tracking-[-0.01em]"></h2>

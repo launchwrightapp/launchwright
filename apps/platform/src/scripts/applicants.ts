@@ -25,7 +25,7 @@ const human = (k: string) => k.replace(/[_-]+/g, " ").replace(/([a-z])([A-Z])/g,
 const show = (v: unknown) => (Array.isArray(v) ? v.join(", ") : typeof v === "object" && v ? JSON.stringify(v) : String(v ?? ""));
 
 function card(a: Applicant) {
-  const li = el("li", "flex flex-col gap-3 rounded-[22px] border border-line bg-surface p-5");
+  const li = el("li", "flex flex-col gap-3 rounded-xl border border-line bg-surface p-5");
   const top = el("div", "flex items-start gap-3");
   const who = el("div", "min-w-0 flex-1");
   add(who, el("p", "truncate text-lg font-semibold", a.name || a.email.split("@")[0]), el("p", "truncate text-[15px] text-muted", `${a.email} · applied ${day(a.appliedAt)}`));

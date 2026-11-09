@@ -16,7 +16,7 @@ const current = modules.find((m) => m.status === "current")!;
       </p>
     </div>
 
-    <section class="card rounded-[22px] grid grid-cols-1 gap-6 bg-surface p-6 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
+    <section class="card rounded-xl grid grid-cols-1 gap-6 bg-surface p-6 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
       <div>
         <p class="flex items-center gap-2"><span class="tag bg-blue text-white">In progress</span><span class="text-muted">Module {current.n}</span></p>
         <h2 id="current-title" class="mt-3 text-3xl font-bold tracking-[-0.02em]">{current.name}</h2>
@@ -30,7 +30,7 @@ const current = modules.find((m) => m.status === "current")!;
 
     <ol class="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
       {modules.map((m) => (
-        <li class:list={["card rounded-[22px] flex items-start gap-3 p-4", m.status === "next" && "bg-transparent"]}>
+        <li class:list={["card rounded-xl flex items-start gap-3 p-4", m.status === "next" && "bg-transparent"]}>
           <span class:list={["grid size-10 flex-none place-items-center rounded-full text-[15px] font-semibold", m.status === "done" ? "bg-ink text-on-ink" : m.status === "current" ? "bg-blue text-white" : "border border-line text-muted"]}>
             {m.status === "done" ? <Check class="size-4" /> : m.n}
           </span>
@@ -43,7 +43,7 @@ const current = modules.find((m) => m.status === "current")!;
       ))}
     </ol>
 
-    <div class="card rounded-[22px] flex flex-wrap items-center justify-between gap-3 bg-transparent p-6">
+    <div class="card rounded-xl flex flex-wrap items-center justify-between gap-3 bg-transparent p-6">
       <p><span class="font-semibold">Level 2 · Your own VPS.</span> <span class="text-muted">Linux, SSH, Nginx, Docker, TLS, backups. Unlocks after Level 1.</span></p>
       <span class="tag tag-line">Later</span>
     </div>

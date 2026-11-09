@@ -19,8 +19,8 @@ export function renderMessage(m: Message, mine: "in" | "out", label: (m: Message
   meta.textContent = `${label(m)} · ${when(m.at)}${m.via === "email" ? " · by email" : ""}`;
   const bubble = document.createElement("p");
   bubble.className = right
-    ? "max-w-[min(36rem,100%)] whitespace-pre-wrap break-words rounded-[20px] rounded-br-md bg-ink px-4 py-3 text-on-ink"
-    : "max-w-[min(36rem,100%)] whitespace-pre-wrap break-words rounded-[20px] rounded-bl-md border border-line bg-surface-2 px-4 py-3";
+    ? "max-w-[min(36rem,100%)] whitespace-pre-wrap break-words rounded-xl rounded-br-md bg-ink px-4 py-3 text-on-ink"
+    : "max-w-[min(36rem,100%)] whitespace-pre-wrap break-words rounded-xl rounded-bl-md border border-line bg-surface-2 px-4 py-3";
   bubble.textContent = m.body;
   add(li, meta, bubble);
   return li;
