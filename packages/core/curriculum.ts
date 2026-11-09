@@ -1,6 +1,15 @@
-// The Level 1 curriculum: modules, and the concepts inside them.
+// The Level 1 curriculum: modules, the concepts inside them, and practice exercises.
 // Tool calls teach concepts (the MCP server records them in lesson_progress); the platform
 // shows the same modules with each learner's progress. One source for both.
+//
+// Level 1 teaches production fundamentals. It doesn't make an app "production-ready": that word is
+// for a specific app that passed checks fit for its users, data and failure risks. The exercises
+// are the hands-on part no tool call can do for you (restore drills, access tests, a runbook).
+
+export const LEVEL_1 = {
+  name: "Level 1",
+  promise: "Ship your first web app with production fundamentals.",
+};
 
 export type ModuleId = "git" | "env" | "database" | "cicd" | "testing" | "deploy" | "monitoring" | "security";
 
@@ -174,7 +183,7 @@ export const LESSONS: Record<Concept, Lesson> = {
   readiness: {
     module: "security",
     title: "Production readiness",
-    full: "Ang readiness checks ay naghahanap ng karaniwang risks bago dumating ang totoong users: secrets sa code, settings na walang documentation, walang tests sa bawat PR, walang browser test ng totoong app, walang migrations, deployed site na walang HTTPS, security headers o uptime check. Magandang baseline ang pumasa sa mga ito, pero hindi patunay na secure ang app: kailangan mo pa rin ng access checks sa data mo at backups na kaya mong i-restore. Isa-isahin ang pag-fix, simula sa failures.",
+    full: "Ang readiness checks ay naghahanap ng karaniwang risks bago dumating ang totoong users: secrets sa code, settings na walang documentation, walang tests sa bawat PR, walang browser test ng totoong app, walang migrations, deployed site na walang HTTPS, security headers o uptime check. Magandang baseline ang pumasa sa mga ito, pero hindi pa ito patunay na production-ready ang app: depende iyon sa users, data at risks nito. Kailangan mo pa rin ng access tests, backups na nasubukan mong i-restore, rate limits, runbook at malinaw na data retention; nasa practice exercises ang mga iyon. Isa-isahin ang pag-fix, simula sa failures.",
     short: "Readiness: baseline lang; unahin ang failures, tapos warnings, isa-isa.",
   },
   api_auth: {
@@ -203,18 +212,79 @@ export const LESSONS: Record<Concept, Lesson> = {
   },
 };
 
+// Practice exercises: real work on the learner's own app, guided by the lesson-practice prompt.
+// `why` is shown on the dashboard (Taglish); `task` is the instruction to the learner's AI tool.
+export type ExerciseId = "backup_restore" | "launch_quality" | "incident_runbook" | "access_tests" | "abuse_and_deps" | "data_lifecycle";
+
+export interface Exercise {
+  id: ExerciseId;
+  module: ModuleId;
+  title: string;
+  why: string;
+  task: string;
+}
+
+export const EXERCISES: Exercise[] = [
+  {
+    id: "backup_restore",
+    module: "database",
+    title: "Backup and restore drill",
+    why: "Hindi mo pa alam kung may backup ka hangga't hindi mo pa nasusubukang mag-restore. Alamin kung anong backups o point-in-time restore ang kasama sa plan mo sa Neon o Supabase, mag-restore sa hiwalay na branch o database, at i-check kung kumpleto ang data. Sa schema changes, gawin muna ang compatible na hakbang (magdagdag bago magtanggal) para gumagana pa rin ang dating version kung kailangan mong mag-rollback.",
+    task: "Recovery drill. 1) Find out what backups or point-in-time restore my database plan (Neon or Supabase) actually includes and how far back it goes; check the provider's current docs, don't guess. If it isn't enough for my data, help me set up my own regular dump stored outside the database provider. 2) Restore to a separate branch or database (never over production), then check the restored data: row counts on the main tables and one record I know. 3) Write down how long it took and the steps, in a RECOVERY.md in the repo. 4) Look at my pending or recent migrations: would the previous app version still work against the new schema? If not, show me how to split it into expand-then-contract steps (add first, switch the code, remove later).",
+  },
+  {
+    id: "launch_quality",
+    module: "testing",
+    title: "Launch quality check",
+    why: "Puwedeng pumasa ang tests pero mahirap pa ring gamitin ang app. Bago mag-launch, i-test ang mga pinakamahalagang ginagawa ng users (sign up, ang main action, pagbayad kung meron), sa mobile din, gamit ang keyboard at screen reader basics, at tingnan kung mabilis mag-load. Alamin din kung ilang users ang inaasahan mo at kung kaya iyon ng free tier limits mo.",
+    task: "Launch quality check. 1) Ask me for the two or three journeys that matter most to my users and make sure each has a Playwright test that checks the result, not just the clicks. 2) Run those tests on a mobile viewport too (a Playwright device profile) and fix what breaks. 3) Add an automated accessibility scan with @axe-core/playwright on the main pages, then explain each violation and fix the serious ones; tell me what automated scans can't catch (keyboard flow, focus, meaningful labels) and check those by hand with me. 4) Measure load performance on the deployed preview (Lighthouse or the browser's performance panel) and fix the biggest problem. 5) Ask how many users I expect at launch, then compare that to the free-tier limits of my hosting and database (check current docs) and tell me what happens when a limit is hit.",
+  },
+  {
+    id: "incident_runbook",
+    module: "monitoring",
+    title: "Alerts, owner and runbook",
+    why: "Kapag may outage, dapat alam na kung sino ang aasikaso at kung ano ang gagawin, hindi pa lang iisipin. Siguraduhing nakakarating ang alert sa taong kikilos, at gumawa ng maikling runbook: paano i-check, paano mag-rollback, paano mag-restore, at sino ang sasabihan.",
+    task: "Incident readiness. 1) List the alerts I have (uptime, failed deploys, failed CI) and where each one goes; send a test failure and confirm it reaches me. Remove or fix any alert I'd ignore. 2) Ask who owns incidents for this app (usually me) and a backup person if there is one. 3) Write a short RUNBOOK.md in the repo: how to tell what's broken (logs, get_logs, the uptime check), how to roll back with launchwright deploy, how to restore data (link RECOVERY.md if it exists), how to rotate a leaked secret, and who to tell, including users and, for a notifiable personal data breach, the NPC within 72 hours. 4) Walk through one pretend outage with me using only the runbook, and fix the steps that didn't work.",
+  },
+  {
+    id: "access_tests",
+    module: "security",
+    title: "Prove your access control",
+    why: "Ang tanong ay hindi lang kung naka-login ang user, kundi kung kanya ba talaga ang record na hinihingi niya. I-validate ang input sa server, i-check ang may-ari ng bawat record (o ang team o tenant nito), at sumulat ng test na sinusubukang kunin o baguhin ang data ng ibang user. Dapat itong ma-reject.",
+    task: "Access control exercise. 1) List my API routes and server actions that read or change data, and for each one show me where it checks who the user is and whether they may touch that specific record (owner, team or tenant). 2) Add server-side input validation (a schema such as zod) where it's missing, and make invalid input return a clear 400, not a crash. 3) Write automated tests that sign in as user A and try to read, change and delete user B's records by changing IDs in the request, plus the same calls with no session. They must get 401, 403 or 404 and B's data must be unchanged. 4) Fix every route that fails, and run the tests in CI.",
+  },
+  {
+    id: "abuse_and_deps",
+    module: "security",
+    title: "Abuse and dependency checks",
+    why: "Kapag public na ang app, may magtatangkang abusuhin ito: paulit-ulit na login attempts, spam sa forms, sobrang daming requests na nagpapataas ng bill mo. Lagyan ng rate limits ang login, sign-up at forms, ng spam protection ang public forms kung kailangan, at i-check ang dependencies mo para sa kilalang vulnerabilities.",
+    task: "Abuse and dependency exercise. 1) Find my endpoints that can be abused: login, sign-up, password reset, contact or comment forms, anything that sends email or costs money per call. Add rate limits to them (for example a Cloudflare rate limiting rule or the Workers rate limit binding; check what my plan includes) and test that the limit triggers. 2) For public forms that get spam, add a proportionate check such as Cloudflare Turnstile, and explain why I shouldn't add a CAPTCHA where it isn't needed. 3) Run npm audit (or my package manager's equivalent), explain each high or critical finding and whether it affects my app, and fix or upgrade what does. 4) Turn on Dependabot alerts and security updates for the repo, and explain how I'd review those pull requests with review_pr.",
+  },
+  {
+    id: "data_lifecycle",
+    module: "security",
+    title: "Personal data map and deletion",
+    why: "Dapat alam mo kung saan napupunta ang personal data ng users mo: database, logs, backups, email at analytics services. Magtakda kung gaano katagal ito itatago, at gumawa ng paraan para totoong ma-delete ang data ng isang user kapag hiniling niya, pati sa third-party services.",
+    task: "Data lifecycle exercise. 1) Build a data map with me in DATA.md: every kind of personal data the app collects, why, where it's stored (database tables, logs, backups, and each third-party service such as email, analytics, payments or AI APIs), and who can access it. 2) Agree on a retention period for each and add a scheduled cleanup for data past it. 3) Implement deleting one user's data on request across the database and each third-party service that supports it; note what stays in backups and for how long, and what we must keep by law. 4) Test it with a throwaway user and confirm the data is gone. 5) Check that my privacy notice matches the data map, under the Data Privacy Act (RA 10173).",
+  },
+];
+
+export const isExerciseId = (s: string): s is ExerciseId => EXERCISES.some((e) => e.id === s);
+export const exercisesIn = (m: ModuleId) => EXERCISES.filter((e) => e.module === m);
+
 export const CONCEPTS = Object.keys(LESSONS) as Concept[];
 export const isConcept = (s: string): s is Concept => s in LESSONS;
 export const conceptsIn = (m: ModuleId) => CONCEPTS.filter((c) => LESSONS[c].module === m);
 
 export interface ModuleProgress extends Module {
   concepts: { id: Concept; title: string; full: string; done: boolean }[];
+  exercises: Exercise[]; // practice; not counted in done/total
   done: number;
   total: number;
   status: "done" | "current" | "next";
 }
 
-// Progress per module from the concepts a learner has seen. The first unfinished module is "current".
+// Progress per module from the concepts a learner has seen (exercises are listed, not tracked yet). The first unfinished module is "current".
 export function progress(seen: Iterable<string>): ModuleProgress[] {
   const s = new Set(seen);
   let current = false;
@@ -227,6 +297,6 @@ export function progress(seen: Iterable<string>): ModuleProgress[] {
       status = "current";
       current = true;
     }
-    return { ...m, concepts, done, total: concepts.length, status };
+    return { ...m, concepts, exercises: exercisesIn(m.id), done, total: concepts.length, status };
   });
 }

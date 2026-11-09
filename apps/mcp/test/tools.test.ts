@@ -110,7 +110,19 @@ describe("MCP tools", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["check_env", "check_readiness", "connect_database", "deploy", "explain_error", "get_logs", "project_status", "review_pr", "set_secret", "setup_ci"]);
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review"]));
+    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review", "lesson-practice"]));
+  });
+
+  it("lesson-practice guides one exercise on the learner's repo", async () => {
+    const { client } = await connect();
+    const p = await client.getPrompt({ name: "lesson-practice", arguments: { repo: REPO, exercise: "backup_restore" } });
+    const text = (p.messages[0].content as { text: string }).text;
+    expect(text).toContain(REPO);
+    expect(text).toContain("Backup and restore drill");
+    expect(text).toContain("never over production");
+    expect(text).toContain("doesn't by itself make the app production-ready");
+    expect(text).toContain("Taglish");
+    await expect(client.getPrompt({ name: "lesson-practice", arguments: { repo: REPO, exercise: "nope" } })).rejects.toThrow();
   });
 
   it("project_status saves the project, teaches once in full, then short, and audits", async () => {

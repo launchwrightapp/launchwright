@@ -180,6 +180,14 @@ test("sidebar or menu marks the current page", async ({ page, isMobile }) => {
   await expect(page).toHaveURL(/\/readiness/);
 });
 
+test("lessons list practice exercises under their module", async ({ page }) => {
+  await page.goto("/lessons");
+  await expect(page.getByText("Ship your first web app with production fundamentals.")).toBeVisible();
+  const db = page.getByRole("listitem").filter({ has: page.getByText("Database", { exact: true }) });
+  await db.getByText("Backup and restore drill").click();
+  await expect(db.getByText("/lesson-practice exercise=backup_restore")).toBeVisible();
+});
+
 test("top bar stays fixed while scrolling", async ({ page }) => {
   await serveMe(page);
   await page.goto("/");

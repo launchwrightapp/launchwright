@@ -7,8 +7,8 @@ claude mcp add --transport http launchwright https://mcp.launchwright.app/mcp
 ```
 
 Every tool call returns the result **and** a short lesson. The first time a learner meets a
-concept the lesson is full; after that it's one line. The curriculum (8 Level 1 modules and their
-concepts) lives in `packages/core/curriculum.ts`, shared with the dashboard.
+concept the lesson is full; after that it's one line. The curriculum (8 Level 1 modules, their
+concepts and practice exercises) lives in `packages/core/curriculum.ts`, shared with the dashboard.
 
 ## Tools (v0.1)
 
@@ -32,7 +32,9 @@ and ask. `check_env` then reads only that app's folder. Each app gets its own `l
 `setup_ci` for a second app keeps the existing `ci.yml`. A repo with one app works as before.
 
 Prompts (guided lessons): `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
-`lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`, `lesson-review`.
+`lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`, `lesson-review`, and
+`lesson-practice` (hands-on exercises: backup and restore, launch quality, alerts and a runbook,
+access tests, abuse and dependencies, personal data lifecycle).
 
 ## Security model
 

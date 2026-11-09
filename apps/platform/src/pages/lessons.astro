@@ -1,6 +1,7 @@
 ---
 import App from "../layouts/App.astro";
 import Check from "../../../../packages/ui/Check.astro";
+import { LEVEL_1 } from "../../../../packages/core/curriculum";
 
 // Level 1 curriculum (packages/core/curriculum.ts) with this learner's progress.
 // A concept counts as covered once a tool call has taught it.
@@ -11,6 +12,7 @@ import Check from "../../../../packages/ui/Check.astro";
       <p class="label">Lessons · Level 1</p>
       <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]" data-bind="lessonsHeading">Lessons</h1>
       <p class="mt-1 text-[14px] text-muted">Lessons happen inside your AI tool: every launchwright tool call explains what it did and why. The first time you meet a concept you get the full lesson; after that, one line. <span data-bind="conceptsCovered">0</span> concepts covered so far.</p>
+      <p class="mt-1 text-[14px] text-muted"><span class="font-semibold text-ink">{LEVEL_1.promise}</span> Passing the checks is a baseline. The practice exercises cover what no check can verify for you, like a restore drill or testing who can see whose data. Whether a specific app is production-ready depends on its users, its data and what happens if it fails.</p>
     </div>
 
     <section hidden data-if="current" class="card rounded-xl grid grid-cols-1 gap-4 bg-surface p-4 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
@@ -55,6 +57,23 @@ import Check from "../../../../packages/ui/Check.astro";
               </li>
             </template>
           </ul>
+          <div hidden data-if="hasExercises" class="flex flex-col gap-1 border-t border-line pt-2">
+            <p class="text-[12px] font-semibold uppercase tracking-wide text-muted">Practice on your app</p>
+            <ul class="flex flex-col gap-1" data-each="exercises">
+              <template>
+                <li>
+                  <details class="group">
+                    <summary class="flex cursor-pointer items-center gap-2 py-1 text-[14px]">
+                      <span class="size-2 flex-none rotate-45 border border-muted" aria-hidden="true"></span>
+                      <span class="flex-1" data-bind="title"></span>
+                    </summary>
+                    <p class="pb-1 pl-4 text-[14px] text-muted" data-bind="why"></p>
+                    <p class="pb-2 pl-4 text-[13px] text-muted">In your AI tool: <code data-bind="command"></code></p>
+                  </details>
+                </li>
+              </template>
+            </ul>
+          </div>
           <p hidden data-if="promptCommand" class="text-[13px] text-muted">Guided lesson: <code data-bind="promptCommand"></code></p>
         </li>
       </template>

@@ -103,6 +103,8 @@ export function view(me: Me, now = Date.now()) {
     bars: m.concepts.map((c) => ({ done: c.done, doneCurrent: c.done && m.status === "current", doneOther: c.done && m.status !== "current" })),
     concepts: m.concepts.map((c) => ({ ...c, state: c.done ? "Covered" : "Not yet" })),
     promptCommand: m.prompt ? `/${m.prompt}` : null,
+    hasExercises: m.exercises.length > 0,
+    exercises: m.exercises.map((e) => ({ title: e.title, why: e.why, command: `/lesson-practice exercise=${e.id}` })),
   }));
   const current = modules.find((m) => m.isCurrent) ?? null;
 

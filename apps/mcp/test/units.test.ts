@@ -11,7 +11,7 @@ import { apiAuth, checkUrl, securityHeaders, uptime } from "../src/live";
 import { openSealedBox, sealedBox } from "../src/sealedbox";
 import { looksLikeSecret, redact, untrustedBlock } from "../../../packages/core/untrusted";
 import { seal, unseal } from "../../../packages/core/seal";
-import { CONCEPTS, LESSONS, MODULES, progress } from "../../../packages/core/curriculum";
+import { CONCEPTS, EXERCISES, LESSONS, MODULES, progress } from "../../../packages/core/curriculum";
 
 describe("check_env analysis", () => {
   const files = {
@@ -105,6 +105,15 @@ describe("curriculum", () => {
     expect(p[0].status).toBe("done");
     expect(p[1]).toMatchObject({ status: "current", done: 1, total: 4 });
     expect(p.filter((m) => m.status === "current")).toHaveLength(1);
+  });
+  it("lists practice exercises per module without counting them as progress", () => {
+    expect(new Set(EXERCISES.map((e) => e.id)).size).toBe(EXERCISES.length);
+    for (const e of EXERCISES) expect(MODULES.map((m) => m.id)).toContain(e.module);
+    const p = progress(CONCEPTS.filter((c) => LESSONS[c].module === "database"));
+    const db = p.find((m) => m.id === "database")!;
+    expect(db).toMatchObject({ status: "done", done: db.total });
+    expect(db.exercises.map((e) => e.id)).toEqual(["backup_restore"]);
+    expect(p.find((m) => m.id === "security")!.exercises.map((e) => e.id)).toEqual(["access_tests", "abuse_and_deps", "data_lifecycle"]);
   });
 });
 
