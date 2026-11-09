@@ -5,5 +5,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "wt:new": "bash scripts/worktree.sh new",
+    "wt:done": "bash scripts/worktree.sh done",
+    "wt:list": "bash scripts/worktree.sh list"
+  }
 }
