@@ -157,6 +157,20 @@
   .tag-warn { @apply bg-warn-bg text-warn; }
   .tag-bad { @apply bg-bad-bg text-bad; }
   .tag-line { @apply border border-line bg-transparent text-muted; }
+  /* Pill tabs and filters: one style for every tab row (role=tab or aria-pressed buttons). */
+  .pill-tabs { @apply flex flex-wrap gap-2; }
+  .pill-tab {
+    @apply inline-flex min-h-11 flex-none cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-line bg-surface px-5 text-[17px] font-medium leading-none text-ink hover:border-ink;
+  }
+  .pill-tab[aria-selected="true"], .pill-tab[aria-pressed="true"] { @apply border-ink bg-ink text-on-ink; }
+  .pill-tab .count { @apply tabular-nums; }
+  /* Bottom sheet: a <dialog> that slides up from the bottom edge, full width. */
+  .sheet {
+    @apply fixed inset-x-0 top-auto bottom-0 m-0 max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[14px] border border-b-0 border-line bg-surface p-0 text-ink;
+  }
+  .sheet[open] { animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .sheet::backdrop { background: rgb(0 0 0 / 0.45); }
+  @media (prefers-reduced-motion: reduce) { .sheet[open] { animation: none; } }
   .card { @apply rounded-[40px] border border-line bg-surface-2 p-7; }
   .label { @apply text-base font-medium text-muted; }
   .input {
@@ -220,4 +234,8 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .step-in { animation: step-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1); }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
 }
