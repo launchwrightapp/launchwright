@@ -50,14 +50,15 @@ if (cmd === "list") {
   console.log(`Sent "You're in" to ${r.email}. Seats used: ${r.seatsUsed}/${r.seats}.`);
 } else if (cmd === "funnel") {
   const days = email && /^\d+$/.test(email) ? email : "";
-  const { steps } = await call(`/api/admin/funnel${days ? `?days=${days}` : ""}`);
-  console.log(days ? `Last ${days} days\n` : "All time\n");
+  const { steps, countingSince } = await call(`/api/admin/funnel${days ? `?days=${days}` : ""}`);
+  console.log(`${days ? `Last ${days} days` : "All time"}${countingSince ? ` (counting started ${countingSince})` : ""}\n`);
   const top = steps[0].n;
   let prev = null;
   for (const s of steps) {
     const ofTop = top ? `${Math.round((s.n / top) * 100)}%`.padStart(5) : "    -";
-    const ofPrev = prev ? `${Math.round((s.n / prev) * 100)}% of previous` : "";
-    console.log(`${String(s.n).padStart(6)}  ${ofTop}  ${s.label.padEnd(38)} ${ofPrev}`);
+    const ofPrev = prev === null ? "" : s.n > prev || !prev ? "–" : `${Math.round((s.n / prev) * 100)}% of previous`;
+    console.log(`${String(s.n).padStart(6)}  ${ofTop}  ${s.label.padEnd(42)} ${ofPrev}`);
+    if (s.detail) console.log(`${" ".repeat(15)}${s.detail}`);
     prev = s.n;
   }
   console.log("\nThe first 10 rows are anonymous totals from the site. The last 4 count GitHub accounts, yours included.");
