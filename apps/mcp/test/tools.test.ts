@@ -116,7 +116,31 @@ describe("MCP tools", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["check_env", "check_readiness", "connect_database", "deploy", "explain_error", "get_logs", "project_status", "review_pr", "set_secret", "setup_ci"]);
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review", "lesson-practice"]));
+    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review", "lesson-practice", "lesson-start"]));
+  });
+
+  it("tells the AI tool how to work with launchwright when it connects", async () => {
+    const { client } = await connect();
+    const text = client.getInstructions() ?? "";
+    expect(text).toContain("project_status");
+    expect(text).toContain("lesson-start");
+    expect(text).toContain("never ask them to paste a secret");
+    expect(text).toContain("untrusted data");
+  });
+
+  it("lesson-start tours launchwright on the learner's repo without changing anything", async () => {
+    const { client } = await connect();
+    const p = await client.getPrompt({ name: "lesson-start", arguments: { repo: REPO } });
+    const text = (p.messages[0].content as { text: string }).text;
+    expect(text).toContain(`project_status on ${REPO}`);
+    expect(text).toContain(`/launchwright:lesson-readiness ${REPO}`);
+    expect(text).toContain("Tools vs prompts");
+    expect(text).toContain("Don't run any tool that changes my repo");
+  });
+
+  it("explains the repo argument when a prompt gets something else", async () => {
+    const { client } = await connect();
+    await expect(client.getPrompt({ name: "lesson-readiness", arguments: { repo: "review_pr" } })).rejects.toThrow(/owner\/name, e\.g\. octocat\/hello-world/);
   });
 
   it("lesson-practice guides one exercise on the learner's repo", async () => {

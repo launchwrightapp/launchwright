@@ -150,7 +150,7 @@ export function view(me: Me, now = Date.now()) {
     { n: 2, title: "Give launchwright your repo", detail: "Install the launchwright GitHub App on the repo you'll work on. You pick the repos.", href: GITHUB_APP_INSTALL_URL, done: !!project, cta: "Install" },
     { n: 3, title: "Connect Cloudflare", detail: "Where your app runs. You create a limited token; the AI never sees it.", href: "/security#connect-cloudflare", done: cloudflareConnected, cta: "Connect" },
     { n: 4, title: "Connect a database", detail: "Neon or Supabase, both have free tiers.", href: "/security#connect-neon", done: hasDatabase, cta: "Connect" },
-    { n: 5, title: "Check your project", detail: "Ask your AI tool: \"Use launchwright project_status on owner/repo\".", href: "/connect", done: !!project, cta: "How" },
+    { n: 5, title: "Check your project", detail: "Start the lesson-start prompt with your repo, or ask your AI tool: \"Use launchwright to check my project owner/repo\".", href: "/connect#tools-and-prompts", done: !!project, cta: "How" },
   ].map((s) => ({ ...s, todo: !s.done, label: `Step ${s.n}: ${s.title}${s.done ? " (done)" : ""}` }));
   const setupDone = onboarding.filter((s) => s.done).length;
 

@@ -326,3 +326,13 @@ test("coming back from Supabase says what happened", async ({ page }) => {
   await loaded(page);
   await expect(page.locator("#supabase-status")).toHaveText(/You cancelled on Supabase/);
 });
+
+test("connect page explains tools vs prompts, with the repo as the prompt argument", async ({ page }) => {
+  await serveMe(page, me);
+  await page.goto("/connect");
+  const card = page.locator("#tools-and-prompts");
+  await expect(card.getByText("Two ways to use launchwright")).toBeVisible();
+  await expect(card.getByText("/launchwright:lesson-start octocat/hello-world")).toBeVisible();
+  await expect(card.getByText("Use launchwright to review PR #3 on octocat/hello-world")).toBeVisible();
+  await expect(page.getByText("Take the tour")).toBeVisible();
+});

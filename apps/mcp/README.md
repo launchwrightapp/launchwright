@@ -31,7 +31,7 @@ Cloudflare app. With more than one, `check_env`, `set_secret`, `connect_database
 and ask. `check_env` then reads only that app's folder. Each app gets its own `launchwright-deploy-<app>.yml`;
 `setup_ci` for a second app keeps the existing `ci.yml`. A repo with one app works as before.
 
-Prompts (guided lessons): `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
+Prompts (guided lessons): `lesson-start` (a tour of launchwright itself), `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
 `lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`, `lesson-review`, and
 `lesson-practice` (hands-on exercises: backup and restore, launch quality, alerts and a runbook,
 access tests, abuse and dependencies, personal data lifecycle). `check_readiness` marks an
