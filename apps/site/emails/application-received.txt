@@ -8,7 +8,7 @@ What you're building:
 {{building}}
 
 WHAT HAPPENS NEXT
-1. We read your application. Every one, by a person.
+1. We read your application. Every one, by a person. An AI model may help us review your answers, without your name or contact details. Reply "no AI" if you'd rather it didn't.
 2. If you're in, we email you a link to get started.
 3. Not this round? After the pilot, a free Starter plan stays open to everyone.
 
