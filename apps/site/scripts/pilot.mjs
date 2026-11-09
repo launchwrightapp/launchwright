@@ -3,6 +3,7 @@
 //   npm run pilot -- list                      applicants, newest first
 //   npm run pilot -- accept juan@example.com   send "You're in" and take a seat
 //   npm run pilot -- accept juan@example.com --resend
+//   npm run pilot -- funnel [days]              how far people get, step by step
 //   npm run pilot -- notify-policy --test      privacy update email, one copy to NOTIFY_EMAIL
 //   npm run pilot -- notify-policy --all       privacy update email to every applicant
 // The admin token comes from LW_ADMIN_TOKEN, or the macOS Keychain item "launchwright-admin".
@@ -47,6 +48,19 @@ if (cmd === "list") {
 } else if (cmd === "accept" && email) {
   const r = await call("/api/admin/accept", { method: "POST", body: JSON.stringify({ email, resend: flag === "--resend" }) });
   console.log(`Sent "You're in" to ${r.email}. Seats used: ${r.seatsUsed}/${r.seats}.`);
+} else if (cmd === "funnel") {
+  const days = email && /^\d+$/.test(email) ? email : "";
+  const { steps } = await call(`/api/admin/funnel${days ? `?days=${days}` : ""}`);
+  console.log(days ? `Last ${days} days\n` : "All time\n");
+  const top = steps[0].n;
+  let prev = null;
+  for (const s of steps) {
+    const ofTop = top ? `${Math.round((s.n / top) * 100)}%`.padStart(5) : "    -";
+    const ofPrev = prev ? `${Math.round((s.n / prev) * 100)}% of previous` : "";
+    console.log(`${String(s.n).padStart(6)}  ${ofTop}  ${s.label.padEnd(38)} ${ofPrev}`);
+    prev = s.n;
+  }
+  console.log("\nThe first 10 rows are anonymous totals from the site. The last 4 count GitHub accounts, yours included.");
 } else if (cmd === "notify-policy" && email === "--test") {
   const r = await call("/api/admin/notify-policy", { method: "POST", body: JSON.stringify({ test: true }) });
   console.log(`Test sent to ${r.to}.`);
@@ -64,6 +78,6 @@ if (cmd === "list") {
   console.log(`\n${sent} of ${applicants.length} sent.`);
   if (sent < applicants.length) process.exit(1);
 } else {
-  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- accept <email> [--resend]\n  npm run pilot -- notify-policy --test | --all");
+  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- funnel [days]\n  npm run pilot -- accept <email> [--resend]\n  npm run pilot -- notify-policy --test | --all");
   process.exit(cmd ? 1 : 0);
 }

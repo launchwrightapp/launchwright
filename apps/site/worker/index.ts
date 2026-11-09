@@ -3,9 +3,10 @@ import { sendAcknowledgement, sendAcceptance, sendNewApplication, sendPolicyUpda
 import { cleanAnswers } from "./options";
 import { crossSite, underLimit } from "./guard";
 import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
+import { report as funnelReport, track, type FunnelEnv } from "./funnel";
 import { checkCode, clearSession, endSession, hasSessionCookie, requestCode, sessionEmail, type VerifyEnv } from "./verify";
 
-interface Env extends VerifyEnv {
+interface Env extends VerifyEnv, FunnelEnv {
   ASSETS: Fetcher;
   ADMIN_TOKEN?: string; // secret; enables /api/admin/* (unset = those routes 404)
   NOTIFY_EMAIL?: string; // secret; where "new application" alerts go (unset = no alerts)
@@ -116,6 +117,11 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     return json({ seats: PILOT_SEATS, accepted: rows.filter((r) => r.accepted_at).length, applicants: rows });
   }
 
+  // The pilot funnel: anonymous totals per step. ?days=N for the last N days.
+  if (url.pathname === "/api/admin/funnel" && req.method === "GET") {
+    return json(await funnelReport(sql, url));
+  }
+
   // Accept one applicant: sends the "You're in" email and records the seat.
   if (url.pathname === "/api/admin/accept" && req.method === "POST") {
     if (!env.EMAIL) return json({ error: "Email sending isn't set up yet." }, 503);
@@ -180,6 +186,7 @@ const POST_ROUTES: Record<string, Route> = {
   "/api/pilot/code": requestCode,
   "/api/pilot/verify": checkCode,
   "/api/waitlist": waitlist,
+  "/api/funnel": track,
 };
 
 export default {
