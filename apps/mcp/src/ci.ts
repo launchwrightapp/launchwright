@@ -3,6 +3,7 @@
 //   launchwright-deploy.yml   Cloudflare: preview per PR + E2E on the preview; production on
 //                             manual dispatch (after dashboard approval) + smoke test + rollback
 //   uptime.yml                scheduled check of the production URL
+//   .githooks/pre-commit      gitleaks on staged changes, before a key leaves the laptop
 // Plus a minimal Playwright config and smoke test when the repo has none.
 // Pure functions: the tool opens a pull request with the result.
 import { dependencies, type RepoSnapshot } from "./readiness";
@@ -292,13 +293,52 @@ test("home page loads without errors", async ({ page }) => {
 });
 `;
 
-export function ciFiles(s: RepoSnapshot, opts: { productionUrl?: string | null; app?: App | null }): { files: { path: string; content: string }[]; plan: CiPlan; added: string[] } {
+// A pre-commit hook that scans staged changes with gitleaks. Fails open (with a warning) when
+// gitleaks isn't installed or errors, so a beginner is never stuck; blocks only on a finding.
+// Turned on per clone with `git config core.hooksPath .githooks`.
+export const PRE_COMMIT_HOOK = `#!/bin/sh
+# Made by launchwright (setup_ci). Scans what you're about to commit for keys and passwords,
+# before they leave your laptop. CI scans again on every push; this catches it one step earlier.
+# Turn it on once per clone:  git config core.hooksPath .githooks
+# Needs gitleaks: https://github.com/gitleaks/gitleaks#installing (macOS: brew install gitleaks)
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "launchwright: gitleaks isn't installed, so this commit was NOT scanned for secrets." >&2
+  echo "Install it: https://github.com/gitleaks/gitleaks#installing (CI still scans after you push)." >&2
+  exit 0
+fi
+
+if gitleaks git --help >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --no-banner
+else
+  gitleaks protect --staged --redact --no-banner # gitleaks older than 8.19
+fi
+status=$?
+
+if [ "$status" -eq 1 ]; then
+  echo "" >&2
+  echo "launchwright: this commit looks like it contains a secret (hidden above). Nothing was committed." >&2
+  echo "Move the value to .env (git ignores it) or your platform's secret storage, then commit again." >&2
+  echo "If it's really not a secret, add the comment  gitleaks:allow  on that line." >&2
+  exit 1
+fi
+if [ "$status" -ne 0 ]; then
+  echo "launchwright: gitleaks couldn't run (exit $status), so this commit was NOT scanned. CI still scans after you push." >&2
+fi
+exit 0
+`;
+
+// Repos that already manage git hooks another way: don't fight them over core.hooksPath.
+const HOOK_MANAGER = /^(\.husky\/|\.githooks\/pre-commit$|lefthook\.ya?ml$|\.lefthook\.ya?ml$|\.pre-commit-config\.ya?ml$|\.simple-git-hooks\.(json|js|cjs)$)/;
+export const hasHookManager = (paths: string[]) => paths.some((p) => HOOK_MANAGER.test(p));
+
+export function ciFiles(s: RepoSnapshot, opts: { productionUrl?: string | null; app?: App | null }): { files: { path: string; content: string; executable?: boolean }[]; plan: CiPlan; added: string[] } {
   const p = plan(s, opts.app);
   // Monorepo with several apps: setup_ci runs once per app, so keep the shared files that are
   // already there and add only this app's deploy workflow.
   const perApp = p.deployWorkflow !== DEPLOY_WORKFLOW;
   const keep = (path: string) => perApp && s.paths.includes(path);
-  const files: { path: string; content: string }[] = [];
+  const files: { path: string; content: string; executable?: boolean }[] = [];
   if (!keep(".github/workflows/ci.yml")) files.push({ path: ".github/workflows/ci.yml", content: ciWorkflow(p) });
   const deploy = deployWorkflow(p);
   if (deploy) files.push({ path: `.github/workflows/${p.deployWorkflow}`, content: deploy });
@@ -313,5 +353,6 @@ export function ciFiles(s: RepoSnapshot, opts: { productionUrl?: string | null; 
     files.push({ path: "playwright.config.ts", content: playwrightConfig(!!scripts.preview, p.packageManager) });
     if (!s.paths.includes("tests/smoke.spec.ts")) files.push({ path: "tests/smoke.spec.ts", content: SMOKE_TEST });
   }
+  if (!hasHookManager(s.paths)) files.push({ path: ".githooks/pre-commit", content: PRE_COMMIT_HOOK, executable: true });
   return { files, plan: p, added: files.map((f) => f.path) };
 }
