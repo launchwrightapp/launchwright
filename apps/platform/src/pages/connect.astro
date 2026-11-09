@@ -37,9 +37,9 @@ const steps = [
     </ol>
 
     <div class="card rounded-xl p-0">
-      <div role="tablist" aria-label="AI tool" data-tabs class="pill-tabs px-5 pt-5">
+      <div role="tablist" aria-label="AI tool" data-tabs class="tabs px-5 pt-5">
         {tools.map((t, i) => (
-          <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="pill-tab">{t.label}</button>
+          <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">{t.label}</button>
         ))}
       </div>
       {tools.map((t) => (
