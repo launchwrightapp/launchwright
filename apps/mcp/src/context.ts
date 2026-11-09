@@ -8,7 +8,7 @@ import { RepoError, readRepo, type Snapshot } from "./github";
 import { cloudflare, CloudflareError } from "./providers/cloudflare";
 import { DatabaseError, neonProvider, supabaseProvider, type DatabaseProvider } from "./providers/database";
 import { UrlError } from "./live";
-import { wranglerConfig } from "./env";
+import { appLabel, appList, findApps, matchApp, type App } from "./apps";
 import type { Outcome, Store } from "./store";
 
 export interface Learner {
@@ -114,19 +114,29 @@ export function notConnected(ctx: Ctx, provider: ProviderId, why: string): never
 
 export interface RepoContext {
   snap: Snapshot;
-  worker: string | null; // Cloudflare Worker (or Pages project) name from wrangler config
+  apps: App[]; // every Cloudflare app (wrangler config) in the repo
+  app: App | null; // the one this call is about
+  worker: string | null; // its Worker (or Pages project) name
   pages: boolean;
   productionUrl: string | null;
 }
 
-export async function repoContext(ctx: Ctx, repo: string): Promise<RepoContext> {
+// `app` picks one Cloudflare app in a monorepo. With `need`, a repo with several apps and no
+// `app` is an error that lists them, so the AI asks the learner instead of guessing.
+export async function repoContext(ctx: Ctx, repo: string, opts: { app?: string; need?: boolean } = {}): Promise<RepoContext> {
   const snap = await readRepo(repo, ctx.learner.githubToken);
-  const wranglerPath = Object.keys(snap.files)
-    .filter((p) => /(^|\/)wrangler\.(jsonc?|toml)$/.test(p))
-    .sort((a, b) => a.split("/").length - b.split("/").length)[0];
-  const cfg = wranglerPath ? wranglerConfig(wranglerPath, snap.files[wranglerPath]) : null;
+  const apps = findApps(snap.paths, snap.files);
+  let app: App | null = null;
+  if (opts.app) {
+    app = matchApp(apps, opts.app);
+    if (!app) throw new UserError(apps.length ? `${snap.repo} has no app called "${opts.app}". Its Cloudflare apps:\n${appList(apps)}\n\nCall again with one of these as \`app\`.` : `${snap.repo} has no wrangler config, so there's no Cloudflare app to pick. Leave out \`app\`.`);
+  } else if (apps.length === 1) app = apps[0];
+  else if (apps.length > 1 && opts.need) throw needApp(snap.repo, apps);
   const saved = await ctx.store.getProject(ctx.learner.id, snap.repo).catch(() => null);
-  return { snap, worker: cfg?.name ?? null, pages: cfg?.pages ?? false, productionUrl: saved?.productionUrl ?? null };
+  return { snap, apps, app, worker: app?.name ?? null, pages: app?.pages ?? false, productionUrl: saved?.productionUrl ?? null };
 }
+
+export const needApp = (repo: string, apps: App[]) =>
+  new UserError(`${repo} is a monorepo with ${apps.length} Cloudflare apps:\n${appList(apps)}\n\nAsk the learner which one this is about, then call again with \`app\` set to its name (e.g. "${appLabel(apps[0])}").`, "blocked");
 
 export const SECRET_NAME = /^[A-Z][A-Z0-9_]{0,99}$/;

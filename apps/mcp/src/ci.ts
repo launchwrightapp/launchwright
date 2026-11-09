@@ -6,7 +6,7 @@
 // Plus a minimal Playwright config and smoke test when the repo has none.
 // Pure functions: the tool opens a pull request with the result.
 import { dependencies, type RepoSnapshot } from "./readiness";
-import { wranglerConfig } from "./env";
+import { deployWorkflowFor, findApps, type App } from "./apps";
 
 export const DEPLOY_WORKFLOW = "launchwright-deploy.yml";
 const GITLEAKS = "ghcr.io/gitleaks/gitleaks:v8.21.2";
@@ -15,10 +15,12 @@ export interface CiPlan {
   packageManager: "npm" | "pnpm" | "yarn" | "bun";
   scripts: { typecheck?: string; lint?: string; test?: string; build?: string };
   playwright: { config: string | null; installed: boolean };
-  cloudflare: { dir: string; worker: string | null; pages: boolean } | null;
+  cloudflare: { dir: string; worker: string | null; pages: boolean; build?: string } | null;
+  deployWorkflow: string; // file name under .github/workflows
 }
 
-export function plan(s: RepoSnapshot): CiPlan {
+// `app` picks the Cloudflare app in a monorepo; default: the one nearest the repo root.
+export function plan(s: RepoSnapshot, app?: App | null): CiPlan {
   const has = (n: string) => s.paths.includes(n);
   const packageManager = has("pnpm-lock.yaml") ? "pnpm" : has("yarn.lock") ? "yarn" : has("bun.lockb") || has("bun.lock") ? "bun" : "npm";
   let scripts: Record<string, string> = {};
@@ -29,17 +31,27 @@ export function plan(s: RepoSnapshot): CiPlan {
   }
   const pick = (...names: string[]) => names.find((n) => typeof scripts[n] === "string" && !/no test specified/.test(scripts[n]));
   const config = s.paths.find((p) => /(^|\/)playwright\.config\.(ts|js|mjs|cjs)$/.test(p) && !p.includes("node_modules/")) ?? null;
-  const wranglerPath = s.paths.filter((p) => /(^|\/)wrangler\.(jsonc?|toml)$/.test(p) && !p.includes("node_modules/")).sort((a, b) => a.split("/").length - b.split("/").length)[0];
+  const apps = findApps(s.paths, s.files);
+  const target = app ?? apps[0] ?? null;
   let cloudflare: CiPlan["cloudflare"] = null;
-  if (wranglerPath) {
-    const cfg = wranglerConfig(wranglerPath, s.files[wranglerPath] ?? "");
-    cloudflare = { dir: wranglerPath.includes("/") ? wranglerPath.slice(0, wranglerPath.lastIndexOf("/")) : ".", worker: cfg.name, pages: cfg.pages };
+  if (target) {
+    cloudflare = { dir: target.dir, worker: target.name, pages: target.pages };
+    // The deploy job builds inside the app's folder, so use that package's own build script.
+    if (target.dir !== ".") {
+      try {
+        const own = (JSON.parse(s.files[`${target.dir}/package.json`] ?? "{}") as { scripts?: Record<string, string> }).scripts ?? {};
+        if (typeof own.build === "string") cloudflare.build = "build";
+      } catch {
+        /* ignore */
+      }
+    }
   }
   return {
     packageManager,
     scripts: { typecheck: pick("typecheck", "type-check", "check-types", "tsc"), lint: pick("lint"), test: pick("test", "test:unit"), build: pick("build") },
     playwright: { config, installed: dependencies(s.files).has("@playwright/test") },
     cloudflare,
+    deployWorkflow: deployWorkflowFor(apps, target),
   };
 }
 
@@ -124,8 +136,10 @@ ${playwrightSteps(p)}
 export function deployWorkflow(p: CiPlan): string | null {
   const cf = p.cloudflare;
   if (!cf) return null;
+  const multi = p.deployWorkflow !== DEPLOY_WORKFLOW;
   const wd = cf.dir === "." ? "" : `\n        working-directory: ${cf.dir}`;
-  const build = p.scripts.build ? `\n      - name: Build\n        run: ${run(p.packageManager, p.scripts.build)}${wd}` : "";
+  const buildScript = cf.build ?? p.scripts.build;
+  const build = buildScript ? `\n      - name: Build\n        run: ${run(p.packageManager, buildScript)}${wd}` : "";
   const previewCmd = cf.pages
     ? `npx wrangler pages deploy --branch "pr-\${{ github.event.number || github.run_number }}"`
     : `npx wrangler versions upload --preview-alias "pr-\${{ github.event.number || github.run_number }}"`;
@@ -138,7 +152,7 @@ export function deployWorkflow(p: CiPlan): string | null {
 #   Manual (production)   -> started by launchwright's deploy tool after you approve it on the
 #                            dashboard; smoke test on the live site; automatic rollback if it fails
 # Needs two Actions secrets: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (deploy sets them).
-name: Deploy
+name: ${multi ? `Deploy ${cf.worker ?? cf.dir}` : "Deploy"}
 
 on:
   pull_request:
@@ -158,7 +172,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-\${{ inputs.environment || 'preview' }}-\${{ github.ref }}
+  group: deploy-${multi ? `${p.deployWorkflow.replace(/\.yml$/, "")}-` : ""}\${{ inputs.environment || 'preview' }}-\${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -274,12 +288,17 @@ test("home page loads without errors", async ({ page }) => {
 });
 `;
 
-export function ciFiles(s: RepoSnapshot, opts: { productionUrl?: string | null }): { files: { path: string; content: string }[]; plan: CiPlan; added: string[] } {
-  const p = plan(s);
-  const files: { path: string; content: string }[] = [{ path: ".github/workflows/ci.yml", content: ciWorkflow(p) }];
+export function ciFiles(s: RepoSnapshot, opts: { productionUrl?: string | null; app?: App | null }): { files: { path: string; content: string }[]; plan: CiPlan; added: string[] } {
+  const p = plan(s, opts.app);
+  // Monorepo with several apps: setup_ci runs once per app, so keep the shared files that are
+  // already there and add only this app's deploy workflow.
+  const perApp = p.deployWorkflow !== DEPLOY_WORKFLOW;
+  const keep = (path: string) => perApp && s.paths.includes(path);
+  const files: { path: string; content: string }[] = [];
+  if (!keep(".github/workflows/ci.yml")) files.push({ path: ".github/workflows/ci.yml", content: ciWorkflow(p) });
   const deploy = deployWorkflow(p);
-  if (deploy) files.push({ path: `.github/workflows/${DEPLOY_WORKFLOW}`, content: deploy });
-  if (opts.productionUrl) files.push({ path: ".github/workflows/uptime.yml", content: uptimeWorkflow(opts.productionUrl) });
+  if (deploy) files.push({ path: `.github/workflows/${p.deployWorkflow}`, content: deploy });
+  if (opts.productionUrl && !keep(".github/workflows/uptime.yml")) files.push({ path: ".github/workflows/uptime.yml", content: uptimeWorkflow(opts.productionUrl) });
   if (!p.playwright.config) {
     let scripts: Record<string, string> = {};
     try {

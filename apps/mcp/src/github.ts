@@ -59,7 +59,7 @@ export async function readRepo(repo: string, token: string): Promise<Snapshot> {
 
   const snap: Snapshot = { repo: meta.full_name, branch: meta.default_branch, private: meta.private, paths, files: {}, sizes: Object.fromEntries(size), truncated: tree.truncated };
   const fetchFiles = (list: string[]) => readFiles(token, snap, list.filter((p) => size.has(p) && size.get(p)! <= MAX_FILE));
-  const wrangler = paths.filter((p) => WRANGLER.test(p) && !p.includes("node_modules/")).slice(0, 3);
+  const wrangler = paths.filter((p) => WRANGLER.test(p) && !p.includes("node_modules/")).slice(0, 8);
   await fetchFiles(["package.json", "pnpm-workspace.yaml", ".gitignore", ...wrangler, ...workflowFiles(paths).slice(0, MAX_WORKFLOWS)]);
   // Monorepo: the framework and database usually live in the workspace packages, not the root.
   const globs = workspaceGlobs(snap.files["package.json"], snap.files["pnpm-workspace.yaml"]);
