@@ -27,10 +27,10 @@ only in the grant's encrypted props; the AI never sees it.
 
 ## Setup (once)
 
-1. `npx wrangler kv namespace create OAUTH_KV`, put the id in `wrangler.jsonc`.
+1. `npx wrangler kv namespace create OAUTH_KV`, put the id in `wrangler.jsonc` (done).
 2. GitHub App → add callback URLs `https://mcp.launchwright.app/callback` and `https://localhost:8792/callback`.
-3. `npx wrangler secret put GITHUB_CLIENT_SECRET` (and optionally `DATABASE_URL`).
-4. Run `sql/001_lesson_progress.sql` on Neon.
+3. Secrets: CI deploys with the platform's repo secrets (`PLATFORM_GITHUB_CLIENT_SECRET`, `PLATFORM_DATABASE_URL`), since it's the same GitHub App and database.
+4. Run `sql/001_lesson_progress.sql` on the platform's Neon database.
 
 ## Local dev
 

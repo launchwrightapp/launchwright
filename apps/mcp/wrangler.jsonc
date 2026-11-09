@@ -13,8 +13,8 @@
   "vars": { "GITHUB_CLIENT_ID": "Iv23lixXjMCTRCvuULLf" },
   // OAuth grants, clients and tokens (stored hashed; props encrypted). Create it once with
   // `npx wrangler kv namespace create OAUTH_KV` and put the id here (ids aren't secret).
-  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_OAUTH_KV_ID" }]
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "b3875cf5c6bc4106b632c50daa69622a" }]
   // Secrets (not in this file): GITHUB_CLIENT_SECRET (same GitHub App as the platform) and,
-  // optionally, DATABASE_URL for lesson progress. Set with `npx wrangler secret put <NAME>`.
+  // optionally, DATABASE_URL for lesson progress. CI deploys them from the platform repo secrets.
   // Locally: .dev.vars (see .dev.vars.example).
 }
