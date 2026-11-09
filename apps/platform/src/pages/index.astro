@@ -1,49 +1,59 @@
 ---
 import App from "../layouts/App.astro";
-import Explain from "../components/Explain.astro";
-import CopyBox from "../components/CopyBox.astro";
 import Check from "../../../../packages/ui/Check.astro";
-import { project, checks, passing, modules, modulesDone, conceptsCovered, connections, approval, checkShort, events, lesson } from "../data/sample";
-import type { EventKind } from "../data/sample";
 
 // Overview answers three questions, in this order:
-// 1. Now: what's blocking me and what do I do next?
-// 2. Progress: how far along are the project and I?
+// 1. Now: what's blocking me and what do I do next? (For a new learner: the setup steps.)
+// 2. Progress: how far along are the project and I? (And anything waiting for approval.)
 // 3. History: what happened recently? (The raw tool log is in the bottom panel.)
-const next = checks.find((c) => c.status === "fail")!;
-const failing = checks.filter((c) => c.status === "fail").length;
-const notStarted = checks.filter((c) => c.status === "pending").length;
-const connected = connections.filter((c) => c.on).length;
-
-// Tailwind only generates classes it can see written out in full.
-const cols: Record<number, string> = { 3: "grid-cols-3", 4: "grid-cols-4", 8: "grid-cols-8" };
+// Everything is filled in from /api/me by src/scripts/learner.ts.
 const card = "rounded-xl border border-line bg-surface p-4 dark:bg-surface-2";
 const level = "text-[12px] font-semibold uppercase tracking-[0.08em] text-muted";
 const stat = "group flex h-full flex-col gap-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-ink no-underline transition hover:border-ink/30 dark:bg-surface-2";
-const kinds: { id: EventKind | "all"; label: string }[] = [
+const kinds = [
   { id: "all", label: "All" },
-  { id: "action", label: "Actions" },
+  { id: "action", label: "AI actions" },
   { id: "approval", label: "Approvals" },
   { id: "problem", label: "Problems" },
-  { id: "lesson", label: "Lessons" },
+  { id: "you", label: "You" },
 ];
-const kindDot: Record<EventKind, string> = { action: "bg-ok", approval: "bg-orange", problem: "bg-bad", lesson: "bg-blue" };
-const kindName: Record<EventKind, string> = { action: "Action", approval: "Approval", problem: "Problem", lesson: "Lesson" };
 ---
 <App title="Overview" page="overview">
   <div class="flex flex-col gap-4">
     <!-- Project identity -->
     <div>
-      <p class="text-muted">Good afternoon, <span data-user-first>{project.user.first}</span>.</p>
-      <h1 class="mt-0.5 text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.03em]">{project.name}</h1>
-      <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-muted">
-        <span>{project.framework}</span><span aria-hidden="true">·</span>
-        <span>{project.branch}</span><span aria-hidden="true">·</span>
-        <span>{project.stack}</span><span aria-hidden="true">·</span>
-        <span class="flex items-center gap-1.5 text-ok"><span class="size-2 rounded-full bg-ok" aria-hidden="true"></span>{project.preview}</span>
-        <span class="tag tag-line ml-1 py-0 text-[12px]">Sample data</span>
+      <p class="text-muted"><span data-bind="greeting">Hello</span>, <span data-user-first>there</span>.</p>
+      <h1 class="mt-0.5 text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.03em]" data-bind="title">launchwright</h1>
+      <p hidden data-if="hasProject" class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-muted">
+        <a class="text-muted" data-attr="href:project.githubUrl" data-bind="project.repo"></a><span aria-hidden="true">·</span>
+        <span data-bind="project.stack"></span><span aria-hidden="true">·</span>
+        <span data-bind="project.checkedAgo"></span>
+        <span hidden data-if="project.host" class="flex items-center gap-1.5 text-ok"><span class="size-2 rounded-full bg-ok" aria-hidden="true"></span><span data-bind="project.host"></span></span>
       </p>
     </div>
+
+    <!-- First run: setup checklist -->
+    <section hidden data-if="showOnboarding" class={card} aria-labelledby="setup-title">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="setup-title" class="text-base font-semibold">Get set up</h2>
+        <span class="text-[14px] text-muted" data-bind="setupHeading"></span>
+      </div>
+      <p class="mt-1 text-[14px] text-muted">About 10 minutes. You keep your own AI tool and your own free accounts; launchwright never sees your keys' values.</p>
+      <ol class="mt-3 grid grid-cols-1 gap-2 @3xl:grid-cols-2" data-each="onboarding">
+        <template>
+          <li class="flex items-start gap-3 rounded-lg border border-line p-3" data-attr="aria-label:label">
+            <span class="grid size-8 flex-none place-items-center rounded-full border border-line text-[13px] font-semibold" data-class="bg-ok border-transparent text-white:done">
+              <span data-if="done"><Check class="size-4" /></span><span data-unless="done" data-bind="n"></span>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block font-semibold" data-class="text-muted line-through:done" data-bind="title"></span>
+              <span class="block text-[14px] text-muted" data-bind="detail"></span>
+            </span>
+            <a data-if="todo" class="btn btn-sm btn-outline flex-none" data-attr="href:href" data-bind="cta"></a>
+          </li>
+        </template>
+      </ol>
+    </section>
 
     <!-- Level 1: Now -->
     <section class="flex flex-col gap-3" aria-labelledby="now-title">
@@ -53,78 +63,90 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         <li>
           <a class={stat} href="/readiness">
             <span class="text-[14px] text-muted">Readiness</span>
-            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums">{passing}<span class="text-muted">/{checks.length}</span></span>
+            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums"><span data-bind="passing">0</span><span class="text-muted">/<span data-bind="total">8</span></span></span>
             <span class="text-[14px] text-muted">checks passed</span>
           </a>
         </li>
         <li>
           <a class={stat} href="#next-up">
-            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Blocking <span class="tag tag-bad py-0 text-[12px]">Failed</span></span>
-            <span class="text-[16px] font-semibold leading-snug">{next.name}</span>
-            <span class="text-[14px] text-muted">Fix this first</span>
+            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Blocking <span hidden data-if="next.isFail" class="tag tag-bad py-0 text-[12px]">Failed</span><span hidden data-if="next.isWarn" class="tag tag-warn py-0 text-[12px]">Needs work</span></span>
+            <span class="text-[16px] font-semibold leading-snug"><span hidden data-if="next" data-bind="next.title"></span><span data-unless="next">Nothing</span></span>
+            <span class="text-[14px] text-muted"><span hidden data-if="next">Fix this first</span><span data-unless="next">No failing checks</span></span>
           </a>
         </li>
         <li>
-          <a class={stat} href="#approval">
-            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Waiting for you <span class="tag tag-warn py-0 text-[12px]">1</span></span>
-            <span class="text-[16px] font-semibold leading-snug">{approval.title}</span>
-            <span class="text-[14px] text-muted">Asked {approval.ago}</span>
+          <a class={stat} href="#approvals">
+            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Waiting for you <span class="tag tag-line py-0 text-[12px]" data-class="tag-warn:hasApprovals" data-bind="approvalCount">0</span></span>
+            <span class="text-[16px] font-semibold leading-snug"><span hidden data-if="hasApprovals" data-bind="approvals.0.title"></span><span data-unless="hasApprovals">No approvals</span></span>
+            <span class="text-[14px] text-muted"><span hidden data-if="hasApprovals">Asked <span data-bind="approvals.0.asked"></span></span><span data-unless="hasApprovals">You'll be asked before anything risky</span></span>
           </a>
         </li>
         <li>
-          <a class={stat} href="/security">
+          <a class={stat} href="/security#accounts">
             <span class="text-[14px] text-muted">Accounts</span>
-            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums">{connected}<span class="text-muted">/{connections.length}</span></span>
+            <span class="text-[22px] font-bold leading-none tracking-[-0.02em] tabular-nums"><span data-bind="connectedCount">0</span><span class="text-muted">/<span data-bind="connections.length">3</span></span></span>
             <span class="text-[14px] text-muted">connected</span>
           </a>
         </li>
       </ul>
 
       <!-- The one thing to do next -->
-      <section id="next-up" class="grid scroll-mt-4 grid-cols-1 gap-4 rounded-xl bg-blue p-4 text-white @4xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] @4xl:p-5" aria-labelledby="next-title">
+      <section id="next-up" hidden data-if="next" class="grid scroll-mt-4 grid-cols-1 gap-4 rounded-xl bg-blue p-4 text-white @4xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] @4xl:p-5" aria-labelledby="next-title">
         <div class="flex flex-col gap-3">
           <p class="flex flex-wrap items-center gap-2">
             <span class="tag bg-white text-night">Next up</span>
-            <span class="text-[14px] text-white/75">Module {lesson.module} · {lesson.area} · ~{lesson.minutes} min lesson</span>
+            <span class="text-[14px] text-white/75" data-bind="next.module"></span>
           </p>
-          <h3 id="next-title" class="text-[clamp(1.375rem,2.2vw,1.75rem)] font-bold leading-tight tracking-[-0.02em]">Fix {next.name.replace(/^./, (c) => c.toLowerCase())}</h3>
-          <p class="text-white/90"><Explain simple={next.simple} tech={next.tech} /></p>
-          <p class="text-[14px] text-white/75"><b class="font-semibold text-white">Why it matters:</b> {next.why}</p>
+          <h3 id="next-title" class="text-[clamp(1.375rem,2.2vw,1.75rem)] font-bold leading-tight tracking-[-0.02em]" data-bind="next.heading"></h3>
+          <p class="text-white/90" data-bind="next.detail"></p>
+          <p class="text-[14px] text-white/75"><b class="font-semibold text-white">Why it matters:</b> <span data-bind="next.why"></span></p>
         </div>
         <div class="flex flex-col gap-3">
-          <CopyBox tone="dark" label="Paste this into your AI tool" text={next.fix!.prompt} />
+          <div class="min-w-0">
+            <p class="mb-2 text-[15px] font-medium text-white/75">Paste this into your AI tool</p>
+            <div class="flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 py-2 pl-4 pr-2 text-white">
+              <code class="min-w-0 flex-1 [overflow-wrap:anywhere] bg-transparent p-0 py-1 text-[16px]" data-copy-text data-bind="next.prompt"></code>
+              <button type="button" data-copy hidden class="inline-flex min-h-8 flex-none cursor-pointer items-center rounded-md border border-white/25 px-3 text-[13px] font-semibold text-white hover:bg-white/10">Copy</button>
+            </div>
+          </div>
           <div class="flex flex-wrap gap-2">
-            <a class="btn btn-sm border-white bg-white text-night hover:bg-white/90" href="/lessons">Start the lesson</a>
-            <a class="btn btn-sm border-white/30 bg-transparent text-white hover:bg-white/10" href={`/readiness#check-${next.id}`}>View the check</a>
+            <a class="btn btn-sm border-white bg-white text-night hover:bg-white/90" href="/lessons">See the lesson</a>
+            <a class="btn btn-sm border-white/30 bg-transparent text-white hover:bg-white/10" data-attr="href:next.href">View the check</a>
           </div>
         </div>
       </section>
+      <p hidden data-if="allPassing" class="rounded-xl bg-ok-bg px-4 py-3 text-ok">Every check passes. Keep it that way: CI runs them on every push. Next, try a break-and-fix lesson or invite a friend to review your app.</p>
     </section>
 
-    <!-- Level 2: Progress (and the approval that's holding things up) -->
+    <!-- Level 2: Progress (and the approvals holding things up) -->
     <section class="flex flex-col gap-3" aria-labelledby="progress-title">
       <h2 id="progress-title" class={level}>Progress</h2>
       <div class="grid grid-cols-1 gap-3 @3xl:grid-cols-2 @6xl:grid-cols-3">
-        <!-- Approval -->
-        <div id="approval" class:list={[card, "scroll-mt-4 border-orange/40 @3xl:col-span-2 @6xl:col-span-1"]}>
+        <!-- Approvals -->
+        <div id="approvals" class:list={[card, "scroll-mt-4 @3xl:col-span-2 @6xl:col-span-1"]} data-class="border-orange/40:hasApprovals">
           <div class="flex items-center justify-between gap-3">
             <h3 class="text-base font-semibold">Needs your approval</h3>
-            <span class="tag tag-warn">Waiting · {approval.ago}</span>
+            <span class="tag tag-line" data-class="tag-warn:hasApprovals" data-bind="approvalCount">0</span>
           </div>
-          <p class="mt-1.5 text-[16px] font-semibold tracking-[-0.01em]">{approval.title}</p>
-          <p class="text-[14px] text-muted">Asked by <b class="text-ink">{approval.client}</b> via <code>{approval.tool}</code></p>
-          <dl class="mt-3 flex flex-col gap-2.5 text-[14px]">
-            <div><dt class="font-semibold">What it does</dt><dd class="text-muted"><Explain simple={approval.simple} tech={approval.tech} /></dd></div>
-            <div><dt class="font-semibold">Why we ask</dt><dd class="text-muted">It deletes data. Launchwright always asks you before anything that can't be undone.</dd></div>
-            <div><dt class="font-semibold">If you approve</dt><dd class="text-muted">The change runs on production and is saved to your audit log.</dd></div>
-          </dl>
-          <pre id="approval-diff" hidden class="term mt-3 rounded-lg bg-warn-bg px-4 py-2.5 text-warn">{approval.diff}</pre>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button class="btn btn-sm flex-1" type="button" value="approve" data-decide="decision-status">Approve</button>
-            <button class="btn btn-sm btn-outline flex-1" type="button" data-toggle="approval-diff" aria-controls="approval-diff" aria-expanded="false">Inspect change</button>
-            <button class="btn btn-sm btn-outline flex-1" type="button" value="reject" data-decide="decision-status">Reject</button>
-          </div>
-          <p id="decision-status" class="mt-3 text-[14px] text-muted empty:hidden" role="status"></p>
+          <p data-unless="hasApprovals" class="mt-1.5 text-[14px] text-muted">Nothing waiting. Production deploys, rollbacks and replacing a secret always stop here first, so one bad prompt can't change production.</p>
+          <ul class="mt-2 flex flex-col gap-3" data-each="approvals">
+            <template>
+              <li class="flex flex-col gap-2 border-t border-line pt-3 first:border-t-0 first:pt-0">
+                <p class="text-[16px] font-semibold tracking-[-0.01em]" data-bind="title"></p>
+                <p class="text-[14px] text-muted">Asked by <b class="text-ink" data-bind="askedBy"></b> via <code data-bind="tool"></code> · <span data-bind="asked"></span></p>
+                <dl class="flex flex-col gap-2 text-[14px]">
+                  <div><dt class="font-semibold">If you approve</dt><dd class="text-muted" data-bind="summary"></dd></div>
+                  <div><dt class="font-semibold">Why we ask</dt><dd class="text-muted">It changes what your users see, or it can't be undone. Your AI tool can run it once after you approve, and it's saved to your audit log.</dd></div>
+                </dl>
+                <details class="text-[14px]"><summary class="cursor-pointer font-medium">Inspect change</summary><pre class="term mt-2 overflow-x-auto rounded-lg bg-warn-bg px-4 py-2.5 text-warn" data-bind="detailText"></pre></details>
+                <div class="flex flex-wrap gap-2">
+                  <button class="btn btn-sm flex-1" type="button" data-decision="approve" data-attr="data-approval:id;data-status:approveId">Approve</button>
+                  <button class="btn btn-sm btn-outline flex-1" type="button" data-decision="reject" data-attr="data-approval:id;data-status:approveId">Reject</button>
+                </div>
+                <p class="text-[14px] text-muted empty:hidden" role="status" data-attr="id:approveId"></p>
+              </li>
+            </template>
+          </ul>
         </div>
 
         <!-- Readiness -->
@@ -134,24 +156,20 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
             <a class="text-[14px] font-medium text-muted hover:text-ink" href="/readiness">All details</a>
           </div>
           <p class="mt-2.5 flex flex-wrap gap-1.5">
-            <span class="tag tag-ok"><Check class="size-3.5" />{passing} passed</span>
-            <span class="tag tag-bad">{failing} failed</span>
-            <span class="tag tag-line">{notStarted} not started</span>
+            <span class="tag tag-ok"><Check class="size-3.5" /><span data-bind="passing">0</span> passed</span>
+            <span class="tag tag-bad"><span data-bind="failing">0</span> failed</span>
+            <span class="tag tag-warn"><span data-bind="warning">0</span> need work</span>
+            <span class="tag tag-line"><span data-bind="notChecked">8</span> not checked</span>
           </p>
-          <ul class:list={["mt-3 grid gap-1 @2xl:gap-2", cols[8]]} aria-labelledby="checks-title">
-            {checks.map((c) => (
+          <ul class="mt-3 grid grid-cols-8 gap-1 @2xl:gap-2" aria-labelledby="checks-title" data-each="checks">
+            <template>
               <li>
-                <a href={`/readiness#check-${c.id}`} class="group flex flex-col items-center gap-2 text-ink no-underline" aria-label={`${c.name}: ${c.status === "pass" ? "passed" : c.status === "fail" ? "failed" : "not started"}`}>
-                  <span class:list={[
-                    "block h-12 w-full max-w-7 rounded-full transition group-hover:opacity-80",
-                    c.status === "pass" && "bg-ok",
-                    c.status === "fail" && "bg-bad",
-                    c.status === "pending" && "border-2 border-dashed border-line",
-                  ]}></span>
-                  <span class="w-full truncate text-center text-[11px] text-muted @2xl:text-[12px]">{checkShort[c.id]}</span>
+                <a class="group flex flex-col items-center gap-2 text-ink no-underline" data-attr="href:href;aria-label:ariaLabel">
+                  <span class="block h-12 w-full max-w-7 rounded-full border-2 border-dashed border-line transition group-hover:opacity-80" data-class="bg-ok border-transparent:isPass;bg-bad border-transparent:isFail;bg-orange border-transparent:isWarn"></span>
+                  <span class="w-full truncate text-center text-[11px] text-muted @2xl:text-[12px]" data-bind="short"></span>
                 </a>
               </li>
-            ))}
+            </template>
           </ul>
         </div>
 
@@ -160,20 +178,20 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
           <div class="flex items-start justify-between gap-3">
             <div>
               <h3 class="text-base font-semibold">Lesson progress</h3>
-              <p class="text-[14px] text-muted">{modulesDone} of {modules.length} Level 1 modules · {conceptsCovered} concepts covered</p>
+              <p class="text-[14px] text-muted"><span data-bind="modulesDone">0</span> of <span data-bind="modulesTotal">8</span> Level 1 modules · <span data-bind="conceptsCovered">0</span> concepts covered</p>
             </div>
             <a class="text-[14px] font-medium text-muted hover:text-ink" href="/lessons">Lessons</a>
           </div>
-          <ul class="mt-3 flex flex-col gap-2">
-            {modules.map((m) => (
+          <ul class="mt-3 flex flex-col gap-2" data-each="modules">
+            <template>
               <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.25rem] items-center gap-3">
-                <span class:list={["truncate text-[14px]", m.status === "next" ? "text-muted" : "text-ink", m.status === "current" && "font-semibold"]}>{m.name}</span>
-                <span class:list={["grid h-2 gap-1", cols[m.total]]} role="img" aria-label={`${m.concepts} of ${m.total} concepts${m.status === "current" ? ", in progress" : ""}`}>
-                  {Array.from({ length: m.total }, (_, i) => <i class:list={["rounded-full", i < m.concepts ? (m.status === "current" ? "bg-blue" : "bg-ok") : "bg-line"]}></i>)}
+                <span class="truncate text-[14px] text-ink" data-class="text-muted:isNext;font-semibold:isCurrent" data-bind="name"></span>
+                <span class="flex h-2 gap-1" role="img" data-attr="aria-label:ariaLabel" data-each="bars">
+                  <template><i class="flex-1 rounded-full bg-line" data-class="bg-blue:doneCurrent;bg-ok:doneOther"></i></template>
                 </span>
-                <span class="text-right text-[13px] tabular-nums text-muted">{m.concepts}/{m.total}</span>
+                <span class="text-right text-[13px] tabular-nums text-muted" data-bind="count"></span>
               </li>
-            ))}
+            </template>
           </ul>
         </div>
       </div>
@@ -190,18 +208,19 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
         </div>
       </div>
       <div class="rounded-xl border border-line bg-surface dark:bg-surface-2">
-        <ol id="activity-list" class="flex flex-col">
-          {events.map((e) => (
-            <li data-kind={e.kind} class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2.5 first:border-t-0">
-              <span class:list={["mt-2 size-2 rounded-full", kindDot[e.kind]]} aria-hidden="true"></span>
-              <span><span class="sr-only">{kindName[e.kind]}: </span><Explain simple={e.simple} tech={e.tech} /></span>
-              <span class="text-[14px] tabular-nums text-muted">{e.time}</span>
+        <ol id="activity-list" class="flex flex-col" data-each="recent">
+          <template>
+            <li class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 border-t border-line px-4 py-2.5 first:border-t-0" data-attr="data-kind:kind">
+              <span class="mt-2 size-2 rounded-full bg-ok" data-class="bg-orange:isPending;bg-bad:isProblem;bg-blue:isYou" aria-hidden="true"></span>
+              <span><b class="font-semibold" data-bind="who"></b> · <code data-bind="tool"></code> <span data-bind="summary"></span></span>
+              <span class="text-[14px] tabular-nums text-muted" data-bind="ago"></span>
             </li>
-          ))}
+          </template>
         </ol>
+        <p data-unless="hasAudit" class="px-4 py-2.5 text-[14px] text-muted">Nothing yet. Every tool call your AI tool makes, and every decision you make here, shows up in this list.</p>
         <p data-filter-empty hidden class="px-4 py-2.5 text-[14px] text-muted">Nothing here yet.</p>
       </div>
-      <p class="hidden text-[14px] text-muted lg:block">The exact tool calls are in the panel below.</p>
+      <p class="hidden text-[14px] text-muted lg:block">The exact tool calls are in the panel below; the full audit log is on the Security page.</p>
     </section>
   </div>
 </App>

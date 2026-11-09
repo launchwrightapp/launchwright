@@ -1,65 +1,72 @@
 ---
 import App from "../layouts/App.astro";
-import Explain from "../components/Explain.astro";
-import CopyBox from "../components/CopyBox.astro";
 import Check from "../../../../packages/ui/Check.astro";
-import { checks, passing } from "../data/sample";
 
-// Failing first, then not checked, then passed.
-const order = { fail: 0, pending: 1, pass: 2 } as const;
-const sorted = [...checks].sort((a, b) => order[a.status] - order[b.status]);
-const tag = { pass: ["tag tag-ok", "Passed"], fail: ["tag tag-bad", "Failed"], pending: ["tag tag-line", "Not started"] } as const;
+// The 8 readiness checks from the learner's last check_readiness run (failing first).
+// Filled in from /api/me by src/scripts/learner.ts.
 ---
 <App title="Readiness" page="readiness">
   <div class="flex flex-col gap-4">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="label">Readiness</p>
-        <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">{passing} of {checks.length} checks passed</h1>
+        <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]" data-bind="readinessHeading">Readiness checks</h1>
+        <p hidden data-if="hasProject" class="mt-1 text-[14px] text-muted"><span data-bind="project.repo"></span> · <span data-bind="project.checkedAgo"></span><span hidden data-if="project.host"> · live checks on <span data-bind="project.host"></span></span></p>
       </div>
-      <button class="btn btn-sm" type="button">Run checks again</button>
+      <div hidden data-if="hasProject" class="min-w-0 max-w-full">
+        <p class="mb-1 text-[13px] text-muted">To run them again, paste into your AI tool:</p>
+        <div class="flex items-center gap-2 rounded-lg border border-line bg-surface py-1.5 pl-3 pr-1.5">
+          <code class="min-w-0 flex-1 [overflow-wrap:anywhere] bg-transparent p-0 text-[14px]" data-copy-text data-bind="project.readinessPrompt"></code>
+          <button type="button" data-copy hidden class="inline-flex min-h-8 flex-none cursor-pointer items-center rounded-md border border-line px-3 text-[13px] font-semibold hover:bg-surface-2">Copy</button>
+        </div>
+      </div>
     </div>
 
-    <ul class="flex flex-col gap-3">
-      {sorted.map((c) => (
-        <li id={`check-${c.id}`} class="scroll-mt-28">
-          <details class="card rounded-xl group p-0" open={c.status !== "pass"}>
+    <p hidden data-if="noProject" class="rounded-xl border border-line bg-surface p-4 text-muted">No checks yet. <a href="/connect">Connect your AI tool</a>, then ask it: <code>Use launchwright check_readiness on owner/repo</code>. Add your deployed URL to run the live checks (auth, headers, uptime).</p>
+
+    <ul class="flex flex-col gap-3" data-each="sorted">
+      <template>
+        <li class="scroll-mt-28" data-attr="id:anchor">
+          <details class="card rounded-xl group p-0" data-attr="open:needsWork">
             <summary class="flex cursor-pointer items-center gap-4 px-4 py-2.5">
-              <span class:list={["grid size-9 flex-none place-items-center rounded-full", c.status === "pass" ? "bg-ok-bg text-ok" : c.status === "fail" ? "bg-warn-bg text-warn" : "bg-surface-3 text-muted"]} aria-hidden="true">
-                {c.status === "pass" ? <Check class="size-4" /> : c.status === "fail" ? "!" : "–"}
+              <span class="grid size-9 flex-none place-items-center rounded-full bg-surface-3 text-muted" data-class="bg-ok-bg text-ok:isPass;bg-bad-bg text-bad:isFail;bg-warn-bg text-warn:isWarn" aria-hidden="true">
+                <span data-if="isPass"><Check class="size-4" /></span><span data-if="needsWork">!</span><span data-if="isOpen">–</span>
               </span>
-              <span class="min-w-0 flex-1 font-semibold">{c.name}</span>
-              <span class={tag[c.status][0]}>{tag[c.status][1]}</span>
+              <span class="min-w-0 flex-1 font-semibold" data-bind="title"></span>
+              <span class="tag tag-line" data-class="tag-ok:isPass;tag-bad:isFail;tag-warn:isWarn" data-bind="statusLabel"></span>
               <svg class="size-5 flex-none text-muted transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </summary>
             <div class="grid grid-cols-1 gap-4 border-t border-line px-4 py-2.5 @3xl:grid-cols-2">
               <div class="flex flex-col gap-4">
                 <div>
-                  <p class="label">What we checked</p>
-                  <p class="mt-1"><Explain simple={c.simple} tech={c.tech} /></p>
+                  <p class="label">What we found</p>
+                  <p class="mt-1" data-bind="detail"></p>
+                  <p hidden data-if="hasFiles" class="mt-1 text-[13px] text-muted">From your repo: <span class="[overflow-wrap:anywhere]" data-bind="files"></span></p>
                 </div>
                 <div>
-                  <p class="label">Why it matters</p>
-                  <p class="mt-1">{c.why}</p>
+                  <p class="label">Why it matters · <span data-bind="lessonTitle"></span></p>
+                  <p class="mt-1" data-bind="why"></p>
                 </div>
               </div>
-              {c.fix ? (
-                <div class="flex flex-col gap-4 rounded-xl bg-surface p-4">
-                  <p class="label">How to fix</p>
-                  <p>{c.fix.simple}</p>
-                  <CopyBox label="Paste into your AI tool" text={c.fix.prompt} />
-                  <p class="text-[14px] text-muted">Or run the tool directly: <code>{c.fix.command}</code></p>
+              <div hidden data-unless="isPass" class="flex flex-col gap-4 rounded-xl bg-surface p-4">
+                <p class="label">How to fix</p>
+                <p>Ask your AI tool. Launchwright explains each change as it goes.</p>
+                <div class="min-w-0">
+                  <p class="mb-2 text-[15px] font-medium text-muted">Paste into your AI tool</p>
+                  <div class="flex items-center gap-2 rounded-lg border border-line bg-surface py-2 pl-4 pr-2 text-ink">
+                    <code class="min-w-0 flex-1 [overflow-wrap:anywhere] bg-transparent p-0 py-1 text-[16px]" data-copy-text data-bind="prompt"></code>
+                    <button type="button" data-copy class="inline-flex min-h-8 flex-none cursor-pointer items-center rounded-md border border-line px-3 text-[13px] font-semibold text-ink hover:bg-surface-2">Copy</button>
+                  </div>
                 </div>
-              ) : (
-                <div class="flex items-start gap-3 rounded-xl bg-surface p-4 text-muted">
-                  <Check class="mt-1 size-4 text-ok" />
-                  <p>Nothing to do. We'll check again on every push.</p>
-                </div>
-              )}
+              </div>
+              <div hidden data-if="isPass" class="flex items-start gap-3 rounded-xl bg-surface p-4 text-muted">
+                <Check class="mt-1 size-4 text-ok" />
+                <p>Nothing to do. CI checks it again on every push.</p>
+              </div>
             </div>
           </details>
         </li>
-      ))}
+      </template>
     </ul>
   </div>
 </App>

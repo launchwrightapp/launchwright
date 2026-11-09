@@ -1,91 +1,134 @@
 ---
 import App from "../layouts/App.astro";
-import Explain from "../components/Explain.astro";
-import { audit, connections, secrets, approval } from "../data/sample";
+import { CLOUDFLARE_TOKEN_TEMPLATE } from "../../../../packages/core/verify";
 
 const tabs = [
-  { id: "approvals", label: "Approvals", count: "1" },
-  { id: "secrets", label: "Secrets" },
+  { id: "approvals", label: "Approvals", count: true },
   { id: "accounts", label: "Accounts" },
+  { id: "secrets", label: "Secrets" },
   { id: "audit", label: "Audit log" },
 ];
+const input = "min-h-10 w-full min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 text-[15px] text-ink dark:bg-surface-2";
 ---
 <App title="Security" page="security">
   <div class="flex flex-col gap-4">
     <div>
       <p class="label">Security</p>
       <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">You stay in control</h1>
+      <p class="mt-1 text-[14px] text-muted">Your AI tool asks; you decide. Keys are stored encrypted and never shown to the AI. Everything is logged.</p>
     </div>
 
     <div class="card rounded-xl p-0">
-      <div role="tablist" aria-label="Security" data-tabs class="tabs px-4 pt-4">
+      <div role="tablist" aria-label="Security" data-tabs data-hash-tabs class="tabs px-4 pt-4">
         {tabs.map((t, i) => (
           <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">
-            {t.label}{t.count && <span class="count">{t.count}</span>}
+            {t.label}{t.count && <span hidden data-if="hasApprovals" class="count" data-bind="approvalCount"></span>}
           </button>
         ))}
       </div>
 
-      <div id="panel-approvals" role="tabpanel" aria-labelledby="tab-approvals" class="p-4">
-        <div class="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-2xl font-semibold">{approval.title}</p>
-            <span class="tag tag-warn">Waiting</span>
-          </div>
-          <p class="text-[14px] text-muted">Asked by <b class="text-ink">{approval.client}</b> via <code>{approval.tool}</code> · {approval.ago}</p>
-          <pre class="term rounded-lg bg-warn-bg px-4 py-2.5 text-warn">{approval.diff}</pre>
-          <p><Explain simple={approval.simple} tech={approval.tech} /></p>
-          <div class="flex flex-wrap gap-2.5">
-            <button class="btn btn-sm" type="button" value="approve" data-decide="sec-decision">Approve</button>
-            <button class="btn btn-sm btn-outline" type="button" value="reject" data-decide="sec-decision">Reject</button>
-          </div>
-          <p id="sec-decision" class="text-[14px] text-muted empty:hidden" role="status"></p>
-        </div>
+      <div id="panel-approvals" role="tabpanel" aria-labelledby="tab-approvals" class="flex flex-col gap-3 p-4">
+        <p data-unless="hasApprovals" class="text-muted">Nothing is waiting for you. When your AI tool wants to deploy to production, roll back, or replace a secret, the request shows up here and nothing happens until you approve it.</p>
+        <ul class="flex flex-col gap-3" data-each="approvals">
+          <template>
+            <li class="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-xl font-semibold" data-bind="title"></p>
+                <span class="tag tag-warn">Waiting</span>
+              </div>
+              <p class="text-[14px] text-muted">Asked by <b class="text-ink" data-bind="askedBy"></b> via <code data-bind="tool"></code> · <span data-bind="asked"></span> · <span data-bind="repo"></span></p>
+              <p data-bind="summary"></p>
+              <pre class="term overflow-x-auto rounded-lg bg-warn-bg px-4 py-2.5 text-warn" data-bind="detailText"></pre>
+              <div class="flex flex-wrap gap-2.5">
+                <button class="btn btn-sm" type="button" data-decision="approve" data-attr="data-approval:id;data-status:approveId">Approve</button>
+                <button class="btn btn-sm btn-outline" type="button" data-decision="reject" data-attr="data-approval:id;data-status:approveId">Reject</button>
+              </div>
+              <p class="text-[14px] text-muted empty:hidden" role="status" data-attr="id:approveId"></p>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+      <div id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" class="flex flex-col gap-4 p-4">
+        <p class="text-muted">Bring your own cloud: your app runs on your accounts' free tiers. Each key gets only the permissions launchwright needs, is checked with the provider, then stored encrypted. Disconnect any time, then revoke the key at the provider.</p>
+        <ul class="grid grid-cols-1 gap-3 @3xl:grid-cols-3" data-each="connections">
+          <template>
+            <li class="flex flex-col gap-1.5 rounded-xl border border-line bg-surface p-4">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-base font-semibold" data-bind="name"></p>
+                <span class="tag tag-line" data-class="tag-ok:connected" data-bind="stateLabel"></span>
+              </div>
+              <p class="text-muted" data-bind="label"></p>
+              <p hidden data-if="connected" class="text-[14px] text-muted"><span class="font-medium text-ink">Can do:</span> <span data-bind="scopes"></span></p>
+              <p hidden data-if="connected" class="text-[13px] text-muted" data-bind="connectedAgo"></p>
+              <button hidden data-if="connected" type="button" class="btn btn-sm btn-outline mt-1 self-start" data-attr="data-disconnect:id">Disconnect</button>
+            </li>
+          </template>
+        </ul>
+
+        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="cf-title">
+          <h2 id="cf-title" class="text-base font-semibold">Connect Cloudflare</h2>
+          <ol class="list-decimal pl-5 text-[14px] text-muted">
+            <li><a href={CLOUDFLARE_TOKEN_TEMPLATE} target="_blank" rel="noopener">Open Cloudflare's token page with launchwright's permissions filled in</a> (Workers Scripts edit, Workers Observability read, Account Settings read, Pages edit).</li>
+            <li>Pick your account, click Continue to summary, then Create Token.</li>
+            <li>Copy the token and paste it below. Cloudflare shows it only once.</li>
+          </ol>
+          <form data-connect="cloudflare" data-status="cf-status" class="flex flex-wrap gap-2">
+            <label for="cf-token" class="sr-only">Cloudflare API token</label>
+            <input id="cf-token" name="secret" type="password" autocomplete="off" spellcheck="false" required maxlength="500" placeholder="Cloudflare API token" class={input} />
+            <button type="submit" class="btn btn-sm">Connect</button>
+          </form>
+          <p id="cf-status" role="status" class="text-[14px] text-muted empty:hidden"></p>
+        </section>
+
+        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="neon-title">
+          <h2 id="neon-title" class="text-base font-semibold">Connect Neon</h2>
+          <p class="text-[14px] text-muted">In the <a href="https://console.neon.tech/app/settings/api-keys" target="_blank" rel="noopener">Neon console</a>: Account settings → API keys → Create new API key. Paste it here.</p>
+          <form data-connect="neon" data-status="neon-status" class="flex flex-wrap gap-2">
+            <label for="neon-key" class="sr-only">Neon API key</label>
+            <input id="neon-key" name="secret" type="password" autocomplete="off" spellcheck="false" required maxlength="500" placeholder="Neon API key" class={input} />
+            <button type="submit" class="btn btn-sm">Connect</button>
+          </form>
+          <p id="neon-status" role="status" class="text-[14px] text-muted empty:hidden"></p>
+        </section>
+
+        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="supa-title">
+          <h2 id="supa-title" class="text-base font-semibold">Connect Supabase</h2>
+          <p class="text-[14px] text-muted">Sign in to Supabase and approve launchwright. You can revoke it any time in Supabase (Organization settings → OAuth apps).</p>
+          <a hidden data-if="supabaseAvailable" class="btn btn-sm self-start" href="/auth/supabase">Connect Supabase</a>
+          <p data-unless="supabaseAvailable" class="text-[14px] text-muted">Supabase sign-in isn't switched on for this server yet. Use Neon for now.</p>
+        </section>
       </div>
 
       <div id="panel-secrets" role="tabpanel" aria-labelledby="tab-secrets" class="flex flex-col gap-4 p-4">
-        <p class="text-muted"><Explain simple="Secrets are passwords and keys your app needs. Your AI tool can use them, but can't read them." tech="Stored encrypted; injected as Worker secrets and GitHub Actions secrets. Values never appear in tool results or logs." /></p>
-        <ul class="divide-y divide-line rounded-xl border border-line bg-surface">
-          {secrets.map((s) => (
+        <p class="text-muted">Secrets are passwords and keys your app needs. Your AI tool asks for them by name; you type the value on a launchwright page, and it goes straight to GitHub or Cloudflare. Only names are listed here, never values.</p>
+        <ul hidden data-if="hasSecrets" class="divide-y divide-line rounded-xl border border-line bg-surface" data-each="secrets">
+          <template>
             <li class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
-              <code class="text-[16px]">{s.name}</code>
-              <span class="flex-1 text-[14px] text-muted">{s.where} · updated {s.updated}</span>
-              <span class="tag tag-line">AI: use only</span>
+              <code class="text-[16px]" data-bind="name"></code>
+              <span class="flex-1 text-[14px] text-muted"><span data-bind="where"></span> · <span data-bind="repo"></span> · updated <span data-bind="updated"></span></span>
+              <span class="tag tag-line">AI: name only</span>
             </li>
-          ))}
+          </template>
         </ul>
-        <p class="rounded-lg bg-warn-bg px-4 py-2.5 text-[14px] text-warn">Claude Code asked to read <code class="bg-transparent p-0">DATABASE_URL</code> at 13:41 · Blocked</p>
-      </div>
-
-      <div id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" class="p-4">
-        <ul class="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
-          {connections.map((c) => (
-            <li class="flex flex-col gap-1.5 rounded-xl border border-line bg-surface p-4">
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-base font-semibold">{c.name}</p>
-                <span class={c.on ? "tag tag-ok" : "tag tag-line"}>{c.on ? "Connected" : "Not connected"}</span>
-              </div>
-              <p class="text-muted">{c.detail}</p>
-              <p class="text-[14px] text-muted"><span class="font-medium text-ink">Can do:</span> {c.scope}</p>
-            </li>
-          ))}
-        </ul>
+        <p data-unless="hasSecrets" class="text-[14px] text-muted">No secrets set through launchwright yet. Ask your AI tool: "Use launchwright set_secret for RESEND_API_KEY on owner/repo".</p>
       </div>
 
       <div id="panel-audit" role="tabpanel" aria-labelledby="tab-audit" class="overflow-x-auto">
-        <table class="w-full min-w-[560px] text-left">
-          <thead class="text-[14px] text-muted"><tr><th class="px-4 py-2 font-medium">Time</th><th class="px-3 py-2.5 font-medium">Tool</th><th class="px-3 py-2.5 font-medium">AI tool</th><th class="px-4 py-2 font-medium">Result</th></tr></thead>
-          <tbody class="divide-y divide-line border-t border-line">
-            {audit.map((r) => (
+        <table class="w-full min-w-[640px] text-left">
+          <thead class="text-[14px] text-muted"><tr><th class="px-4 py-2 font-medium">When</th><th class="px-3 py-2.5 font-medium">Who</th><th class="px-3 py-2.5 font-medium">Action</th><th class="px-4 py-2 font-medium">Result</th></tr></thead>
+          <tbody class="divide-y divide-line border-t border-line" data-each="audit">
+            <template>
               <tr>
-                <td class="px-4 py-2.5 tabular-nums">{r.time}</td>
-                <td class="px-3 py-2.5"><code>{r.tool}</code></td>
-                <td class="px-3 py-2.5">{r.client}</td>
-                <td class="px-4 py-2.5">{r.tone ? <span class={`tag tag-${r.tone}`}>{r.result}</span> : r.result}</td>
+                <td class="whitespace-nowrap px-4 py-2.5 tabular-nums" data-bind="ago"></td>
+                <td class="px-3 py-2.5" data-bind="who"></td>
+                <td class="px-3 py-2.5"><code data-bind="tool"></code></td>
+                <td class="px-4 py-2.5"><span class="" data-class="tag:isFlagged;tag-warn:isPending;tag-bad:isProblem" data-bind="summary"></span></td>
               </tr>
-            ))}
+            </template>
           </tbody>
         </table>
+        <p data-unless="hasAudit" class="px-4 py-3 text-[14px] text-muted">The audit log is empty. It records every tool call and every decision you make here.</p>
       </div>
     </div>
     <span id="audit" class="sr-only">Audit log is in the Audit log tab.</span>
