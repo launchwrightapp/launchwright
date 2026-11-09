@@ -218,8 +218,32 @@ export function uptimeWorkflows(s: RepoSnapshot) {
 }
 
 // Next.js (app and pages router) and Astro API routes, as URL paths. Dynamic segments are skipped.
-export function apiRoutes(paths: string[]): string[] {
-  const out = new Set<string>();
+// Server code that may define API routes in code rather than by file name: Workers, Hono,
+// Express-style servers, Pages Functions. Read before the live auth check.
+const ROUTE_CODE_FILE = /(^|\/)(worker|workers|server|functions|api|routes|middleware)(\/|\.[cm]?[jt]sx?$)|(^|\/)(src\/)?(index|app|main)\.[cm]?[jt]s$/;
+const CODE_SKIP = /(^|\/)(node_modules|dist|build|\.next|\.astro|\.output|\.wrangler|coverage|out|vendor|public|tests?|__tests__|e2e)\/|\.(test|spec)\.|\.d\.ts$/;
+export const MAX_ROUTE_FILES = 30;
+
+export function routeCodeFiles(paths: string[], sizes: Record<string, number> = {}): string[] {
+  return paths
+    .filter((p) => /\.[cm]?[jt]sx?$/.test(p) && ROUTE_CODE_FILE.test(p) && !CODE_SKIP.test(p) && (sizes[p] ?? 0) <= 64 * 1024)
+    .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b))
+    .slice(0, MAX_ROUTE_FILES);
+}
+
+// "/api/..." paths written in server code: app.get("/api/me"), url.pathname === "/api/me",
+// path.startsWith("/api/admin/"). Dynamic segments (:id, *, ${...}) are skipped.
+function routesInCode(files: Record<string, string>): string[] {
+  const out: string[] = [];
+  for (const [path, text] of Object.entries(files)) {
+    if (!/\.[cm]?[jt]sx?$/.test(path) || !ROUTE_CODE_FILE.test(path) || CODE_SKIP.test(path)) continue;
+    for (const m of text.matchAll(/["'`](\/api(?:\/[A-Za-z0-9_.-]+)+)\/?["'`]/g)) out.push(m[1]);
+  }
+  return out;
+}
+
+export function apiRoutes(paths: string[], files: Record<string, string> = {}): string[] {
+  const out = new Set<string>(routesInCode(files));
   for (const p of paths) {
     if (p.includes("node_modules/")) continue;
     let m = p.match(/(?:^|\/)(?:src\/)?app\/(api\/.*)\/route\.(?:ts|js|mjs|tsx)$/);

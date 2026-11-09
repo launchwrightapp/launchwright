@@ -16,7 +16,7 @@ import { GITHUB_APP_INSTALL_URL } from "../../../packages/core/github-app";
 import { EXERCISES, MODULES } from "../../../packages/core/curriculum";
 import { untrustedBlock, redact } from "../../../packages/core/untrusted";
 import { REPO_RE, appInstalled, branchHead, branchProtection, dispatchWorkflow, openPulls, pullFiles, pullRequest, runsForCommit, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
-import { PROTECT_HOW, protectionGap, runChecks, score, type Check } from "./readiness";
+import { PROTECT_HOW, protectionGap, routeCodeFiles, runChecks, score, type Check } from "./readiness";
 import { diffText, reviewPull, safePath } from "./review";
 import { checkUrl, liveChecks } from "./live";
 import { detectStack, projectStatus } from "./project";
@@ -151,6 +151,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         const rc = await repoContext(ctx, repo);
         rc.snap.protection = await branchProtection(learner.githubToken, rc.snap.repo, rc.snap.branch);
         const target = url ? checkUrl(url) : rc.productionUrl ? checkUrl(rc.productionUrl) : null;
+        if (target) await readFiles(learner.githubToken, rc.snap, routeCodeFiles(rc.snap.paths, rc.snap.sizes));
         const live = target ? await liveChecks(target, rc.snap) : undefined;
         const checks = runChecks(rc.snap, live);
         const { passed, total } = score(checks);
