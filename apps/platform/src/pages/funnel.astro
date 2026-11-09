@@ -1,0 +1,56 @@
+---
+// Pilot funnel (team only; the worker returns 404 for everyone else).
+// Data: GET /api/admin/funnel?days=N (worker/funnel.ts), drawn by scripts/funnel.ts.
+import App from "../layouts/App.astro";
+import { seg, segGroup, toolbar } from "../data/ui";
+
+const ranges = [
+  { id: "7", label: "7 days" },
+  { id: "30", label: "30 days" },
+  { id: "", label: "All time" },
+];
+const groups = [
+  { id: "site", title: "On the site", note: "Anonymous daily totals. Each browser tab counts once per step." },
+  { id: "learners", title: "After acceptance", note: "GitHub accounts, counted on the day they first got there. Your own testing counts too." },
+];
+---
+<App title="Funnel" page="funnel">
+  <script src="../scripts/funnel.ts"></script>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="label">Operations</p>
+        <h1 class="flex items-center gap-2 text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Pilot funnel <span data-sample class="hidden tag tag-line text-[13px] font-medium tracking-normal">Sample</span></h1>
+      </div>
+      <div role="group" aria-label="Time range" data-range class={segGroup}>
+        {ranges.map((r, i) => (
+          <button type="button" data-days={r.id} aria-pressed={i === 1 ? "true" : "false"} class={seg}>{r.label}</button>
+        ))}
+      </div>
+    </div>
+    <p data-status role="status" class="-mt-2 text-[13px] text-muted">Loading…</p>
+    <p data-biggest hidden class="rounded-md border border-line bg-surface px-3 py-2 text-[14px] dark:bg-surface-2"></p>
+
+    {groups.map((g) => (
+      <div class="rounded-md border border-line bg-surface dark:bg-surface-2">
+        <div class:list={[toolbar, "justify-between rounded-t-md"]}>
+          <h2 class="text-[14px] font-semibold">{g.title}</h2>
+          <p class="text-[13px] text-muted">{g.note}</p>
+        </div>
+        <div class="overflow-x-auto rounded-b-md">
+          <table class="w-full table-fixed border-collapse text-left text-[14px]">
+            <thead class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
+              <tr class="border-b border-line">
+                <th scope="col" class="px-3 py-2 @xl:px-4 font-semibold">Step</th>
+                <th scope="col" class="w-20 px-3 py-2 @xl:w-28 @xl:px-4 text-right font-semibold">Count</th>
+                <th scope="col" class="hidden w-72 px-3 py-2 @xl:table-cell @xl:px-4 font-semibold">Of landing visits</th>
+                <th scope="col" class="w-24 px-3 py-2 @xl:w-36 @xl:px-4 text-right font-semibold">From previous</th>
+              </tr>
+            </thead>
+            <tbody data-group={g.id} aria-busy="true" aria-live="polite"></tbody>
+          </table>
+        </div>
+      </div>
+    ))}
+  </div>
+</App>

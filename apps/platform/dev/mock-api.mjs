@@ -104,6 +104,17 @@ async function handle(req, res) {
   const p = new URL(req.url, "http://localhost").pathname;
   const m = req.method;
 
+  // Same shape as apps/site/worker/funnel.ts report(). Sample numbers.
+  if (p === "/api/admin/funnel" && m === "GET") {
+    const days = Number(new URL(req.url, "http://localhost").searchParams.get("days")) || null;
+    const k = days === 7 ? 0.25 : days === 30 ? 1 : 1.6;
+    const sample = [["visit", "Landing page visits", 1240], ["code_sent", "Asked for an email code", 96], ["verified", "Verified their email", 81],
+      ["apply_1", "Reached form step 1 of 5", 80], ["apply_2", "Reached form step 2 of 5", 74], ["apply_3", "Reached form step 3 of 5", 52],
+      ["apply_4", "Reached form step 4 of 5", 49], ["apply_5", "Reached form step 5 of 5", 47], ["submitted", "Sent the application", 44],
+      ["accepted", "Accepted", 10], ["ai_connected", "AI tool connected (first tool call)", 8], ["first_check", "First readiness check", 7],
+      ["production_deploy", "First production deploy started", 4], ["all_checks_live", "All checks passing on a live URL", 2]];
+    return send(res, 200, { days, sample: true, steps: sample.map(([key, label, n]) => ({ key, label, n: Math.round(n * k) })) });
+  }
   if (p === "/api/admin/applicants" && m === "GET") {
     return send(res, 200, { seats: SEATS, accepted: applicants.filter((a) => a.acceptedAt).length, applicants });
   }

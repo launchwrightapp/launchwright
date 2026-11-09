@@ -24,6 +24,8 @@ test.describe("learner", () => {
     await expect(page.locator('a[href="/applicants"]')).toHaveCount(0);
     expect((await page.goto("/inbox"))?.status()).toBe(404);
     expect((await page.goto("/applicants"))?.status()).toBe(404);
+    expect((await page.goto("/funnel"))?.status()).toBe(404);
+    expect((await page.request.get("/api/admin/funnel")).status()).toBe(404);
     expect((await page.request.get("/api/admin/applicants")).status()).toBe(404);
     expect((await page.request.get("/api/admin/threads")).status()).toBe(404);
   });
@@ -49,6 +51,23 @@ test.describe("admin", () => {
     await expect(page.locator('a[href="/applicants"]').first()).toBeAttached();
     await expect(page.locator('a[href="/messages"]')).toHaveCount(0);
     await expect(page.getByText("Applications aren't", { exact: false }).or(page.getByText("DATABASE_URL isn't set"))).toBeVisible();
+  });
+});
+
+test.describe("admin funnel", () => {
+  test.beforeEach(async ({ context, baseURL }) => signIn(context, baseURL!, testAdmin));
+
+  test("the funnel page is in the team nav and explains a missing database", async ({ page }) => {
+    await expect(async () => expect((await page.goto("/funnel"))?.status()).toBe(200)).toPass();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Pilot funnel");
+    await expect(page.locator('a[href="/funnel"]').first()).toBeAttached();
+    await expect(page.getByText("DATABASE_URL isn't set")).toBeVisible();
+    await expect(page.getByRole("button", { name: "30 days" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("the funnel API only answers GET", async ({ page }) => {
+    await page.goto("/funnel");
+    expect((await page.request.post("/api/admin/funnel", { data: {} })).status()).toBe(405);
   });
 });
 
