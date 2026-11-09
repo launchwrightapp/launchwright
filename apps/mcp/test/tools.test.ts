@@ -110,7 +110,21 @@ describe("MCP tools", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["check_env", "check_readiness", "connect_database", "deploy", "explain_error", "get_logs", "project_status", "review_pr", "set_secret", "setup_ci"]);
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review"]));
+    expect(prompts.map((p) => p.name)).toEqual(expect.arrayContaining(["lesson-readiness", "lesson-deploy", "lesson-secrets", "lesson-database", "lesson-ci", "lesson-debug", "lesson-security", "lesson-connect", "lesson-review", "lesson-practice"]));
+  });
+
+  it("lesson-practice guides one exercise on the learner's repo", async () => {
+    const { client } = await connect();
+    const p = await client.getPrompt({ name: "lesson-practice", arguments: { repo: REPO, exercise: "backup_restore" } });
+    const text = (p.messages[0].content as { text: string }).text;
+    expect(text).toContain(REPO);
+    expect(text).toContain("Backup and restore drill");
+    expect(text).toContain("never over production");
+    expect(text).toContain("doesn't by itself make the app production-ready");
+    expect(text).toContain("once the default branch has: RECOVERY.md with your restore steps");
+    expect(text).toContain("run launchwright check_readiness to record it");
+    expect(text).toContain("Taglish");
+    await expect(client.getPrompt({ name: "lesson-practice", arguments: { repo: REPO, exercise: "nope" } })).rejects.toThrow();
   });
 
   it("project_status saves the project, teaches once in full, then short, and audits", async () => {
@@ -156,6 +170,26 @@ describe("MCP tools", () => {
     rules = [{ type: "pull_request" }, { type: "required_status_checks", parameters: { required_status_checks: [{ context: "Checks" }] } }];
     const on = await call("check_readiness", { repo: REPO });
     expect(on.text).toContain("[PASS] CI runs your tests");
+  });
+
+  it("check_readiness records practice exercises from evidence on the default branch", async () => {
+    const { call, mem } = await connect();
+    const before = await call("check_readiness", { repo: REPO });
+    expect(before.text).toContain("Practice exercises found on main: 0 of 6");
+    expect(before.text).toContain("[todo] Backup and restore drill (backup_restore): needs RECOVERY.md with your restore steps");
+    files["docs/RECOVERY.md"] = "# Recovery\nRestore to a Neon branch, then compare row counts.";
+    files["RUNBOOK.md"] = "# Runbook\nTBD";
+    try {
+      const after = await call("check_readiness", { repo: REPO });
+      expect(after.text).toContain("Practice exercises found on main: 1 of 6");
+      expect(after.text).toContain("[done] Backup and restore drill (backup_restore): found `docs/RECOVERY.md`. Not checked automatically:");
+      expect(after.text).toContain("[todo] Alerts, owner and runbook"); // RUNBOOK.md without rollback steps
+      const seen = await mem.store.seen(1, ["exercise:backup_restore", "exercise:incident_runbook"] as never);
+      expect(Object.keys(seen)).toEqual(["exercise:backup_restore"]);
+    } finally {
+      delete files["docs/RECOVERY.md"];
+      delete files["RUNBOOK.md"];
+    }
   });
 
   it("review_pr lists open PRs, then prepares a review with flags, CI and a fenced diff", async () => {

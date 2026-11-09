@@ -13,7 +13,7 @@
 // Credentials are sealed with TOKEN_KEY before they touch the database and are never sent back.
 // Every change is written to the audit log as the learner's action.
 import { neon } from "@neondatabase/serverless";
-import { isConcept } from "../../../packages/core/curriculum";
+import { exercisesDoneIn, isConcept } from "../../../packages/core/curriculum";
 import { connectionAad, seal, secretRequestAad } from "../../../packages/core/seal";
 import { CLOUDFLARE_SCOPES, NEON_SCOPES, SUPABASE_SCOPES, verifyCloudflareToken, verifyNeonKey } from "../../../packages/core/verify";
 import { SUPABASE_AUTHORIZE, exchangeSupabaseCode } from "../../../packages/core/supabase-oauth";
@@ -62,7 +62,7 @@ const SCOPES: Record<string, string> = { cloudflare: CLOUDFLARE_SCOPES, neon: NE
 async function me(env: LearnerEnv, user: User) {
   const configured = { database: !!env.DATABASE_URL, encryption: !!env.TOKEN_KEY, supabase: !!(env.SUPABASE_CLIENT_ID && env.SUPABASE_CLIENT_SECRET) };
   const base = { user: { id: user.id, login: user.login, name: user.name }, configured };
-  if (!env.DATABASE_URL) return { ...base, projects: [], conceptsSeen: [], connections: [], approvals: [], audit: [], secrets: [], mcp: { connected: false, client: null, lastSeen: null } };
+  if (!env.DATABASE_URL) return { ...base, projects: [], conceptsSeen: [], exercisesDone: [], connections: [], approvals: [], audit: [], secrets: [], mcp: { connected: false, client: null, lastSeen: null } };
   const sql = neon(env.DATABASE_URL);
   const [projects, lessons, connections, approvals, auditRows, secrets] = await Promise.all([
     sql`select repo, framework, package_manager, database, hosting, worker_name, production_url, readiness_passed, readiness_total, checks, checked_at, updated_at
@@ -75,6 +75,7 @@ async function me(env: LearnerEnv, user: User) {
     sql`select repo, name, target, updated_at from secret_names where github_id = ${user.id} order by name`,
   ]);
   const seen = lessons.map((r) => r.concept as string).filter(isConcept);
+  const exercisesDone = exercisesDoneIn(lessons.map((r) => r.concept as string));
   const lastAi = auditRows.find((r) => r.actor === "ai");
   return {
     ...base,
@@ -84,6 +85,7 @@ async function me(env: LearnerEnv, user: User) {
       checks: p.checks ?? null, checkedAt: iso(p.checked_at), updatedAt: iso(p.updated_at),
     })),
     conceptsSeen: seen,
+    exercisesDone,
     connections: connections.map((c: Row) => ({ provider: c.provider, method: c.method, label: c.account_label, scopes: SCOPES[c.provider as string] ?? "", connectedAt: iso(c.created_at) })),
     approvals: approvals.map((a: Row) => ({ id: a.id, repo: a.repo, client: a.client, tool: a.tool, action: a.action, title: a.title, summary: a.summary, detail: a.detail, createdAt: iso(a.created_at), expiresAt: iso(a.expires_at) })),
     audit: auditRows.map((r: Row) => ({ actor: r.actor, client: r.client, tool: r.tool, repo: r.repo, summary: r.summary, outcome: r.outcome, at: iso(r.created_at) })),

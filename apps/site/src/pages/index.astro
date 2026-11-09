@@ -140,7 +140,7 @@ const stages = [
     modules: [
       ["Git", "Branches, commits, and pull requests without the fear."],
       ["Env & secrets", "Why API keys never belong in your code."],
-      ["Database", "Neon or Supabase, migrations, and backups."],
+      ["Database", "Neon or Supabase, migrations, and a backup you have actually restored."],
     ],
   },
   {
@@ -149,7 +149,7 @@ const stages = [
     blurb: "Catch problems before your users do.",
     modules: [
       ["CI/CD", "GitHub Actions that test before you deploy."],
-      ["Testing", "Unit tests and Playwright smoke tests."],
+      ["Testing", "Playwright tests of your key flows, on mobile, with accessibility checks."],
       ["Deploy", "Preview deploys, production, and rollback."],
     ],
   },
@@ -158,8 +158,8 @@ const stages = [
     name: "Operate",
     blurb: "Keep it running and keep it safe.",
     modules: [
-      ["Monitoring", "Logs, errors, and uptime checks."],
-      ["Security", "Auth, security headers, and the Data Privacy Act (RA 10173)."],
+      ["Monitoring", "Logs, errors, uptime checks, and a recovery runbook."],
+      ["Security", "Access tests, rate limits, headers, and the Data Privacy Act (RA 10173)."],
     ],
   },
 ];
@@ -377,7 +377,7 @@ const faq = [
 
     <!-- Learning path: stages climb left to right, like steps up to production -->
     <section id="curriculum" aria-labelledby="curr-title" class="gutter scroll-mt-24 py-20 md:py-28">
-      <SectionIntro variant="mirror" id="curr-title" title="Your path" muted="to production." note="Eight skills in three stages, learned on your own project with managed free tiers. Each skill shows up when your project needs it." />
+      <SectionIntro variant="mirror" id="curr-title" title="Your path" muted="to production." note="Level 1: ship your first web app with production fundamentals. Eight skills in three stages, learned on your own project with managed free tiers, with hands-on practice for the parts no check can do for you." />
 
       <ol class="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4 xl:items-start" data-reveal data-stagger>
         {stages.map((s, i) => {

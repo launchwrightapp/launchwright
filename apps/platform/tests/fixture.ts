@@ -24,6 +24,7 @@ export const me = {
     },
   ],
   conceptsSeen: ["project_status", "pull_requests", "code_review", "env_config", "secrets", "secret_storage", "env_drift", "readiness"],
+  exercisesDone: ["incident_runbook"],
   connections: [{ provider: "cloudflare", method: "api_key", label: "Juan's account", scopes: "Workers Scripts: Edit", connectedAt: ago(60 * 24) }],
   approvals: [
     { id: "0b8e6a2e-6a8a-4c55-9a39-1a2b3c4d5e6f", repo: "juan/barbershop-booking", client: "Claude Code", tool: "deploy", action: "deploy:production:main", title: "Deploy juan/barbershop-booking (main) to production", summary: "Builds main and replaces what your users see.", detail: { workflow: "launchwright-deploy.yml", branch: "main" }, createdAt: ago(4), expiresAt: ago(-60 * 24) },

@@ -10,12 +10,13 @@
 // - Every call is written to the audit log.
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import type { Concept } from "../../../packages/core/curriculum";
-import { MODULES } from "../../../packages/core/curriculum";
+import type { Concept, ExerciseId } from "../../../packages/core/curriculum";
+import { evidenceFiles, exerciseEvidence, exerciseKey } from "../../../packages/core/curriculum";
+import { EXERCISES, MODULES } from "../../../packages/core/curriculum";
 import { untrustedBlock, redact } from "../../../packages/core/untrusted";
 import { REPO_RE, branchHead, branchProtection, dispatchWorkflow, openPulls, pullFiles, pullRequest, runsForCommit, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
 import { PROTECT_HOW, protectionGap, runChecks, score, type Check } from "./readiness";
-import { diffText, reviewPull } from "./review";
+import { diffText, reviewPull, safePath } from "./review";
 import { checkUrl, liveChecks } from "./live";
 import { detectStack, projectStatus } from "./project";
 import { isLessonConcept } from "./lessons";
@@ -149,6 +150,11 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         const checks = runChecks(rc.snap, live);
         const { passed, total } = score(checks);
         const stack = detectStack(rc.snap);
+        // Practice exercises: evidence on the default branch marks them done (and they stay done).
+        await readFiles(learner.githubToken, rc.snap, evidenceFiles(rc.snap.paths).filter((p) => (rc.snap.sizes?.[p] ?? 0) <= 64 * 1024));
+        const evidence = exerciseEvidence(rc.snap.paths, rc.snap.files);
+        const practiced = evidence.filter((e) => e.done);
+        await store.record(learner.id, practiced.map((e) => exerciseKey(e.id))).catch((e) => console.error("exercise progress write failed", e));
         await store.saveProject(learner.id, {
           repo: rc.snap.repo, framework: stack.framework, packageManager: stack.packageManager, database: stack.database, hosting: stack.hosting, workerName: rc.worker,
           productionUrl: target?.origin ?? null, readiness: { passed, total, checks },
@@ -161,12 +167,21 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
           lines.join("\n"),
           rc.snap.truncated ? "\nNote: the repo is very large, so GitHub sent only part of the file list." : "",
           `\nThe dashboard shows the same results: ${dashboard(ctx, "/readiness")}`,
+          `\nThese checks are a baseline, not proof the app is production-ready; that depends on its users, data and failure risks. What they can't verify is practised with the lesson-practice prompt (exercise=<id>). Practice exercises found on ${rc.snap.branch}: ${practiced.length} of ${EXERCISES.length}.`,
+          evidence
+            .map((e) => {
+              const ex = EXERCISES.find((x) => x.id === e.id)!;
+              return e.done
+                ? `- [done] ${ex.title} (${e.id}): found ${e.found.map((f) => `\`${safePath(f)}\``).join(", ")}.${ex.unchecked ? ` Not checked automatically: ${ex.unchecked}` : ""}`
+                : `- [todo] ${ex.title} (${e.id}): needs ${e.missing.join("; ")}.`;
+            })
+            .join("\n"),
         ].join("\n");
         const failing = checks.filter((c) => (c.status === "fail" || c.status === "warn") && isLessonConcept(c.id)).map((c) => c.id as Concept);
         const concepts: Concept[] = ["readiness", ...failing];
         if (checks.find((c) => c.id === "secrets")?.status === "warn") concepts.push("secret_scanning");
         if (stack.database) concepts.push("data_privacy");
-        return { result, data: { repo: rc.snap.repo, passed, total, checks, url: target?.origin ?? null }, concepts, audit: { repo: rc.snap.repo, summary: `${passed} of ${total} checks passed` } };
+        return { result, data: { repo: rc.snap.repo, passed, total, checks, url: target?.origin ?? null, exercises: evidence }, concepts, audit: { repo: rc.snap.repo, summary: `${passed} of ${total} checks passed` } };
       }),
   );
 
@@ -672,7 +687,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
     }));
 
   lesson("lesson-readiness", "Lesson: is my app ready for production?", "Check the repo, then fix the readiness gaps one at a time.", (r) =>
-    `I'm learning how production apps work. Use the launchwright check_readiness tool on ${r}. Then go through the results with me one item at a time, failures first, and tell me about any check it couldn't run. For each one: explain what it is and why it matters, show me the smallest change that fixes it, and check that the fix works. At the end, run check_readiness again. Remind me that passing every check is a good baseline, not a full security audit.`);
+    `I'm learning how production apps work. Use the launchwright check_readiness tool on ${r}. Then go through the results with me one item at a time, failures first, and tell me about any check it couldn't run. For each one: explain what it is and why it matters, show me the smallest change that fixes it, and check that the fix works. At the end, run check_readiness again. Remind me that passing every check is a good baseline, not a full security audit and not proof the app is production-ready, and point me to the lesson-practice exercises for what the checks can't verify (restore drill, access tests, rate limits, runbook, data retention).`);
   lesson("lesson-secrets", "Lesson: env vars and secrets", "Find every setting the app needs and store the secret ones safely.", (r) =>
     `Teach me env vars and secrets using my repo ${r}. First run launchwright check_env and explain the difference between the code, .env.example, and production, and which settings are public config, which are secrets, and which are only needed at build time. Explain why a secret must never go in a variable that ends up in browser code. Then fix the gaps: confirm which environment each missing setting belongs to, update .env.example together, and for each missing secret use set_secret so I type the value in the secure link (never in this chat).`);
   lesson("lesson-database", "Lesson: connect a database", "Pick Neon or Supabase, connect it, and add the first migration.", (r) =>
@@ -703,6 +718,31 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         },
       ],
     }),
+  );
+  server.registerPrompt(
+    "lesson-practice",
+    {
+      title: "Practice: production fundamentals on your app",
+      description: "Hands-on exercises: backup and restore, launch quality, alerts and a runbook, access tests, abuse and dependencies, personal data.",
+      argsSchema: z.object({
+        repo,
+        exercise: z.enum(EXERCISES.map((e) => e.id) as [ExerciseId, ...ExerciseId[]]).describe(EXERCISES.map((e) => `${e.id}: ${e.title}`).join("; ")),
+      }),
+    },
+    ({ repo, exercise }) => {
+      const ex = EXERCISES.find((e) => e.id === exercise)!;
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `I'm practising production fundamentals on my own app ${repo}: "${ex.title}". Start with launchwright project_status so you know my stack, then guide me through this one step at a time. Use launchwright tools where they fit (check_readiness, review_pr, get_logs, deploy, set_secret). Make changes in a branch and open a pull request for me to review; never touch production data, and ask before anything destructive.\n\n${ex.task}\n\nThis exercise counts as done on my Launchwright dashboard once the default branch has: ${ex.doneWhen.map((n) => n.what).join("; ")}. ${ex.unchecked ? `That's only evidence. Not checked automatically: ${ex.unchecked} We verify those together. ` : ""}After I merge the pull request, run launchwright check_readiness to record it.\n\nAt the end, summarise what we verified and what's still open. Remind me that finishing this exercise doesn't by itself make the app production-ready: that depends on its users, data and failure risks.\n\nGround rules: explain each step in plain words before doing it, wait for me before moving on, and never print or ask me to paste secrets into the chat. Explain in Taglish (casual Tagalog-English, technical terms in English) by default. Use another language only if I explicitly ask for it or have clearly shown that preference in my own messages; don't infer my language from this generated prompt.`,
+            },
+          },
+        ],
+      };
+    },
   );
   lesson("lesson-security", "Lesson: security and the Data Privacy Act", "Auth on API routes, security headers, least privilege, RA 10173.", (r) =>
     `Teach me the security basics for my app ${r}. Run launchwright check_readiness (ask me for my deployed URL if it isn't known) and go through auth on API routes first: who is asking, and whether they may access that specific record. Then the security headers. Then explain least privilege for my Cloudflare and database keys. Finally ask me what personal data my app handles (database, logs, third-party services) and explain what the Philippine Data Privacy Act (RA 10173) means for it: an applicable lawful basis (consent is one), the privacy notice, collecting only what's needed, protection, people's rights, and which breaches must be notified to the NPC and the affected people, within 72 hours of knowing or reasonably believing it happened.`);
