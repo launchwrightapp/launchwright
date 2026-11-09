@@ -72,7 +72,9 @@ export async function runTool(ctx: Ctx, tool: string, repo: string | undefined, 
     store.audit(learner.id, { client: learner.client, tool, repo: out.audit.repo ?? repo, summary: out.audit.summary, outcome: out.audit.outcome ?? "ok" }).catch((e) => console.error("audit write failed", e)),
   ]);
   const text = `## Result\n\n${out.result}${lessons.length ? `\n\n## Lesson\n\n${lessons.map((l) => `- ${l.text}`).join("\n")}` : ""}`;
-  return { content: [{ type: "text" as const, text }], structuredContent: { ...(out.data ?? {}), lessons } };
+  // Some clients (Claude Code among them) show the AI only structuredContent when it's present,
+  // so the result text goes in there too, or the explanation and next steps never reach it.
+  return { content: [{ type: "text" as const, text }], structuredContent: { result: out.result, ...(out.data ?? {}), lessons } };
 }
 
 // --- The learner's accounts -----------------------------------------------------------------
