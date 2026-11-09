@@ -21,10 +21,10 @@ const tabs = [
     </div>
 
     <div class="card rounded-xl p-0">
-      <div role="tablist" aria-label="Security" data-tabs class="pill-tabs px-5 pt-5">
+      <div role="tablist" aria-label="Security" data-tabs class="tabs px-5 pt-5">
         {tabs.map((t, i) => (
-          <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="pill-tab">
-            {t.label}{t.count && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] text-night">{t.count}</span>}
+          <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">
+            {t.label}{t.count && <span class="count">{t.count}</span>}
           </button>
         ))}
       </div>

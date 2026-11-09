@@ -157,13 +157,14 @@
   .tag-warn { @apply bg-warn-bg text-warn; }
   .tag-bad { @apply bg-bad-bg text-bad; }
   .tag-line { @apply border border-line bg-transparent text-muted; }
-  /* Pill tabs and filters: one style for every tab row (role=tab or aria-pressed buttons). */
-  .pill-tabs { @apply flex flex-wrap gap-2; }
-  .pill-tab {
-    @apply inline-flex min-h-11 flex-none cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-line bg-surface px-5 text-[17px] font-medium leading-none text-ink hover:border-ink;
+  /* Tabs and filters (role=tab or aria-pressed buttons): underline on the selected one, over a full-width rule. */
+  .tabs { @apply flex overflow-x-auto shadow-[inset_0_-1px_0_var(--line)]; }
+  .tab {
+    @apply inline-flex min-h-11 flex-none cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-5 text-[17px] font-medium leading-none text-muted hover:text-ink;
   }
-  .pill-tab[aria-selected="true"], .pill-tab[aria-pressed="true"] { @apply border-ink bg-ink text-on-ink; }
-  .pill-tab .count { @apply tabular-nums; }
+  .tab[aria-selected="true"], .tab[aria-pressed="true"] { @apply border-ink text-ink; }
+  .tab .count { @apply rounded-md bg-warn-bg px-2 py-1 text-[15px] font-semibold tabular-nums text-warn; }
+  .tab .count:empty { @apply hidden; }
   /* Bottom sheet: a <dialog> that slides up from the bottom edge, full width. */
   .sheet {
     @apply fixed inset-x-0 top-auto bottom-0 m-0 max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[14px] border border-b-0 border-line bg-surface p-0 text-ink;
