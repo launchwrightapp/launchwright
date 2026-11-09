@@ -79,8 +79,11 @@ jobs:
           SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
           DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
           FORWARD_TO: ${{ secrets.PLATFORM_FORWARD_TO }}
+          TOKEN_KEY: ${{ secrets.PLATFORM_TOKEN_KEY }}
+          SUPABASE_CLIENT_ID: ${{ vars.SUPABASE_CLIENT_ID }}
+          SUPABASE_CLIENT_SECRET: ${{ secrets.SUPABASE_CLIENT_SECRET }}
         run: |
-          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO"]) if (process.env[k]) s[k] = process.env[k];
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO", "TOKEN_KEY", "SUPABASE_CLIENT_ID", "SUPABASE_CLIENT_SECRET"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Upload preview versions (production is untouched)
         id: up
@@ -139,11 +142,15 @@ jobs:
           SESSION_SECRET: ${{ secrets.PLATFORM_SESSION_SECRET }}
           DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
           FORWARD_TO: ${{ secrets.PLATFORM_FORWARD_TO }}
+          TOKEN_KEY: ${{ secrets.PLATFORM_TOKEN_KEY }}
+          SUPABASE_CLIENT_ID: ${{ vars.SUPABASE_CLIENT_ID }}
+          SUPABASE_CLIENT_SECRET: ${{ secrets.SUPABASE_CLIENT_SECRET }}
         run: |
-          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO"]) if (process.env[k]) s[k] = process.env[k];
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO", "TOKEN_KEY", "SUPABASE_CLIENT_ID", "SUPABASE_CLIENT_SECRET"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
           # The MCP server signs in with the same GitHub App and keeps lesson progress in the same database.
-          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "DATABASE_URL"]) if (process.env[k]) s[k] = process.env[k];
+          # TOKEN_KEY must be the same in both: the platform seals tokens, the MCP server opens them.
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "DATABASE_URL", "TOKEN_KEY", "SUPABASE_CLIENT_ID", "SUPABASE_CLIENT_SECRET"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/mcp-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Deploy site
         working-directory: apps/site
@@ -156,6 +163,9 @@ jobs:
         run: |
           BASE_URL=https://launchwright.app npm run test:e2e -w apps/site
           BASE_URL=https://platform.launchwright.app npm run test:e2e -w apps/platform
+          # Health: both Workers are configured (sign-in secrets present).
+          curl -fsS https://platform.launchwright.app/health | grep -q '"ok":true'
+          curl -fsS https://mcp.launchwright.app/health | grep -q '"ok":true'
           # MCP: the home page loads, and /mcp asks for sign-in (401 with where to get a token).
           curl -fsS -o /dev/null https://mcp.launchwright.app/
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST https://mcp.launchwright.app/mcp)
