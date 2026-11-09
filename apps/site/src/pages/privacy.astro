@@ -21,28 +21,53 @@ const CONTACT = "privacy@launchwright.app";
     <li><strong>When you gave consent</strong>, so we can show we asked first.</li>
   </ul>
   <p>To confirm your email, we send you a 6-digit code. We keep your email with a scrambled (hashed) copy of the code for up to a day, or until you send your application, whichever comes first. If you never finish, it's deleted after a day.</p>
-  <p>When you sign in to the dashboard with GitHub, we receive your public GitHub profile: your name, username, ID, and profile picture. We keep it in a signed cookie in your browser for up to 7 days so you stay signed in. We don't keep your GitHub access token, and we get no access to your code.</p>
+  <p>When you sign in to the dashboard with GitHub, we receive your public GitHub profile: your name, username, ID, and profile picture. We keep it in a signed cookie in your browser for up to 7 days so you stay signed in. Signing in to the dashboard gives us no access to your code, and the dashboard doesn't keep your GitHub access token.</p>
   <p>When you visit the site, Cloudflare (our host) processes basic technical data such as your IP address to deliver the page and protect it from abuse. We use Cloudflare Web Analytics, which counts visits without cookies and without tracking you across sites. We also keep daily totals of how far people get in the pilot application, such as how many reached step 3. These totals hold no email, IP address, or cookie, so they can't be linked to you. Your light or dark theme choice is saved only in your own browser.</p>
+  <h3>When you use Launchwright with your AI tool</h3>
+  <p>When you connect your AI tool (Claude Code, Cursor, Codex and others) to Launchwright and use it on your app, we also keep:</p>
+  <ul>
+    <li><strong>Your GitHub sign-in for the AI tool.</strong> Your GitHub ID and username, and a GitHub access token so Launchwright can act on the repos you allow. The token is encrypted and expires 30 days after you sign in; then your AI tool asks you to sign in again. Your AI tool never sees it.</li>
+    <li><strong>Access to the repos you choose.</strong> When you install the Launchwright GitHub App, you pick which repos it can reach. Launchwright reads files in those repos when your AI tool asks it to (for example to check readiness or review a pull request), and opens pull requests you review and merge yourself. We don't keep copies of your code. We keep what the checks found: your app's stack, check results, and the file paths they point to.</li>
+    <li><strong>Your projects and progress.</strong> Your repo names, your app's public address if you give it, which lessons you've covered and which practice exercises you've done.</li>
+    <li><strong>An activity log</strong> of what your AI tool did through Launchwright and what you decided: the tool, the repo, a short summary and the outcome. You see it on your dashboard. It never contains secret values.</li>
+    <li><strong>Connected accounts.</strong> If you connect Cloudflare, Neon or Supabase, we keep the key or sign-in token you gave us, encrypted, so Launchwright can deploy and set up your database. The AI never sees it.</li>
+    <li><strong>Secret names, not values.</strong> When you set a secret through the dashboard, we pass the value to GitHub or Cloudflare and wipe our encrypted copy right away, or within an hour if something goes wrong. We keep only its name, so the dashboard can list it.</li>
+    <li><strong>Approvals.</strong> When a production deploy or other risky action waits for you, we keep what was asked and what you decided.</li>
+    <li><strong>Messages</strong> you send us from the dashboard or to hello@launchwright.app, and our replies.</li>
+  </ul>
+  <p>We don't see or keep your conversations with your AI tool. Launchwright only receives the requests your AI tool sends it, such as "check this repo" or an error message you asked it to explain.</p>
+
   <p>We don't use advertising trackers, and we don't sell or rent your data.</p>
 
   <h2>Why we use it</h2>
   <p>We use your application only to review it, contact you about the pilot, and plan the pilot. The legal basis is your consent, which you give with the checkbox on the form. You can withdraw it at any time.</p>
+  <p>We use what we keep when you use Launchwright only to run it for you: do what your AI tool asks, teach you the matching lesson, show your progress and history on your dashboard, keep your accounts safe, and answer your messages. The legal basis is that we need it to provide the service you signed up for. We don't use your code or your activity to train AI models.</p>
   <p>To help us review applications, we may ask an AI model (Anthropic's Claude) to suggest who is most likely to finish the pilot. We send only your answers to the pilot questions and what you're building, under a random label. We don't send your name, email, GitHub username or city, and we remove anything in your project description that looks like contact details (emails, links, handles, phone numbers) first. The AI only makes a suggestion: a person on our team reads every application and makes every decision.</p>
 
   <h2>Who processes it for us</h2>
   <ul>
-    <li><strong>Cloudflare</strong>, which hosts the site, handles the form, and sends our emails.</li>
-    <li><strong>GitHub</strong>, which confirms who you are when you sign in to the dashboard.</li>
-    <li><strong>Neon</strong>, which stores the application database.</li>
+    <li><strong>Cloudflare</strong>, which hosts the site, the dashboard and the Launchwright server, handles the form, sends our emails, and stores the encrypted sign-in for your AI tool.</li>
+    <li><strong>GitHub</strong>, which confirms who you are when you sign in, and through which Launchwright reaches the repos you allow.</li>
+    <li><strong>Neon</strong>, which stores our database: applications, and what we keep when you use Launchwright.</li>
     <li><strong>Anthropic</strong>, which runs the AI model that helps us review applications (without your name or contact details, as described above). Anthropic doesn't use this data to train its models.</li>
   </ul>
   <p>These providers may store data outside the Philippines. They process it only to provide their service to us.</p>
+  <p>The Cloudflare, Neon and Supabase accounts you connect are your own. Launchwright acts on them for you, and those providers handle that data under your agreement with them.</p>
 
   <h2>How long we keep it</h2>
   <p>We keep your application until the pilot ends. If you don't join, we delete it within 30 days after the pilot ends. If you ask us to delete it sooner, we will.</p>
+  <p>When you use Launchwright with your AI tool:</p>
+  <ul>
+    <li><strong>Your projects, progress, connected accounts and secret names</strong> stay while you use Launchwright. If you don't use it for 12 months, we delete all of it automatically.</li>
+    <li><strong>Activity log entries</strong> are deleted after 12 months.</li>
+    <li><strong>Approvals and secret requests</strong> are deleted 30 days after they expire. Secret values themselves are wiped right after use, or within an hour.</li>
+    <li><strong>The sign-in for your AI tool</strong>, with its GitHub token, expires 30 days after you sign in.</li>
+    <li><strong>Messages</strong> are deleted 2 years after the last message in the conversation.</li>
+  </ul>
+  <p>You can remove some of it yourself at any time: disconnect an account on the dashboard's Security page (we delete our copy of its key or token right away), or uninstall the Launchwright GitHub App from your repos in your GitHub settings. To have everything deleted, email us.</p>
 
   <h2>How we protect it</h2>
-  <p>Data is encrypted in transit (HTTPS) and at rest by our providers. Only the Launchwright team can access applications, and the database credentials are never in our code.</p>
+  <p>Data is encrypted in transit (HTTPS) and at rest by our providers. Only the Launchwright team can access applications, and the database credentials are never in our code. Access tokens, keys and secret values are encrypted in our database with a key kept separately, so the database alone never reveals them.</p>
 
   <h2>Your rights</h2>
   <p>Under RA 10173 you have the right to:</p>
