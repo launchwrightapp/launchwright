@@ -40,7 +40,13 @@ function initTabs(list: HTMLElement) {
     });
   });
   // /security#accounts opens the Accounts tab.
-  const fromHash = list.hasAttribute("data-hash-tabs") && location.hash.length > 1 ? tabs.find((t) => t.getAttribute("aria-controls") === `panel-${location.hash.slice(1)}`) : undefined;
+  // /security#connect-neon opens the tab that contains that section.
+  let fromHash: HTMLButtonElement | undefined;
+  if (list.hasAttribute("data-hash-tabs") && location.hash.length > 1) {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const panel = document.getElementById(`panel-${id}`) ?? document.getElementById(id)?.closest<HTMLElement>('[role="tabpanel"]');
+    fromHash = panel ? tabs.find((t) => t.getAttribute("aria-controls") === panel.id) : undefined;
+  }
   select(fromHash ?? tabs.find((t) => t.getAttribute("aria-selected") === "true") ?? tabs[0]);
 }
 document.querySelectorAll<HTMLElement>("[data-tabs]").forEach(initTabs);

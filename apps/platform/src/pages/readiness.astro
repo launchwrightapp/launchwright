@@ -33,7 +33,7 @@ import Check from "../../../../packages/ui/Check.astro";
                 <span data-if="isPass"><Check class="size-4" /></span><span data-if="needsWork">!</span><span data-if="isOpen">–</span>
               </span>
               <span class="min-w-0 flex-1 font-semibold" data-bind="title"></span>
-              <span class="tag tag-line" data-class="tag-ok:isPass;tag-bad:isFail;tag-warn:isWarn" data-bind="statusLabel"></span>
+              <span class="tag tag-line" data-class="tag-ok:isPass;tag-bad:isFail;tag-warn:isWarn;tag-line:isOpen" data-bind="statusLabel"></span>
               <svg class="size-5 flex-none text-muted transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </summary>
             <div class="grid grid-cols-1 gap-4 border-t border-line px-4 py-2.5 @3xl:grid-cols-2">

@@ -1,6 +1,8 @@
 ---
 import App from "../layouts/App.astro";
-import { CLOUDFLARE_TOKEN_TEMPLATE } from "../../../../packages/core/verify";
+import { GUIDES } from "../../../../packages/core/connect-guides";
+
+const guides = [GUIDES.cloudflare, GUIDES.neon, GUIDES.supabase];
 
 const tabs = [
   { id: "approvals", label: "Approvals", count: true },
@@ -50,54 +52,106 @@ const input = "min-h-10 w-full min-w-0 flex-1 rounded-lg border border-line bg-s
       </div>
 
       <div id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" class="flex flex-col gap-4 p-4">
-        <p class="text-muted">Bring your own cloud: your app runs on your accounts' free tiers. Each key gets only the permissions launchwright needs, is checked with the provider, then stored encrypted. Disconnect any time, then revoke the key at the provider.</p>
-        <ul class="grid grid-cols-1 gap-3 @3xl:grid-cols-3" data-each="connections">
-          <template>
-            <li class="flex flex-col gap-1.5 rounded-xl border border-line bg-surface p-4">
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-base font-semibold" data-bind="name"></p>
-                <span class="tag tag-line" data-class="tag-ok:connected" data-bind="stateLabel"></span>
+        <div class="flex flex-col gap-2 rounded-xl bg-blue/10 p-4 text-[14px]">
+          <p class="flex flex-wrap items-baseline justify-between gap-2">
+            <span class="text-base font-semibold text-ink">Bring your own cloud</span>
+            <span class="text-muted"><span data-bind="connectedCount">0</span> of 3 connected · you need Cloudflare and one database</span>
+          </p>
+          <p class="text-muted">Your app runs on your own accounts' free plans. You create each key yourself, with only the permissions launchwright needs, and paste it here. Your AI tool can walk you through it (ask it to run the <code>lesson-connect</code> prompt), but it never sees or holds your keys. That's the point.</p>
+        </div>
+
+        {guides.map((g) => (
+          <section id={`connect-${g.id}`} class="scroll-mt-28 rounded-xl border border-line bg-surface dark:bg-surface-2" aria-labelledby={`${g.id}-title`} data-class={`border-ok/50:account.${g.id}.connected`}>
+            <header class="flex flex-wrap items-start justify-between gap-3 border-b border-line p-4">
+              <div class="min-w-0">
+                <h2 id={`${g.id}-title`} class="text-lg font-semibold">{g.name} <span class="font-normal text-muted">· {g.tagline}</span></h2>
+                <p class="mt-1 text-[14px] text-muted">{g.forWhat}</p>
+                <p class="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
+                  Used by {g.tools.map((t) => <code class="text-[12px]">{t}</code>)}
+                </p>
               </div>
-              <p class="text-muted" data-bind="label"></p>
-              <p hidden data-if="connected" class="text-[14px] text-muted"><span class="font-medium text-ink">Can do:</span> <span data-bind="scopes"></span></p>
-              <p hidden data-if="connected" class="text-[13px] text-muted" data-bind="connectedAgo"></p>
-              <button hidden data-if="connected" type="button" class="btn btn-sm btn-outline mt-1 self-start" data-attr="data-disconnect:id">Disconnect</button>
-            </li>
-          </template>
-        </ul>
+              <span class="tag tag-line flex-none" data-class={`tag-ok:account.${g.id}.connected;tag-line:account.${g.id}.notConnected`} data-bind={`account.${g.id}.stateLabel`}>Not connected</span>
+            </header>
 
-        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="cf-title">
-          <h2 id="cf-title" class="text-base font-semibold">Connect Cloudflare</h2>
-          <ol class="list-decimal pl-5 text-[14px] text-muted">
-            <li><a href={CLOUDFLARE_TOKEN_TEMPLATE} target="_blank" rel="noopener">Open Cloudflare's token page with launchwright's permissions filled in</a> (Workers Scripts edit, Workers Observability read, Account Settings read, Pages edit).</li>
-            <li>Pick your account, click Continue to summary, then Create Token.</li>
-            <li>Copy the token and paste it below. Cloudflare shows it only once.</li>
-          </ol>
-          <form data-connect="cloudflare" data-status="cf-status" class="flex flex-wrap gap-2">
-            <label for="cf-token" class="sr-only">Cloudflare API token</label>
-            <input id="cf-token" name="secret" type="password" autocomplete="off" spellcheck="false" required maxlength="500" placeholder="Cloudflare API token" class={input} />
-            <button type="submit" class="btn btn-sm">Connect</button>
-          </form>
-          <p id="cf-status" role="status" class="text-[14px] text-muted empty:hidden"></p>
-        </section>
+            <!-- Connected: who, what it can do, how to take it back -->
+            <div hidden data-if={`account.${g.id}.connected`} class="grid grid-cols-1 gap-4 p-4 text-[14px] @3xl:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <p><span class="font-semibold">Connected:</span> <span data-bind={`account.${g.id}.label`}></span></p>
+                <p class="text-muted" data-bind={`account.${g.id}.connectedAgo`}></p>
+                <p class="mt-2 font-semibold">How to take access back</p>
+                <p class="text-muted">{g.revoke}</p>
+                <button type="button" class="btn btn-sm btn-outline mt-2 self-start" data-disconnect={g.id} data-status={`${g.id}-status`}>Disconnect</button>
+              </div>
+              <div>
+                <p class="font-semibold">Limits</p>
+                <ul class="mt-1 flex list-disc flex-col gap-1 pl-5 text-muted">{g.limits.map((l) => <li>{l}</li>)}</ul>
+              </div>
+            </div>
 
-        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="neon-title">
-          <h2 id="neon-title" class="text-base font-semibold">Connect Neon</h2>
-          <p class="text-[14px] text-muted">In the <a href="https://console.neon.tech/app/settings/api-keys" target="_blank" rel="noopener">Neon console</a>: Account settings → API keys → Create new API key. Paste it here.</p>
-          <form data-connect="neon" data-status="neon-status" class="flex flex-wrap gap-2">
-            <label for="neon-key" class="sr-only">Neon API key</label>
-            <input id="neon-key" name="secret" type="password" autocomplete="off" spellcheck="false" required maxlength="500" placeholder="Neon API key" class={input} />
-            <button type="submit" class="btn btn-sm">Connect</button>
-          </form>
-          <p id="neon-status" role="status" class="text-[14px] text-muted empty:hidden"></p>
-        </section>
+            <!-- How to connect: open until connected; stays available to replace the key -->
+            <details class="group" data-attr={`open:account.${g.id}.notConnected`}>
+              <summary class="flex cursor-pointer items-center gap-2 px-4 py-3 text-[14px] font-semibold">
+                <svg class="size-4 transition group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                <span data-unless={`account.${g.id}.connected`}>How to connect {g.name}</span><span hidden data-if={`account.${g.id}.connected`}>Replace the {g.method === "token" ? "key" : "connection"}</span>
+                <span class="ml-auto font-normal text-muted">about {g.minutes} min · {g.free.split(":")[0]}</span>
+              </summary>
+              <div class="grid grid-cols-1 gap-5 border-t border-line p-4 @4xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+                <ol class="flex flex-col gap-3">
+                  {g.steps.map((s, i) => (
+                    <li class="grid grid-cols-[2rem_minmax(0,1fr)] gap-3">
+                      <span class="grid size-8 place-items-center rounded-full bg-ink text-[13px] font-semibold text-on-ink">{i + 1}</span>
+                      <div class="pt-1">
+                        <p class="font-semibold">{s.title}</p>
+                        <p class="text-[14px] text-muted">{s.detail}</p>
+                        {i === 0 && g.method === "token" && (
+                          <a class="btn btn-sm mt-2" href={g.action.href} target="_blank" rel="noopener">{g.action.label} ↗</a>
+                        )}
+                        {i === 0 && g.method === "oauth" && (
+                          <>
+                            <a hidden data-if="supabaseAvailable" class="btn btn-sm mt-2" href={g.action.href}>{g.action.label}</a>
+                            <p data-unless="supabaseAvailable" class="mt-2 rounded-lg bg-surface-3 px-3 py-2 text-[13px]">Supabase sign-in isn't switched on for this server yet. Use Neon for now.</p>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                  {g.method === "token" && (
+                    <li class="grid grid-cols-[2rem_minmax(0,1fr)] gap-3">
+                      <span class="grid size-8 place-items-center rounded-full border border-line text-muted" aria-hidden="true">↳</span>
+                      <form data-connect={g.id} data-status={`${g.id}-status`} class="flex flex-col gap-2">
+                        <label for={`${g.id}-token`} class="font-semibold">{g.id === "cloudflare" ? "Cloudflare API token" : "Neon API key"}</label>
+                        <div class="flex flex-wrap gap-2">
+                          <input id={`${g.id}-token`} name="secret" type="password" autocomplete="off" spellcheck="false" required maxlength="500" placeholder="Paste it here, not in your AI chat" class={input} />
+                          <button type="submit" class="btn btn-sm">Connect</button>
+                        </div>
+                      </form>
+                    </li>
+                  )}
+                  <li><p id={`${g.id}-status`} role="status" class="text-[14px] empty:hidden"></p></li>
+                </ol>
 
-        <section class="flex flex-col gap-2 rounded-xl border border-line p-4" aria-labelledby="supa-title">
-          <h2 id="supa-title" class="text-base font-semibold">Connect Supabase</h2>
-          <p class="text-[14px] text-muted">Sign in to Supabase and approve launchwright. You can revoke it any time in Supabase (Organization settings → OAuth apps).</p>
-          <a hidden data-if="supabaseAvailable" class="btn btn-sm self-start" href="/auth/supabase">Connect Supabase</a>
-          <p data-unless="supabaseAvailable" class="text-[14px] text-muted">Supabase sign-in isn't switched on for this server yet. Use Neon for now.</p>
-        </section>
+                <div class="flex flex-col gap-4 text-[14px]">
+                  <div>
+                    <p class="font-semibold">What launchwright gets, and why</p>
+                    <table class="mt-2 w-full text-left">
+                      <tbody class="divide-y divide-line border-y border-line">
+                        {g.permissions.map((p) => (
+                          <tr><td class="py-2 pr-3 align-top font-medium">{p.name}</td><td class="py-2 text-muted">{p.why}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {g.permissionsNote && <p class="mt-2 text-muted">{g.permissionsNote}</p>}
+                  </div>
+                  <div class="rounded-lg bg-warn-bg p-3 text-warn">
+                    <p class="font-semibold">Watch out</p>
+                    <ul class="mt-1 flex list-disc flex-col gap-1 pl-5">{g.pitfalls.map((p) => <li>{p}</li>)}</ul>
+                  </div>
+                  <p class="text-muted">{g.free}</p>
+                </div>
+              </div>
+            </details>
+          </section>
+        ))}
       </div>
 
       <div id="panel-secrets" role="tabpanel" aria-labelledby="tab-secrets" class="flex flex-col gap-4 p-4">

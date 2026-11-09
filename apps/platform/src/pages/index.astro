@@ -76,7 +76,7 @@ const kinds = [
         </li>
         <li>
           <a class={stat} href="#approvals">
-            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Waiting for you <span class="tag tag-line py-0 text-[12px]" data-class="tag-warn:hasApprovals" data-bind="approvalCount">0</span></span>
+            <span class="flex items-center justify-between gap-2 text-[14px] text-muted">Waiting for you <span class="tag tag-line py-0 text-[12px]" data-class="tag-warn:hasApprovals;tag-line:noApprovals" data-bind="approvalCount">0</span></span>
             <span class="text-[16px] font-semibold leading-snug"><span hidden data-if="hasApprovals" data-bind="approvals.0.title"></span><span data-unless="hasApprovals">No approvals</span></span>
             <span class="text-[14px] text-muted"><span hidden data-if="hasApprovals">Asked <span data-bind="approvals.0.asked"></span></span><span data-unless="hasApprovals">You'll be asked before anything risky</span></span>
           </a>
@@ -126,7 +126,7 @@ const kinds = [
         <div id="approvals" class:list={[card, "scroll-mt-4 @3xl:col-span-2 @6xl:col-span-1"]} data-class="border-orange/40:hasApprovals">
           <div class="flex items-center justify-between gap-3">
             <h3 class="text-base font-semibold">Needs your approval</h3>
-            <span class="tag tag-line" data-class="tag-warn:hasApprovals" data-bind="approvalCount">0</span>
+            <span class="tag tag-line" data-class="tag-warn:hasApprovals;tag-line:noApprovals" data-bind="approvalCount">0</span>
           </div>
           <p data-unless="hasApprovals" class="mt-1.5 text-[14px] text-muted">Nothing waiting. Production deploys, rollbacks and replacing a secret always stop here first, so one bad prompt can't change production.</p>
           <ul class="mt-2 flex flex-col gap-3" data-each="approvals">
