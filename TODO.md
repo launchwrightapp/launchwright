@@ -24,7 +24,7 @@
 ## Done
 - [x] Site copy matches what's built: production deploys (not migrations) wait for approval,
   "secure" no longer reads as a guarantee, cost note by the pilot offer, Level 2 marked
-  "Not in the pilot", walkthrough tested at 360px (`fix/honest-claims`)
+  "Not in the pilot", walkthrough tested at 360px (#33)
 - [x] Landing page sections restyled with motion, electric blue CTAs, compact nav on scroll (#31)
 - [x] Launch ops (#30)
 - [x] Platform dashboard: projects, readiness, lessons, accounts, approvals, audit log (#29)
