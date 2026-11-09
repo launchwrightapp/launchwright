@@ -27,6 +27,8 @@ async function load() {
     const me = (await api("/api/me")) as unknown as Me;
     bind(document, view(me));
     root.dataset.loaded = "true";
+    // The Message us box (chat-box.ts) waits for this before checking for replies.
+    document.dispatchEvent(new CustomEvent("learner-loaded", { detail: me }));
     // Links like /readiness#check-auth point at rows that only exist now.
     if (location.hash.length > 1) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
   } catch (err) {
