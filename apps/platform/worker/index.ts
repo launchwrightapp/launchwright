@@ -1,6 +1,7 @@
 // platform.launchwright.app: GitHub sign-in in front of the static dashboard.
 import { SESSION_COOKIE, SESSION_DAYS, cookie, readCookie, sign, verify, type User } from "./session";
 import { handleApplicantsApi, type ApplicantsEnv } from "./applicants";
+import { handleFunnelApi } from "./funnel";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
 
@@ -128,6 +129,7 @@ export default {
     if (api) {
       return (
         (await handleApplicantsApi(req, url, env, user)) ??
+        (await handleFunnelApi(req, url, env, user)) ??
         (await handleMessagesApi(req, url, env, user, ctx)) ??
         (await handleLearnerApi(req, url, env, user)) ??
         new Response("Not found", { status: 404 })
@@ -135,7 +137,7 @@ export default {
     }
     const admin = isAdmin(user, env);
     // Team pages don't exist for anyone else.
-    if (/^\/(inbox|applicants)(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+    if (/^\/(inbox|applicants|funnel)(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
 
     const res = await env.ASSETS.fetch(req);
     if (!(res.headers.get("content-type") ?? "").includes("text/html")) return res;
