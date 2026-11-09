@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local dev (never commit .dev.vars).
+# GitHub App "launchwright-app" → Client secrets. Without it, sign-in returns 503.
+GITHUB_CLIENT_SECRET=paste-the-client-secret
+# Optional: remember which lessons each learner has seen. Same Neon database as the site.
+# DATABASE_URL=postgres://...
