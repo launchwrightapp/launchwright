@@ -10,6 +10,8 @@
   "preview_urls": true,
   "routes": [{ "pattern": "mcp.launchwright.app", "custom_domain": true }],
   "observability": { "enabled": true },
+  // Wipes secret values left past their one-hour expiry, and expires stale approvals (src/index.ts).
+  "triggers": { "crons": ["*/15 * * * *"] },
   // PLATFORM_ORIGIN: where approval and secret links send the learner.
   "vars": { "GITHUB_CLIENT_ID": "Iv23lixXjMCTRCvuULLf", "PLATFORM_ORIGIN": "https://platform.launchwright.app" },
   // OAuth grants, clients and tokens (stored hashed; props encrypted). Create it once with

@@ -94,7 +94,7 @@ export function neonStore(url: string, tokenKey?: string): Store {
         insert into projects (github_id, repo, framework, package_manager, database, hosting, worker_name, production_url, readiness_passed, readiness_total, checks, checked_at)
         values (${githubId}, ${p.repo}, ${p.framework ?? null}, ${p.packageManager ?? null}, ${p.database ?? null}, ${p.hosting ?? null}, ${p.workerName ?? null}, ${p.productionUrl ?? null},
                 ${r?.passed ?? null}, ${r?.total ?? null}, ${r ? JSON.stringify(r.checks) : null}::jsonb, ${r ? new Date().toISOString() : null})
-        on conflict (github_id, repo) do update set
+        on conflict (github_id, lower(repo)) do update set
           framework        = coalesce(excluded.framework, projects.framework),
           package_manager  = coalesce(excluded.package_manager, projects.package_manager),
           database         = coalesce(excluded.database, projects.database),
@@ -181,6 +181,17 @@ export function neonStore(url: string, tokenKey?: string): Store {
       await sql`insert into secret_names (github_id, repo, name, target) values (${githubId}, ${repo}, ${name}, ${target}) on conflict (github_id, repo, name, target) do update set updated_at = now()`;
     },
   };
+}
+
+// Run by the Worker's cron: wipe secret values left past their hour, and expire stale approvals.
+export async function purgeExpired(url: string) {
+  const sql = neon(url);
+  const secrets = await sql`
+    update secret_requests set value_sealed = null,
+      status = case when status in ('waiting', 'submitted') then 'expired' else status end
+    where value_sealed is not null and expires_at < now() returning id`;
+  const approvals = await sql`update approvals set status = 'expired' where status in ('pending', 'approved') and expires_at < now() returning id`;
+  return { secrets: secrets.length, approvals: approvals.length };
 }
 
 // In-memory store: local dev without a database, and tests. Seeding helpers are for tests.

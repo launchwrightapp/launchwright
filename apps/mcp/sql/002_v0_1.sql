@@ -22,9 +22,10 @@ create table if not exists projects (
   checks           jsonb,                          -- the last check_readiness result
   checked_at       timestamptz,
   created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now(),
-  unique (github_id, repo)
+  updated_at       timestamptz not null default now()
 );
+-- GitHub names are case-insensitive: Juan/Shop and juan/shop are the same repo.
+create unique index if not exists projects_repo_idx on projects (github_id, lower(repo));
 
 -- Everything the AI did (and everything the learner decided), newest first on the dashboard.
 create table if not exists audit_log (
@@ -76,7 +77,8 @@ create table if not exists connections (
 );
 
 -- set_secret: the AI asks by name, the learner types the value on the dashboard, the MCP server
--- writes it to GitHub or Cloudflare and wipes it here. Values live at most an hour, sealed.
+-- writes it to GitHub or Cloudflare and wipes it here. Values live at most an hour, sealed:
+-- a cron on the MCP Worker (purgeExpired in src/store.ts) wipes any value left past expires_at.
 create table if not exists secret_requests (
   id           uuid primary key default gen_random_uuid(),
   github_id    bigint not null,
@@ -91,6 +93,7 @@ create table if not exists secret_requests (
   expires_at   timestamptz not null default now() + interval '1 hour'
 );
 create index if not exists secret_requests_idx on secret_requests (github_id, status, created_at desc);
+create index if not exists secret_requests_purge_idx on secret_requests (expires_at) where value_sealed is not null;
 
 -- Names (never values) of the secrets Launchwright has set, for the dashboard's Secrets tab.
 create table if not exists secret_names (

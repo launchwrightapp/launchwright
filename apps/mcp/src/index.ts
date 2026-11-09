@@ -9,7 +9,7 @@ import { createMcpHandler } from "agents/mcp";
 import { handleAuth, refreshUpstream, type AuthEnv, type Props } from "./auth";
 import { PAGE_CSP, PAGE_CSS, PAGE_JS, homePage } from "./page";
 import { buildServer, VERSION } from "./server";
-import { memoryStore, neonStore } from "./store";
+import { memoryStore, neonStore, purgeExpired } from "./store";
 
 interface Env extends AuthEnv {
   DATABASE_URL?: string;
@@ -99,5 +99,11 @@ function provider(origin: string) {
 export default {
   fetch(req, env, ctx) {
     return provider(new URL(req.url).origin).fetch(req, env, ctx);
+  },
+  // Every 15 minutes (wrangler.jsonc triggers): secret values never outlive their hour.
+  async scheduled(_event, env) {
+    if (!env.DATABASE_URL) return;
+    const n = await purgeExpired(env.DATABASE_URL);
+    if (n.secrets || n.approvals) console.log("purged expired", n);
   },
 } satisfies ExportedHandler<Env>;
