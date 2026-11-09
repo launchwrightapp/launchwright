@@ -30,6 +30,67 @@ test.describe("learner", () => {
     expect((await page.request.get("/api/admin/threads")).status()).toBe(404);
   });
 
+  test("the Message us box opens from any page and closes again", async ({ page }) => {
+    await page.goto("/lessons");
+    const launcher = page.getByRole("link", { name: /Message us/ });
+    await launcher.click();
+    const panel = page.getByRole("region", { name: /launchwright/ });
+    await expect(panel).toBeVisible();
+    await expect(launcher).toBeHidden();
+    await expect(panel.getByText("Messages aren't set up yet")).toBeVisible();
+    const box = panel.getByRole("textbox", { name: "Message to the launchwright team" });
+    await expect(box).toBeFocused();
+    await box.fill("hello");
+    await expect(panel.getByRole("button", { name: "Send" })).toBeEnabled();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(launcher).toBeFocused();
+  });
+
+  test("the Message us box stays open on the next page", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Message us/ }).click();
+    await page.goto("/readiness");
+    await expect(page.getByRole("region", { name: /launchwright/ })).toBeVisible();
+    await page.getByRole("region", { name: /launchwright/ }).getByRole("button", { name: "Close", exact: true }).click();
+    await page.goto("/");
+    await expect(page.getByRole("region", { name: /launchwright/ })).toBeHidden();
+  });
+
+  test("minimizing the Message us box keeps only its title bar, even on the next page", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Message us/ }).click();
+    const panel = page.getByRole("region", { name: /launchwright/ });
+    const box = panel.getByRole("textbox", { name: "Message to the launchwright team" });
+    const open = (await panel.boundingBox())!.height;
+    await panel.getByRole("button", { name: "Minimize" }).click();
+    await expect(box).toBeHidden();
+    expect((await panel.boundingBox())!.height).toBeLessThan(open);
+    await page.goto("/lessons");
+    await expect(panel).toBeVisible();
+    await expect(box).toBeHidden();
+    await panel.getByRole("button", { name: "Expand" }).click();
+    await expect(box).toBeFocused();
+  });
+
+  test("the Message us box and its text field grow with what's in them", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Message us/ }).click();
+    const panel = page.getByRole("region", { name: /launchwright/ });
+    const box = panel.getByRole("textbox", { name: "Message to the launchwright team" });
+    await expect(panel.getByText("Messages aren't set up yet")).toBeVisible();
+    const before = (await panel.boundingBox())!.height;
+    const field = (await box.boundingBox())!.height;
+    await box.fill("line one\nline two\nline three\nline four");
+    await expect.poll(async () => (await box.boundingBox())!.height).toBeGreaterThan(field);
+    expect((await panel.boundingBox())!.height).toBeGreaterThan(before);
+  });
+
+  test("no Message us box on the Messages page itself", async ({ page }) => {
+    await page.goto("/messages");
+    await expect(page.locator("[data-chat]")).toHaveCount(0);
+  });
+
   test("message API rejects cross-site posts", async ({ page }) => {
     const res = await page.request.post("/api/messages", { headers: { origin: "https://evil.example", "content-type": "application/json" }, data: { body: "hi" } });
     expect(res.status()).toBe(403);
@@ -50,6 +111,7 @@ test.describe("admin", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Pilot applicants");
     await expect(page.locator('a[href="/applicants"]').first()).toBeAttached();
     await expect(page.locator('a[href="/messages"]')).toHaveCount(0);
+    await expect(page.locator("[data-chat]")).toHaveCount(0);
     await expect(page.getByText("Applications aren't", { exact: false }).or(page.getByText("DATABASE_URL isn't set"))).toBeVisible();
   });
 });
