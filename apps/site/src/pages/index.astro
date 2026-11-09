@@ -223,7 +223,7 @@ const faq = [
       <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">From your first commit to a secure, deployed app, guided step by step.</p>
       <div class="flex items-center gap-2.5 text-muted max-sm:order-1 sm:[@media(max-height:780px)]:hidden">
         <span class="flex gap-1" aria-hidden="true">{Array.from({ length: 10 }, () => <i class="size-2.5 rounded-full bg-ink opacity-20"></i>)}</span>
-        <span><b class="font-semibold text-ink">10 seats</b> in the pilot cohort</span>
+        <span>Free pilot for <b class="font-semibold text-ink">10 learners</b></span>
       </div>
       <div class="flex flex-wrap items-center justify-center gap-6" data-hero-cta>
         <a class="btn" href="#pilot">{CTA}</a>
@@ -335,7 +335,7 @@ const faq = [
           <span class="ml-auto flex items-center gap-2"><span class="size-1.5 rounded-full bg-lime" aria-hidden="true"></span>Launchwright connected</span>
         </div>
       </div>
-      <p class="label mt-4 text-white/50">Sample output. Launchwright v0.1 is in development with the pilot cohort.</p>
+      <p class="label mt-4 text-white/50">Sample output. launchwright v0.1 is still being built.</p>
     </section>
 
     <!-- Preview strip: four mini product cards -->
@@ -774,7 +774,7 @@ const faq = [
               <span class="text-muted">10 seats</span>
             </div>
             <h2 id="pilot-title" class="text-title font-bold text-balance">{CTA}.</h2>
-            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You'll ship your own app and understand every step.</p>
+            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You ship your own app, and we show you how each part works.</p>
             <ul class="grid gap-3.5 text-[18px]" aria-label="What you get">
               {["One project, all the way to launch", "The full Level 1 learning path", "Readiness checks on your own repo", "Works with your own AI tool and cloud accounts"].map((t) => (
                 <li class="flex items-center gap-3.5">
@@ -792,7 +792,7 @@ const faq = [
               <p class="whitespace-nowrap text-[15px] text-muted max-sm:hidden">About 4 minutes</p>
             </div>
             <form id="waitlist" class="flex flex-col gap-6 p-7 md:p-10" action="/api/pilot/code" method="post" novalidate>
-              <p class="text-[19px] leading-relaxed text-muted">A few short questions about you and what you want to ship. It helps us pick a cohort we can really help.</p>
+              <p class="text-[19px] leading-relaxed text-muted">A few short questions about you and what you want to ship. We use it to pick people we can actually help.</p>
               <label class="block">
                 <span class="mb-2 block font-medium">Email</span>
                 <input class="input" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="juan@example.com" />
@@ -844,7 +844,7 @@ const faq = [
             </details>
           ))}
         </div>
-        <p class="text-center text-[17px] text-muted">Still deciding? Seats are limited. <a class="font-semibold text-ink underline underline-offset-4" href="#pilot">Apply for the pilot</a></p>
+        <p class="text-center text-[17px] text-muted">Want in? <a class="font-semibold text-ink underline underline-offset-4" href="#pilot">Apply for the pilot</a></p>
       </div>
     </section>
 
