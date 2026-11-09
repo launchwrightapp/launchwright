@@ -1,0 +1,59 @@
+---
+// Shell for the three pilot pages: /pilot (email), /pilot/verify (code), /pilot/apply (questions).
+// Left: the intro and whatever the page puts in the "side" slot. Right: one card with the
+// journey (Email → Verify → Apply) on top and the page's form below.
+import Base from "../../../../packages/ui/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  url?: string;
+  noindex?: boolean;
+  part: 1 | 2 | 3;
+  heading: string;
+  intro: string;
+}
+const { title, description, url, noindex, part, heading, intro } = Astro.props;
+const parts = ["Email", "Verify", "Apply"];
+const state = (i: number) => (i + 1 < part ? "done" : i + 1 === part ? "current" : "next");
+---
+<Base title={title} description={description} url={url} noindex={noindex}>
+  <SiteHeader />
+  <main class="gutter pb-24 pt-10 md:pt-16">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] lg:gap-16">
+      <div class="flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="tag bg-blue text-white">Applications open</span>
+          <span class="text-muted">10 seats · free</span>
+        </div>
+        <h1 class="text-title font-bold text-balance">{heading}</h1>
+        <p class="text-[21px] leading-relaxed text-muted">{intro}</p>
+        <slot name="side" />
+      </div>
+
+      <div class="overflow-hidden rounded-[32px] border border-line bg-surface shadow-2xl shadow-black/[0.05]">
+        <!-- The journey: three parts, this page highlighted -->
+        <ol class="flex items-center gap-2 border-b border-line bg-surface-2/60 px-6 py-4 md:px-10" aria-label="Application progress">
+          {parts.map((p, i) => (
+            <li class="flex min-w-0 flex-1 items-center gap-2 last:flex-none" data-part={state(i)} aria-current={state(i) === "current" ? "step" : undefined}>
+              <span class="flex items-center gap-2.5 whitespace-nowrap text-[15px] font-medium text-muted in-data-[part=current]:text-ink in-data-[part=done]:text-ink">
+                <span class="grid size-7 flex-none place-items-center rounded-full border border-line bg-surface text-[13px] font-semibold tabular-nums in-data-[part=current]:border-ink in-data-[part=current]:bg-ink in-data-[part=current]:text-on-ink in-data-[part=done]:border-ok in-data-[part=done]:bg-ok in-data-[part=done]:text-white">
+                  {state(i) === "done"
+                    ? <svg viewBox="0 0 16 16" class="size-3.5" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    : i + 1}
+                </span>
+                <span class="max-sm:in-data-[part=next]:sr-only">{p}</span>
+                {state(i) === "done" && <span class="sr-only">(done)</span>}
+              </span>
+              {i < parts.length - 1 && <span class="h-px min-w-4 flex-1 bg-line in-data-[part=done]:bg-ok" aria-hidden="true"></span>}
+            </li>
+          ))}
+        </ol>
+        <slot />
+      </div>
+    </div>
+  </main>
+  <SiteFooter />
+</Base>

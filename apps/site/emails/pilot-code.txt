@@ -1,0 +1,13 @@
+Your launchwright code
+
+{{code}}
+
+Enter this code on the pilot page to confirm your email. It works for 10 minutes.
+
+If you didn't ask for this, you can ignore this email. Someone may have typed your address by mistake, and nothing happens without the code.
+
+The launchwright team
+
+--
+You're getting this because someone entered this address at launchwright.app/pilot.
+Privacy policy: https://launchwright.app/privacy

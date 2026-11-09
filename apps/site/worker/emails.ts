@@ -3,11 +3,14 @@ import ackHtmlModule from "../emails/application-received.html";
 import ackText from "../emails/application-received.txt";
 import acceptHtmlModule from "../emails/pilot-accepted.html";
 import acceptText from "../emails/pilot-accepted.txt";
+import codeHtmlModule from "../emails/pilot-code.html";
+import codeText from "../emails/pilot-code.txt";
 
 // Wrangler bundles .html as a plain string. Astro's types describe .html imports
 // differently (as components), so tell TypeScript what we actually get.
 const ackHtml = ackHtmlModule as unknown as string;
 const acceptHtml = acceptHtmlModule as unknown as string;
+const codeHtml = codeHtmlModule as unknown as string;
 
 const FROM = { email: "hello@launchwright.app", name: "launchwright" };
 
@@ -53,5 +56,17 @@ export function sendAcceptance(mail: SendEmail, a: Applicant) {
     subject: "You're in: launchwright pilot",
     html: render(acceptHtml, v, true),
     text: render(acceptText, v, false),
+  });
+}
+
+// The 6-digit code that confirms an applicant owns the email (worker/verify.ts).
+export function sendCode(mail: SendEmail, email: string, code: string) {
+  return mail.send({
+    from: FROM,
+    replyTo: FROM.email,
+    to: email,
+    subject: `${code} is your launchwright code`,
+    html: render(codeHtml, { code }, true),
+    text: render(codeText, { code }, false),
   });
 }

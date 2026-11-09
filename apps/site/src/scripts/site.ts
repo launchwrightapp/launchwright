@@ -1,4 +1,5 @@
 import "../../../../packages/ui/dropdown";
+import { codeForm } from "./code-form";
 
 // Walkthrough tabs. Without JS every step stays visible, one after another.
 function initTabs(list: HTMLElement) {
@@ -91,19 +92,8 @@ if ("IntersectionObserver" in window && revealables.length && !matchMedia("(pref
   document.documentElement.classList.add("reveal-on");
 }
 
-// Pilot form on the home page: only checks the email, then continues to the
-// questionnaire (/pilot?email=...). Without JS it goes there as a plain GET.
+// Pilot form on the home page: sends the email code right here, then /pilot/verify.
 const form = document.getElementById("waitlist") as HTMLFormElement | null;
 const statusEl = document.getElementById("waitlist-status");
-
-form?.addEventListener("submit", (e) => {
-  const email = form.elements.namedItem("email") as HTMLInputElement;
-  if (email.checkValidity()) return;
-  e.preventDefault();
-  if (statusEl) {
-    statusEl.textContent = "Please check your email address.";
-    statusEl.dataset.kind = "err";
-  }
-  email.focus();
-});
+if (form && statusEl) codeForm(form, statusEl);
 export {};

@@ -34,66 +34,98 @@ test("security headers are set", async ({ request }) => {
   expect(h["strict-transport-security"]).toContain("max-age=");
 });
 
-test.describe("waitlist API", () => {
+test.describe("pilot API", () => {
+  // All of these stop before the database, so they're safe on the live site too.
   test("rejects GET", async ({ request }) => {
-    const res = await request.get("/api/waitlist");
-    expect(res.status()).toBe(405);
+    for (const path of ["/api/waitlist", "/api/pilot/code", "/api/pilot/verify"]) {
+      expect((await request.get(path)).status(), path).toBe(405);
+    }
   });
 
-  test("rejects a bad email", async ({ request }) => {
-    const res = await request.post("/api/waitlist", { data: { email: "not-an-email", consent: true } });
+  test("code: rejects a bad email", async ({ request }) => {
+    const res = await request.post("/api/pilot/code", { data: { email: "not-an-email" } });
     expect(res.status()).toBe(400);
   });
 
-  test("rejects missing consent", async ({ request }) => {
-    const res = await request.post("/api/waitlist", { data: { email: "a@example.com" } });
-    expect(res.status()).toBe(400);
-  });
-
-  test("rejects oversized bodies", async ({ request }) => {
-    const res = await request.post("/api/waitlist", {
-      data: { email: "a@example.com", consent: true, building: "x".repeat(9000) },
-    });
-    expect(res.status()).toBe(400);
-  });
-
-  test("honeypot submissions are silently dropped", async ({ request }) => {
-    const res = await request.post("/api/waitlist", {
-      data: { email: "bot@example.com", consent: true, website: "http://spam" },
-    });
-    expect(res.status()).toBe(200);
-  });
-
-  test("a valid signup without a Turnstile token is refused", async ({ request }) => {
-    // Safe on the live site too: it stops before the database.
-    const res = await request.post("/api/waitlist", { data: { email: "a@example.com", consent: true } });
+  test("code: refused without a Turnstile token", async ({ request }) => {
+    const res = await request.post("/api/pilot/code", { data: { email: "a@example.com" } });
     expect(res.status()).toBe(403);
     expect((await res.json()).error).toMatch(/not a bot/);
   });
 
-  test("posts from another site are refused", async ({ request }) => {
+  test("code: honeypot submissions are silently dropped", async ({ request }) => {
+    const res = await request.post("/api/pilot/code", { data: { email: "bot@example.com", website: "http://spam" } });
+    expect(res.status()).toBe(200);
+  });
+
+  test("verify: needs a 6-digit code", async ({ request }) => {
+    const res = await request.post("/api/pilot/verify", { data: { email: "a@example.com", code: "12" } });
+    expect(res.status()).toBe(400);
+    expect((await res.json()).error).toMatch(/6-digit/);
+  });
+
+  test("application: rejects missing consent", async ({ request }) => {
+    const res = await request.post("/api/waitlist", { data: { building: "x" } });
+    expect(res.status()).toBe(400);
+  });
+
+  test("application: refused without a verified email", async ({ request }) => {
+    const res = await request.post("/api/waitlist", { data: { email: "a@example.com", consent: true } });
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toMatchObject({ verify: true });
+  });
+
+  test("application: a forged session cookie is refused", async ({ request }) => {
     const res = await request.post("/api/waitlist", {
-      data: { email: "a@example.com", consent: true },
-      headers: { origin: "https://evil.example" },
+      data: { consent: true },
+      headers: { cookie: "lw_pilot=" + "a".repeat(43) },
     });
-    expect(res.status()).toBe(403);
+    // Without a database (local) it's 503; with one, the unknown token is 401.
+    expect([401, 503]).toContain(res.status());
+  });
+
+  test("rejects oversized bodies", async ({ request }) => {
+    const res = await request.post("/api/waitlist", { data: { consent: true, building: "x".repeat(9000) } });
+    expect(res.status()).toBe(400);
+  });
+
+  test("application: honeypot submissions are silently dropped", async ({ request }) => {
+    const res = await request.post("/api/waitlist", { data: { consent: true, website: "http://spam" } });
+    expect(res.status()).toBe(200);
+  });
+
+  test("posts from another site are refused", async ({ request }) => {
+    for (const path of ["/api/waitlist", "/api/pilot/code", "/api/pilot/verify"]) {
+      const res = await request.post(path, { data: { email: "a@example.com", consent: true }, headers: { origin: "https://evil.example" } });
+      expect(res.status(), path).toBe(403);
+    }
   });
 });
 
-test("home form checks the email before continuing", async ({ page }) => {
+test("home form checks the email before sending a code", async ({ page }) => {
   await page.goto("/#pilot");
   await page.locator("#waitlist").getByRole("textbox", { name: "Email" }).fill("nope");
-  await page.locator("#waitlist").getByRole("button", { name: "Continue" }).click();
+  await page.locator("#waitlist").getByRole("button", { name: "Send code" }).click();
   await expect(page.locator("#waitlist-status")).toHaveText("Please check your email address.");
   await expect(page).not.toHaveURL(/\/pilot/);
 });
 
-test("home form continues to the questionnaire with the email filled in", async ({ page }) => {
+test("home form sends the code itself and goes straight to the code page", async ({ page }) => {
+  // The API is mocked: a real call would email someone.
+  let sent: unknown;
+  await page.route("**/api/pilot/code", async (r) => {
+    sent = r.request().postDataJSON();
+    await r.fulfill({ json: { ok: true, resendIn: 30 } });
+  });
   await page.goto("/#pilot");
-  await page.locator("#waitlist").getByRole("textbox", { name: "Email" }).fill("juan@example.com");
-  await page.locator("#waitlist").getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(/\/pilot\?email=juan%40example\.com/);
-  await expect(page.getByRole("textbox", { name: "Email" })).toHaveValue("juan@example.com");
+  await page.locator("#waitlist").getByRole("textbox", { name: "Email" }).fill("Juan@Example.com");
+  await page.locator("#waitlist").getByRole("button", { name: "Send code" }).click();
+  await expect(page).toHaveURL(/\/pilot\/verify\?email=juan%40example\.com/);
+  expect(sent).toMatchObject({ email: "juan@example.com" });
+  if (!process.env.BASE_URL || process.env.BASE_URL.includes("localhost")) {
+    // Locally the page runs Cloudflare's always-pass test widget.
+    expect((sent as Record<string, string>)["cf-turnstile-response"]).toBeTruthy();
+  }
 });
 
 test("theme switch toggles and remembers the choice", async ({ page }) => {
@@ -182,7 +214,8 @@ for (const [path, heading] of [["/privacy", "Privacy policy"], ["/terms", "Terms
 }
 
 test("consent text links to the privacy policy", async ({ page }) => {
-  await page.goto("/pilot");
+  test.skip(!!process.env.BASE_URL && !process.env.BASE_URL.includes("localhost"), "Deployed: /pilot/apply needs a verified email");
+  await page.goto("/pilot/apply");
   // The consent box is on the last step, so it's hidden until then: check the markup.
   await expect(page.locator("#pilot-form a", { hasText: "privacy policy" })).toHaveAttribute("href", "/privacy");
 });
