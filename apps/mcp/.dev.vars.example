@@ -3,3 +3,11 @@
 GITHUB_CLIENT_SECRET=paste-the-client-secret
 # Optional: remember which lessons each learner has seen. Same Neon database as the site.
 # DATABASE_URL=postgres://...
+# Optional: encrypts connected accounts (Cloudflare, Neon, Supabase) and pending secrets.
+# Must be the SAME value as the platform's TOKEN_KEY. Make one with: openssl rand -base64 32
+# TOKEN_KEY=
+# Optional: where approval and secret links point (default https://platform.launchwright.app).
+# PLATFORM_ORIGIN=http://localhost:8791
+# Optional: Supabase OAuth app (refreshes learners' Supabase tokens).
+# SUPABASE_CLIENT_ID=
+# SUPABASE_CLIENT_SECRET=

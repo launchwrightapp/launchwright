@@ -17,6 +17,7 @@ export interface Props extends Record<string, unknown> {
   githubToken: string;
   githubRefresh?: string;
   githubExpiresAt?: number; // ms; absent when the token doesn't expire
+  clientName?: string; // the AI tool, for the audit log ("Claude Code", "Cursor", ...)
 }
 
 const UA = "launchwright-mcp";
@@ -105,7 +106,8 @@ export async function handleAuth(req: Request, env: AuthEnv): Promise<Response |
       const user = await githubUser(token.access_token);
       if (!user) return problem("Couldn't read your GitHub account. Please try again.", 502);
 
-      const props: Props = { id: user.id, login: user.login, ...tokenProps(token) };
+      const client = await oauth.lookupClient(original.clientId).catch(() => null);
+      const props: Props = { id: user.id, login: user.login, clientName: client?.clientName?.slice(0, 60) || undefined, ...tokenProps(token) };
       const { redirectTo } = await oauth.completeAuthorization({
         request: original,
         userId: String(user.id),
