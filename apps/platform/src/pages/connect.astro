@@ -12,7 +12,7 @@ const tools = [
 const steps = [
   { t: "Add Launchwright to your AI tool", d: "One line. Pick your tool below." },
   { t: "Sign in when it asks", d: "A browser window opens. Sign in with GitHub." },
-  { t: "Ask it to check your project", d: "Try: \"Use launchwright project_status on owner/repo\"." },
+  { t: "Take the tour", d: "Start the lesson-start prompt with your repo (owner/name). It shows you everything below on your own app." },
 ];
 ---
 <App title="Connect AI tool" page="connect">
@@ -74,7 +74,31 @@ const steps = [
         <li><code>explain_error</code> <span class="text-muted">an error in plain words, and the smallest fix</span></li>
         <li><code>review_pr</code> <span class="text-muted">review a pull request with you, risky parts first</span></li>
       </ul>
-      <p class="text-[14px] text-muted">Guided lessons are MCP prompts: look for <code>lesson-deploy</code>, <code>lesson-secrets</code>, <code>lesson-debug</code>, <code>lesson-practice</code> and friends in your tool's prompt or slash-command list.</p>
+      <p class="text-[14px] text-muted">Guided lessons are MCP prompts: start with <code>lesson-start</code>, then look for <code>lesson-deploy</code>, <code>lesson-secrets</code>, <code>lesson-debug</code>, <code>lesson-practice</code> and friends in your tool's prompt or slash-command list.</p>
+    </div>
+
+    <div class="card rounded-xl flex flex-col gap-3 p-4" id="tools-and-prompts">
+      <p class="text-base font-semibold">Two ways to use launchwright</p>
+      <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2">
+        <div class="flex flex-col gap-1.5">
+          <p class="font-semibold">Tools: ask in plain words</p>
+          <p class="text-[14px] text-muted">Tell your AI tool what you want and name your repo. It picks the tool, does the work, and explains the lesson.</p>
+          <ul class="flex flex-col gap-1 text-[14px]">
+            <li><code>Use launchwright to check my project octocat/hello-world</code></li>
+            <li><code>Use launchwright to review PR #3 on octocat/hello-world</code></li>
+            <li><code>Use launchwright to show the latest CI error on octocat/hello-world</code></li>
+          </ul>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <p class="font-semibold">Prompts: start a guided lesson</p>
+          <p class="text-[14px] text-muted">Pick a lesson from your tool's slash-command or prompt menu. Its one argument is your repo as <code>owner/name</code>, not a tool or lesson name.</p>
+          <ul class="flex flex-col gap-1 text-[14px]">
+            <li><span class="text-muted">Claude Code:</span> <code>/launchwright:lesson-start octocat/hello-world</code></li>
+            <li><span class="text-muted">Cursor, Codex and others:</span> <span class="text-muted">find <code>lesson-start</code> in the prompt menu and enter your repo</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="text-[14px] text-muted">Either way, your AI tool never sees your secrets, production deploys wait for your approval here, and launchwright only opens pull requests: you review and merge them.</p>
     </div>
   </div>
 </App>
