@@ -205,13 +205,14 @@ const faq = [
   ["Where is my app hosted?", "On your own accounts: GitHub for code, Cloudflare for hosting, and Neon or Supabase for the database. We never host your app, so it stays yours."],
   ["Are my credentials safe?", "Tokens are encrypted and access is least-privilege. The AI never sees your raw credentials, and production deploys need your approval in the dashboard."],
   ["Does passing all 8 checks mean my app is secure?", "No check can promise that. The 8 checks are a solid baseline that catches common mistakes, like leaked secrets or open API routes. They can't prove your app has no bugs."],
+  ["Can I ship a mobile app?", "Not yet. Launchwright is for websites and web apps that run in the browser. Native iOS and Android apps aren't supported."],
   ["Which frameworks are supported?", "At launch: Next.js, Vite (React or Vue), Astro, and Hono. PHP/Laravel, Python, and Docker come with Level 2."],
   ["I'm a beginner. Can I do this?", "Yes. Launchwright is built for students, beginners, career shifters, and people coming from vibe coding. The first time you meet a concept, you get the full explanation."],
 ];
 ---
 <Base
   title="Launchwright"
-  description="You built it with AI. Now learn to ship it. Deploy to your own cloud and learn Git, databases, testing, and security along the way."
+  description="You built a web app with AI. Now learn to ship it. Deploy to your own cloud and learn Git, databases, testing, and security along the way."
   url="https://launchwright.app"
 >
   <SiteHeader home />
@@ -230,7 +231,7 @@ const faq = [
         <path d="M120 200 Q500 -10 880 200 Z" fill="url(#hero-dome)" class="dark:opacity-[2.2]" />
       </svg>
       <h1 id="hero-title" class="mt-auto text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
-      <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">From your first commit to a deployed app that passes the checks real teams run.</p>
+      <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">For websites and web apps. From your first commit to a deployed app that passes the checks real teams run.</p>
       <div class="flex items-center gap-2.5 text-muted max-sm:order-1 sm:[@media(max-height:780px)]:hidden">
         <span class="flex gap-1" aria-hidden="true">{Array.from({ length: 10 }, () => <i class="size-2.5 rounded-full bg-ink opacity-20"></i>)}</span>
         <span>Free pilot for <b class="font-semibold text-ink">10 learners</b></span>
@@ -700,7 +701,7 @@ const faq = [
               <span class="text-muted">10 seats</span>
             </div>
             <h2 id="pilot-title" class="text-title font-bold text-balance">{CTA}.</h2>
-            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You ship your own app, and we show you how each part works.</p>
+            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You ship your own website or web app, and we show you how each part works.</p>
             <p class="text-base text-muted">You use your own AI tool and free-tier cloud accounts. If you go past a free tier, that provider bills you, not us.</p>
             <ul class="grid gap-3.5 text-[18px]" aria-label="What you get">
               {["One project, all the way to launch", "The full Level 1 learning path", "Readiness checks on your own repo", "Works with your own AI tool and cloud accounts"].map((t) => (
