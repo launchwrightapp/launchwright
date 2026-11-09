@@ -20,7 +20,7 @@
 - [x] Pilot funnel and application drop-off: anonymous daily counts from landing visit to
   verified email and each form step, plus learner steps from the MCP audit log, read with
   `npm run pilot -- funnel` (#43)
-- [x] Funnel page on the platform admin, next to Applicants (#PR)
+- [x] Funnel page on the platform admin, next to Applicants (#45)
 - [x] Pilot emails no longer talk about seats (#41)
 - [x] FAQ uses button toggles instead of `<details>` (#42)
 - [x] Landing page says it's for websites and web apps, not mobile apps (#38)
