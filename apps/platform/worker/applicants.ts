@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import { sendAcceptance, type Applicant } from "../../site/worker/emails";
 import { isAdmin, type MessagesEnv } from "./messages";
 import type { User } from "./session";
+import { forgetAccess } from "../../../packages/core/pilot-access";
 import { rankApplicants, ReviewError, REVIEW_MODEL, type ReviewRow } from "./review";
 
 export interface ApplicantsEnv extends MessagesEnv {
@@ -18,7 +19,7 @@ const json = (body: unknown, status = 200) =>
 
 export async function handleApplicantsApi(req: Request, url: URL, env: ApplicantsEnv, user: User): Promise<Response | null> {
   const p = url.pathname;
-  if (p !== "/api/admin/applicants" && p !== "/api/admin/applicants/accept" && p !== "/api/admin/applicants/review") return null;
+  if (p !== "/api/admin/applicants" && p !== "/api/admin/applicants/accept" && p !== "/api/admin/applicants/remove" && p !== "/api/admin/applicants/review") return null;
   if (!isAdmin(user, env)) return json({ error: "Not found." }, 404);
   const origin = req.headers.get("origin");
   if (req.method !== "GET" && origin && origin !== (env.PUBLIC_ORIGIN ?? url.origin)) return json({ error: "Forbidden." }, 403);
@@ -68,6 +69,22 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       const [updated] = (await sql`update waitlist set accepted_at = coalesce(accepted_at, now()) where email = ${email} returning accepted_at`) as Record<string, unknown>[];
       const [{ n }] = (await sql`select count(*)::int as n from waitlist where accepted_at is not null`) as { n: number }[];
       return json({ ok: true, email, acceptedAt: updated.accepted_at, accepted: n, seats: PILOT_SEATS });
+    }
+    // Remove access: frees the seat and ends their dashboard and MCP access (within about 30 seconds
+    // on other Worker instances). No email goes out. They go back to Waiting and can be accepted again.
+    if (p === "/api/admin/applicants/remove" && req.method === "POST") {
+      if (!(req.headers.get("content-type") ?? "").includes("application/json")) return json({ error: "Invalid request." }, 400);
+      const data = (await req.json().catch(() => null)) as { email?: unknown } | null;
+      const email = typeof data?.email === "string" ? data.email.trim().toLowerCase() : "";
+      if (!EMAIL_RE.test(email)) return json({ error: "Invalid email." }, 400);
+      const [row] = (await sql`
+        with old as (select id, github_id from waitlist where email = ${email} and accepted_at is not null for update)
+        update waitlist w set accepted_at = null, github_id = null from old where w.id = old.id
+        returning old.github_id`) as { github_id: number | string | null }[];
+      if (!row) return json({ error: `${email} isn't accepted.` }, 404);
+      if (row.github_id != null) forgetAccess(Number(row.github_id));
+      const [{ n }] = (await sql`select count(*)::int as n from waitlist where accepted_at is not null`) as { n: number }[];
+      return json({ ok: true, email, accepted: n, seats: PILOT_SEATS });
     }
     // Ask Claude to rank everyone still waiting (anonymised, see review.ts). Nothing is stored.
     if (p === "/api/admin/applicants/review" && req.method === "POST") {

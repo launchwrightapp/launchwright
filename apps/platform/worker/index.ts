@@ -5,12 +5,15 @@ import { handleFunnelApi } from "./funnel";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
 import { secure } from "../../../packages/core/security-headers";
+import { hasPilotAccess, NOT_IN_PILOT } from "../../../packages/core/pilot-access";
+import { neon } from "@neondatabase/serverless";
 
 interface Env extends ApplicantsEnv, LearnerEnv {
   ASSETS: Fetcher;
   GITHUB_CLIENT_ID: string; // public, in wrangler.jsonc
   GITHUB_CLIENT_SECRET?: string; // secret
   SESSION_SECRET?: string; // secret, 32+ random bytes
+  PILOT_GITHUB_IDS?: string; // GitHub IDs let in without an application (comma separated)
 }
 
 const STATE_COOKIE = "__Host-lw_oauth";
@@ -22,6 +25,15 @@ const redirect = (to: string, headers: Record<string, string> = {}, cookies: str
   return new Response(null, { status: 302, headers: h });
 };
 const fail = (_url: URL, code: string) => redirect(`/signin?error=${code}`, {}, [cookie(STATE_COOKIE, "", 0)]);
+// Private pilot: true = in, false = not in, null = couldn't check (database unreachable).
+async function inPilot(user: User, env: Env): Promise<boolean | null> {
+  try {
+    return await hasPilotAccess(user, env, env.DATABASE_URL ? neon(env.DATABASE_URL) : null);
+  } catch (e) {
+    console.error("pilot access check failed", e);
+    return null;
+  }
+}
 const origin = (url: URL, env: Env) => env.PUBLIC_ORIGIN ?? url.origin;
 // Only same-site paths, so ?next= can't send people elsewhere.
 const safeNext = (n: string | null) => (n && n.startsWith("/") && !n.startsWith("//") && !n.startsWith("/\\") ? n : "/");
@@ -57,6 +69,11 @@ async function finishLogin(req: Request, url: URL, env: Env) {
   if (!userRes.ok) return fail(url, "github");
   const gh = (await userRes.json()) as { id: number; login: string; name: string | null; avatar_url: string; email: string | null };
   const user: User = { id: gh.id, login: gh.login, name: gh.name || gh.login, avatar: gh.avatar_url, email: await primaryEmail(token.access_token, gh.email) };
+
+  // No session for accounts outside the pilot.
+  const access = await inPilot(user, env);
+  if (access === false) return fail(url, "not_in_pilot");
+  if (access === null) return fail(url, "unavailable");
 
   const session = await sign(user, env.SESSION_SECRET!);
   return redirect(safeNext(next ? decodeURIComponent(next) : null), {}, [cookie(SESSION_COOKIE, session, SESSION_DAYS * 86400), cookie(STATE_COOKIE, "", 0)]);
@@ -126,6 +143,16 @@ const app = {
     const api = url.pathname.startsWith("/api/");
     if (!user && api) return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: { "content-type": "application/json", "cache-control": "no-store" } });
     if (!user) return redirect(`/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
+
+    // Checked on every request too, so removing someone from the pilot ends their session.
+    const access = await inPilot(user, env);
+    if (access !== true) {
+      const status = access === false ? 403 : 503;
+      const error = access === false ? NOT_IN_PILOT : "We couldn't check your access just now. Please try again in a minute.";
+      if (api) return new Response(JSON.stringify({ error }), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
+      if (access === null) return new Response(error, { status, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+      return redirect("/signin?error=not_in_pilot", {}, [cookie(SESSION_COOKIE, "", 0)]);
+    }
 
     const connect = await handleLearnerAuth(req, url, env, user);
     if (connect) return connect;

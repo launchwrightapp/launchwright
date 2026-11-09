@@ -5,8 +5,10 @@ import type { BrowserContext } from "@playwright/test";
 import { TEST_SESSION_SECRET } from "../playwright.config";
 
 export const testUser = { id: 1, login: "test-learner", name: "Test Learner", avatar: "" };
-// The local test server lists id 2 in ADMIN_GITHUB_IDS (playwright.config.ts).
+// The local test server lists id 2 in ADMIN_GITHUB_IDS and id 1 in PILOT_GITHUB_IDS (playwright.config.ts).
 export const testAdmin = { id: 2, login: "test-admin", name: "Test Admin", avatar: "" };
+// Not an admin and not in PILOT_GITHUB_IDS, and the test server has no database: outside the pilot.
+export const testOutsider = { id: 3, login: "not-in-pilot", name: "Not In Pilot", avatar: "" };
 export const remote = !!process.env.BASE_URL;
 
 export async function signIn(context: BrowserContext, baseURL: string, user = testUser) {

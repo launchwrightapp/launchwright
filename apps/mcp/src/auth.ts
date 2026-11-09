@@ -3,8 +3,11 @@
 // GitHub's token lives only in the grant's encrypted props; the AI never sees it.
 import { AuthorizationError, CimdFetchError, OAuthError, authorizationErrorRedirect, type ConsentDescription, type OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { PAGE_CSP, PAGE_CSS, consentPage, page, escape } from "./page";
+import { neon } from "@neondatabase/serverless";
+import { hasPilotAccess, NOT_IN_PILOT, type AccessEnv } from "../../../packages/core/pilot-access";
 
-export interface AuthEnv {
+export interface AuthEnv extends AccessEnv {
+  DATABASE_URL?: string;
   OAUTH_KV: KVNamespace;
   OAUTH_PROVIDER: OAuthHelpers;
   GITHUB_CLIENT_ID: string;
@@ -41,6 +44,27 @@ async function githubUser(token: string) {
   });
   if (!r.ok) return null;
   return (await r.json()) as { id: number; login: string };
+}
+
+// The verified primary email, used once to match a pilot application (needs the GitHub App's
+// "Email addresses: read" permission; without it the username still matches).
+async function githubEmail(token: string) {
+  const r = await fetch("https://api.github.com/user/emails", {
+    headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": UA, "x-github-api-version": "2022-11-28" },
+  }).catch(() => null);
+  if (!r?.ok) return null;
+  const list = (await r.json().catch(() => [])) as { email: string; primary: boolean; verified: boolean }[];
+  return (Array.isArray(list) ? list.find((e) => e.primary && e.verified)?.email : undefined) ?? null;
+}
+
+// Private pilot: true = in, false = not in, null = couldn't check.
+export async function inPilot(env: AuthEnv, who: { id: number; login: string; email?: string | null }): Promise<boolean | null> {
+  try {
+    return await hasPilotAccess(who, env, env.DATABASE_URL ? neon(env.DATABASE_URL) : null);
+  } catch (e) {
+    console.error("pilot access check failed", e);
+    return null;
+  }
 }
 
 interface GithubToken { access_token?: string; refresh_token?: string; expires_in?: number; error?: string }
@@ -105,6 +129,9 @@ export async function handleAuth(req: Request, env: AuthEnv): Promise<Response |
       if (!token.access_token) return problem("GitHub didn't accept the sign-in. Please try again.", 502);
       const user = await githubUser(token.access_token);
       if (!user) return problem("Couldn't read your GitHub account. Please try again.", 502);
+      const access = await inPilot(env, { ...user, email: await githubEmail(token.access_token) });
+      if (access === false) return problem(NOT_IN_PILOT, 403);
+      if (access === null) return problem("We couldn't check your access just now. Please try again in a minute.", 503);
 
       const client = await oauth.lookupClient(original.clientId).catch(() => null);
       const props: Props = { id: user.id, login: user.login, clientName: client?.clientName?.slice(0, 60) || undefined, ...tokenProps(token) };

@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: `npx wrangler dev --port 8792 --var SESSION_SECRET:${TEST_SESSION_SECRET} --var GITHUB_CLIENT_SECRET:e2e-only --var PUBLIC_ORIGIN:http://localhost:8792 --var ADMIN_GITHUB_IDS:2`,
+        command: `npx wrangler dev --port 8792 --var SESSION_SECRET:${TEST_SESSION_SECRET} --var GITHUB_CLIENT_SECRET:e2e-only --var PUBLIC_ORIGIN:http://localhost:8792 --var ADMIN_GITHUB_IDS:2 --var PILOT_GITHUB_IDS:1`,
         url: "http://localhost:8792/signin",
         reuseExistingServer: !process.env.CI,
         timeout: 90_000,

@@ -6,14 +6,14 @@
 //   /oauth/token, /oauth/register, /.well-known/*   served by the OAuth library
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { createMcpHandler } from "agents/mcp";
-import { handleAuth, refreshUpstream, type AuthEnv, type Props } from "./auth";
+import { handleAuth, inPilot, refreshUpstream, type AuthEnv, type Props } from "./auth";
+import { NOT_IN_PILOT } from "../../../packages/core/pilot-access";
 import { PAGE_CSP, PAGE_CSS, PAGE_JS, homePage } from "./page";
 import { buildServer, VERSION } from "./server";
 import { memoryStore, neonStore, purgeExpired, purgeRetention } from "./store";
 import { secure } from "../../../packages/core/security-headers";
 
 interface Env extends AuthEnv {
-  DATABASE_URL?: string;
   TOKEN_KEY?: string; // base64 32 bytes, shared with the platform: seals connected-account tokens
   PLATFORM_ORIGIN?: string;
   SUPABASE_CLIENT_ID?: string;
@@ -27,6 +27,14 @@ const mcpApi = {
     // Set by the OAuth library from the access token's grant (encrypted at rest).
     const props = ctx.props as Props | undefined;
     if (!props?.githubToken) return new Response("Unauthorized", { status: 401 });
+    // Checked on every call too, so removing someone from the pilot cuts off their AI tool.
+    const access = await inPilot(env, { id: props.id, login: props.login });
+    if (access !== true) {
+      return Response.json(
+        { error: access === false ? NOT_IN_PILOT : "We couldn't check your access just now. Please try again in a minute." },
+        { status: access === false ? 403 : 503, headers: { "cache-control": "no-store" } },
+      );
+    }
     const store = env.DATABASE_URL ? neonStore(env.DATABASE_URL, env.TOKEN_KEY) : noStore;
     const learner = { id: props.id, login: props.login, githubToken: props.githubToken, client: props.clientName ?? "AI tool" };
     const config = {
