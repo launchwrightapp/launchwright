@@ -42,6 +42,16 @@ test("a new learner sees the setup checklist and a not-set-up notice", async ({ 
   await expect(page.getByRole("main")).not.toContainText("Sample");
 });
 
+test("explorer status labels stay on one line", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The explorer is desktop only");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await loaded(page);
+  const labels = page.getByRole("complementary", { name: "Explorer" }).getByText("Not checked", { exact: true });
+  await expect(labels.first()).toBeVisible();
+  for (const l of await labels.all()) expect((await l.boundingBox())!.height).toBeLessThan(24);
+});
+
 test("overview with a project leads with now, then progress, then history", async ({ page }) => {
   await serveMe(page);
   await page.goto("/");
