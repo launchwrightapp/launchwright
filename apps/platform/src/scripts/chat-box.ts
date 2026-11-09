@@ -1,6 +1,6 @@
 // Floating "Message us" box (components/ChatBox.astro). Same conversation as the
 // Messages page: it loads when you first open the box, and stays open across pages
-// until you minimize it. A dot on the launcher means the team replied since you last looked.
+// until you close it; minimize keeps just the title bar. A dot on the launcher means the team replied since you last looked.
 import { add, api, initComposer, renderMessage, type Message } from "./conversation";
 
 const root = document.querySelector<HTMLElement>("[data-chat]");
@@ -59,18 +59,36 @@ function init(root: HTMLElement) {
     unread.hidden = true;
   }
 
-  async function open(focus = true) {
+  const body = root.querySelector<HTMLElement>("[data-chat-body]")!;
+  const minBtn = root.querySelector<HTMLButtonElement>("[data-chat-min]")!;
+
+  // Minimized: only the title bar stays, so it's one click to get back to the conversation.
+  function minimize(on: boolean) {
+    body.hidden = on;
+    minBtn.setAttribute("aria-expanded", String(!on));
+    minBtn.setAttribute("aria-label", on ? "Expand" : "Minimize");
+    minBtn.title = on ? "Expand" : "Minimize";
+    store.set(OPEN, on ? "min" : "1");
+    if (!on) {
+      toBottom();
+      markSeen();
+    }
+  }
+
+  async function open(focus = true, min = false) {
     panel.hidden = false;
     launcher.hidden = true;
     launcher.setAttribute("aria-expanded", "true");
-    store.set(OPEN, "1");
+    minimize(min);
     if (focus) composer.focus();
     if (!loaded) {
       loaded = await fetchThread();
       if (loaded) render();
     }
-    toBottom();
-    markSeen();
+    if (!min) {
+      toBottom();
+      markSeen();
+    }
   }
 
   function close() {
@@ -84,6 +102,11 @@ function init(root: HTMLElement) {
   launcher.addEventListener("click", (e) => {
     e.preventDefault();
     void open();
+  });
+  minBtn.addEventListener("click", () => {
+    const on = !body.hidden;
+    minimize(on);
+    if (!on) composer.focus();
   });
   root.querySelector("[data-chat-close]")!.addEventListener("click", close);
   panel.addEventListener("keydown", (e) => {
@@ -108,7 +131,8 @@ function init(root: HTMLElement) {
 
   // Reopen if you left it open on the last page. Otherwise check for a new reply, once
   // the dashboard has loaded and only if this server has a database to ask.
-  if (store.get(OPEN) === "1") void open(false);
+  const saved = store.get(OPEN);
+  if (saved === "1" || saved === "min") void open(false, saved === "min");
   else
     document.addEventListener(
       "learner-loaded",

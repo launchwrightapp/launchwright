@@ -23,17 +23,22 @@ import Composer from "./Composer.astro";
     id="chat-panel"
     hidden
     aria-labelledby="chat-title"
-    class="fixed inset-x-2 bottom-2 z-40 flex h-[min(36rem,calc(100svh-1rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface text-ink shadow-2xl shadow-black/25 sm:inset-x-auto sm:left-4 sm:bottom-4 sm:w-[26rem] lg:bottom-11 lg:left-[4.5rem] lg:h-[min(36rem,calc(100svh-6rem))]"
+    class="fixed inset-x-2 bottom-2 z-40 flex max-h-[min(36rem,calc(100svh-1rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface text-ink shadow-2xl shadow-black/25 sm:inset-x-auto sm:left-4 sm:bottom-4 sm:w-[26rem] lg:bottom-11 lg:left-[4.5rem] lg:max-h-[min(36rem,calc(100svh-6rem))]"
   >
-    <header class="flex min-h-14 flex-none items-center gap-2 border-b border-line pl-4 pr-2">
+    <header class="flex min-h-14 flex-none items-center gap-1 pl-4 pr-2">
       <h2 id="chat-title" class="logo inline-flex items-center gap-[0.3em] text-[18px] text-blue"><Mark class="h-[0.95em] w-auto" />launchwright<span class="sr-only">: message the team</span></h2>
       <a href="/messages" class="ml-auto whitespace-nowrap rounded-md px-2 py-1 text-[13px] text-muted no-underline hover:bg-surface-3 hover:text-ink">Full page</a>
-      <button type="button" data-chat-close aria-label="Minimize" title="Minimize" class="grid size-9 flex-none cursor-pointer place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink">
-        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+      <button type="button" data-chat-min aria-label="Minimize" title="Minimize" aria-expanded="true" aria-controls="chat-body" class="grid size-9 flex-none cursor-pointer place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink">
+        <svg class="size-5 in-aria-[expanded=false]:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+        <svg class="hidden size-5 in-aria-[expanded=false]:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+      </button>
+      <button type="button" data-chat-close aria-label="Close" title="Close" class="grid size-9 flex-none cursor-pointer place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </header>
 
-    <div data-chat-scroll class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 text-[15px]">
+    <div id="chat-body" data-chat-body class="flex min-h-0 flex-auto flex-col border-t border-line">
+    <div data-chat-scroll class="flex min-h-0 flex-auto flex-col gap-4 overflow-y-auto px-4 py-4 text-[15px]">
       <p class="text-muted">Stuck, or not sure what to do next? Ask here. A person reads every message, and we usually answer within a day.</p>
       <p data-chat-empty class="rounded-lg border border-dashed border-line px-4 py-3 text-[14px] text-muted">No messages yet.</p>
       <ol data-chat-thread aria-busy="true" aria-live="polite" class="flex flex-col gap-4"></ol>
@@ -41,6 +46,7 @@ import Composer from "./Composer.astro";
 
     <div class="flex-none border-t border-line px-3 pb-2 pt-3">
       <Composer data-chat-form="" id="chat-message" label="Message to the launchwright team" placeholder="e.g. my deploy says DATABASE_URL is missing" />
+    </div>
     </div>
   </section>
 </div>

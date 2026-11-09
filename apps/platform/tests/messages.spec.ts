@@ -52,9 +52,38 @@ test.describe("learner", () => {
     await page.getByRole("link", { name: /Message us/ }).click();
     await page.goto("/readiness");
     await expect(page.getByRole("region", { name: /launchwright/ })).toBeVisible();
-    await page.getByRole("button", { name: "Minimize" }).click();
+    await page.getByRole("region", { name: /launchwright/ }).getByRole("button", { name: "Close", exact: true }).click();
     await page.goto("/");
     await expect(page.getByRole("region", { name: /launchwright/ })).toBeHidden();
+  });
+
+  test("minimizing the Message us box keeps only its title bar, even on the next page", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Message us/ }).click();
+    const panel = page.getByRole("region", { name: /launchwright/ });
+    const box = panel.getByRole("textbox", { name: "Message to the launchwright team" });
+    const open = (await panel.boundingBox())!.height;
+    await panel.getByRole("button", { name: "Minimize" }).click();
+    await expect(box).toBeHidden();
+    expect((await panel.boundingBox())!.height).toBeLessThan(open);
+    await page.goto("/lessons");
+    await expect(panel).toBeVisible();
+    await expect(box).toBeHidden();
+    await panel.getByRole("button", { name: "Expand" }).click();
+    await expect(box).toBeFocused();
+  });
+
+  test("the Message us box and its text field grow with what's in them", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Message us/ }).click();
+    const panel = page.getByRole("region", { name: /launchwright/ });
+    const box = panel.getByRole("textbox", { name: "Message to the launchwright team" });
+    await expect(panel.getByText("Messages aren't set up yet")).toBeVisible();
+    const before = (await panel.boundingBox())!.height;
+    const field = (await box.boundingBox())!.height;
+    await box.fill("line one\nline two\nline three\nline four");
+    await expect.poll(async () => (await box.boundingBox())!.height).toBeGreaterThan(field);
+    expect((await panel.boundingBox())!.height).toBeGreaterThan(before);
   });
 
   test("no Message us box on the Messages page itself", async ({ page }) => {
