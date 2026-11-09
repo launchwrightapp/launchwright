@@ -28,7 +28,7 @@ function drawList() {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.href = `#thread-${t.id}`;
-    a.className = "flex flex-col gap-0.5 rounded-2xl px-3 py-2.5 text-ink no-underline hover:bg-surface-3/70 aria-[current=true]:bg-surface-3";
+    a.className = "flex flex-col gap-0.5 rounded-lg px-3 py-2.5 text-ink no-underline hover:bg-surface-3/70 aria-[current=true]:bg-surface-3";
     if (current?.id === t.id) a.setAttribute("aria-current", "true");
     const top = document.createElement("span");
     top.className = "flex items-center gap-2";

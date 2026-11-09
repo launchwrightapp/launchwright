@@ -9,7 +9,7 @@ const box = document.getElementById("signin-message");
 const error = params.get("error");
 if (box && (error || params.has("signed_out"))) {
   box.textContent = error ? messages[error] ?? messages.github : "You're signed out.";
-  if (!error) box.className = "rounded-2xl bg-ok-bg px-4 py-3 text-[15px] text-ok";
+  if (!error) box.className = "rounded-lg bg-ok-bg px-4 py-3 text-[15px] text-ok";
   box.hidden = false;
 }
 const next = params.get("next");

@@ -28,7 +28,7 @@ const steps = [
 
     <ol class="grid grid-cols-1 gap-3 @3xl:grid-cols-3">
       {steps.map((s, i) => (
-        <li class="card rounded-[22px] flex flex-col gap-1.5 p-5">
+        <li class="card rounded-xl flex flex-col gap-1.5 p-5">
           <span class="grid size-9 place-items-center rounded-full bg-ink text-[15px] font-semibold text-on-ink">{i + 1}</span>
           <p class="text-lg font-semibold">{s.t}</p>
           <p class="text-muted">{s.d}</p>
@@ -36,7 +36,7 @@ const steps = [
       ))}
     </ol>
 
-    <div class="card rounded-[22px] p-0">
+    <div class="card rounded-xl p-0">
       <div role="tablist" aria-label="AI tool" data-tabs class="flex gap-1 overflow-x-auto border-b border-line px-4 pt-3">
         {tools.map((t, i) => (
           <button type="button" role="tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? "true" : "false"} class="min-h-12 flex-none cursor-pointer border-b-2 border-transparent px-4 font-semibold text-muted aria-selected:border-ink aria-selected:text-ink">{t.label}</button>
@@ -50,7 +50,7 @@ const steps = [
       ))}
     </div>
 
-    <div class="card rounded-[22px] flex flex-wrap items-center justify-between gap-4 p-6">
+    <div class="card rounded-xl flex flex-wrap items-center justify-between gap-4 p-6">
       <div>
         <p class="text-lg font-semibold">Waiting for your first connection</p>
         <p class="text-muted">This page updates on its own once your AI tool connects.</p>

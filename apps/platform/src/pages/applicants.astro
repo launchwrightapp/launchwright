@@ -14,7 +14,7 @@ import App from "../layouts/App.astro";
       <p data-seats class="tag tag-line text-[15px]" aria-live="polite">Loading seats…</p>
     </div>
 
-    <p class="rounded-[18px] border border-line bg-warn-bg px-4 py-3 text-[15px] text-warn">The acceptance email says people can start right away. Accept only once the workspace works end to end.</p>
+    <p class="rounded-xl border border-line bg-warn-bg px-4 py-3 text-[15px] text-warn">The acceptance email says people can start right away. Accept only once the workspace works end to end.</p>
 
     <div role="tablist" aria-label="Filter applicants" data-filter class="flex flex-wrap gap-2">
       <button type="button" role="tab" aria-selected="true" data-show="waiting" class="tag cursor-pointer border border-line bg-surface aria-selected:border-ink aria-selected:bg-ink aria-selected:text-on-ink">Waiting <span data-count="waiting" class="tabular-nums"></span></button>
@@ -22,7 +22,7 @@ import App from "../layouts/App.astro";
       <button type="button" role="tab" aria-selected="false" data-show="all" class="tag cursor-pointer border border-line bg-surface aria-selected:border-ink aria-selected:bg-ink aria-selected:text-on-ink">All <span data-count="all" class="tabular-nums"></span></button>
     </div>
 
-    <p data-applicants-empty hidden class="rounded-[22px] border border-dashed border-line px-5 py-6 text-muted"></p>
+    <p data-applicants-empty hidden class="rounded-xl border border-dashed border-line px-5 py-6 text-muted"></p>
     <ul data-applicants aria-busy="true" aria-live="polite" class="grid grid-cols-1 gap-3 @4xl:grid-cols-2"></ul>
   </div>
 </App>
