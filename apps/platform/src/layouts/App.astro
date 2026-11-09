@@ -9,6 +9,7 @@ import Mark from "../../../../packages/ui/Mark.astro";
 import Dropdown from "../../../../packages/ui/Dropdown.astro";
 import Check from "../../../../packages/ui/Check.astro";
 import Explain from "../components/Explain.astro";
+import ChatBox from "../components/ChatBox.astro";
 
 type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox" | "applicants" | "funnel";
 interface Props { title: string; page: PageId }
@@ -81,6 +82,7 @@ const sections = allSections
 <Base title={`${title} · Launchwright`} noindex>
   <script src="../scripts/app.ts"></script>
   {!isOps && <script src="../scripts/learner.ts"></script>}
+  {!isOps && page !== "messages" && <script src="../scripts/chat-box.ts"></script>}
   <div class="app-shell relative flex min-h-svh flex-col bg-canvas lg:h-svh lg:overflow-hidden">
     <!-- Title bar -->
     <header class="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 bg-night px-3 text-white lg:static lg:px-4">
@@ -339,6 +341,7 @@ const sections = allSections
       <span class="hidden sm:inline">Explain: <Explain simple="Simple" tech="Technical" /></span>
     </>)}
     </footer>
+    {!isOps && page !== "messages" && <ChatBox />}
   </div>
 </Base>
 

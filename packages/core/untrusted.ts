@@ -21,6 +21,12 @@ const PATTERNS: [RegExp, string][] = [
   [/\b([A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY|AUTH)[A-Z0-9_]*)(\s*[=:]\s*["']?)([^\s"']{6,})/gi, "$1$2[hidden]"],
 ];
 
+// Specific, well-known secret formats (everything but the broad NAME=value rule above, which
+// over-matches code like `password: z.string()`): good enough to raise a flag, not just hide.
+export function looksLikeSecret(text: string): boolean {
+  return PATTERNS.slice(0, -1).some(([re]) => new RegExp(re.source, re.flags.replace("g", "")).test(text));
+}
+
 export function redact(text: string): string {
   let out = text;
   for (const [re, sub] of PATTERNS) out = out.replace(re, sub);

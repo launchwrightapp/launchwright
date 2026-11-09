@@ -21,6 +21,9 @@ export interface RepoSnapshot {
   files: Record<string, string>; // contents we fetched: package.json, .gitignore, workflows, wrangler config
   sizes?: Record<string, number>; // bytes per path
   truncated?: boolean; // GitHub cut the file list short (very large repos)
+  // Default branch protection, when the caller looked it up (null: couldn't tell).
+  protection?: { protected: boolean; requiresPr: boolean | null; requiredChecks: string[] | null } | null;
+  private?: boolean;
 }
 
 const base = (p: string) => p.slice(p.lastIndexOf("/") + 1);
@@ -31,7 +34,13 @@ const TEST_CMD = /\b(npm|pnpm|yarn|bun)\s+(run\s+)?test\b|\bvitest\b|\bjest\b|pl
 const DB_DEPS = ["pg", "postgres", "@neondatabase/serverless", "@supabase/supabase-js", "prisma", "@prisma/client", "drizzle-orm", "mysql2", "kysely", "typeorm", "sequelize", "mongoose"];
 const SCANNER = /gitleaks|trufflehog|trufflesecurity/i;
 const PREVIEW = /BASE_URL|PLAYWRIGHT_BASE_URL|preview|deployment_status/i;
-const MIGRATIONS = /(^|\/)(migrations|drizzle|supabase\/migrations|prisma\/migrations|sql)\/.+\.(sql|ts|js|mjs)$/i;
+export const MIGRATIONS = /(^|\/)(migrations|drizzle|supabase\/migrations|prisma\/migrations|sql)\/.+\.(sql|ts|js|mjs)$/i;
+
+// A committed file that usually holds real secrets (.env, .dev.vars, private keys), not a template.
+export function isSecretFile(path: string): boolean {
+  const b = base(path);
+  return (ENV_FILE.test(b) && !ENV_TEMPLATE.test(b)) || KEY_FILE.test(b);
+}
 
 export function workflowFiles(paths: string[]) {
   return paths.filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/i.test(p));
@@ -92,10 +101,7 @@ export function dependencies(files: Record<string, string>): Set<string> {
 }
 
 function secrets(s: RepoSnapshot): Check {
-  const leaked = s.paths.filter((p) => {
-    const b = base(p);
-    return (ENV_FILE.test(b) && !ENV_TEMPLATE.test(b)) || KEY_FILE.test(b);
-  });
+  const leaked = s.paths.filter(isSecretFile);
   if (leaked.length) {
     return {
       id: "secrets",
@@ -140,9 +146,28 @@ function ci(s: RepoSnapshot): Check {
     return { id: "ci", title: "CI runs your tests", status: "fail", detail: "No GitHub Actions workflow in .github/workflows. CI runs your checks on every push, so a broken change is caught before it reaches users." };
   }
   const testing = flows.filter((p) => TEST_CMD.test(s.files[p] ?? ""));
-  return testing.length
-    ? { id: "ci", title: "CI runs your tests", status: "pass", detail: "A workflow runs your tests on GitHub.", files: testing }
-    : { id: "ci", title: "CI runs your tests", status: "warn", detail: "There is a workflow, but it doesn't seem to run tests. Add a step such as `npm test`.", files: flows };
+  if (!testing.length) return { id: "ci", title: "CI runs your tests", status: "warn", detail: "There is a workflow, but it doesn't seem to run tests. Add a step such as `npm test`.", files: flows };
+  const gap = protectionGap(s);
+  return gap
+    ? { id: "ci", title: "CI runs your tests", status: "warn", detail: `A workflow runs your tests on GitHub, but ${gap}`, files: testing }
+    : { id: "ci", title: "CI runs your tests", status: "pass", detail: s.protection ? "A workflow runs your tests on GitHub, and main is protected so checks must pass before merging." : "A workflow runs your tests on GitHub.", files: testing };
+}
+
+export const PROTECT_HOW =
+  "On GitHub: Settings → Rules → Rulesets → New branch ruleset. Target the default branch, turn on \"Require a pull request before merging\" (0 required approvals if you work alone: GitHub doesn't let you approve your own PR), \"Require status checks to pass\" with your CI checks (for Launchwright's CI: Secret scan, Checks, E2E (local); they show up after CI has run once), and \"Block force pushes\".";
+const PRIVATE_FREE = " Private repos on a free GitHub plan can't use rulesets or branch protection: make the repo public, or get GitHub Pro (free for students with the GitHub Student Developer Pack).";
+
+// What's missing from the default branch's protection, as the end of a sentence; null when fine
+// or unknown (protection wasn't looked up, or GitHub didn't say).
+export function protectionGap(s: RepoSnapshot): string | null {
+  const p = s.protection;
+  if (!p) return null;
+  const tail = ` ${PROTECT_HOW}${s.private ? PRIVATE_FREE : ""}`;
+  if (!p.protected) return `the default branch isn't protected: a failing check doesn't stop a merge, and anyone (or any AI tool) with push access can push straight to it.${tail}`;
+  if (p.requiredChecks === null) return null; // classic protection: details hidden, give it the benefit of the doubt
+  if (!p.requiredChecks.length) return `the default branch's rules don't require any checks to pass, so a failing check doesn't stop a merge.${tail}`;
+  if (!p.requiresPr) return `the default branch's rules don't require a pull request, so changes can be pushed straight to it without CI running first.${tail}`;
+  return null;
 }
 
 function e2e(s: RepoSnapshot): Check {

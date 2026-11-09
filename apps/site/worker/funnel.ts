@@ -53,10 +53,25 @@ export async function track(req: Request, env: FunnelEnv, url: URL, ctx: Executi
 // GET /api/admin/funnel?days=N (admin only; checked by the caller). Without days: all time.
 // Site steps come from funnel_daily and the waitlist; learner steps from the MCP server's
 // tables (same database), counting each GitHub account once, on the day it first got there.
+// The application form's steps (src/pages/pilot/apply.astro): title and what it asks.
+const FORM_STEPS = [
+  ["About you", "First name, what describes them, city."],
+  ["Your experience", "How much they've coded, which AI tools they use."],
+  ["Your project", "What they want to ship, where it is now, GitHub username."],
+  ["Your goals", "What they want to learn, hours a week."],
+  ["Review and send", "Their answers and the consent box. Next is Send."],
+] as const;
+
 export async function report(sql: Sql, url: URL) {
   const raw = Number(url.searchParams.get("days"));
   const days = Number.isInteger(raw) && raw > 0 && raw <= 3650 ? raw : null;
-  const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : "-infinity";
+  // Browser and email-code steps only exist from the day counting started, while applications
+  // and learner activity go back further. Start every step on that day, or a later step can
+  // read bigger than the one before it (e.g. 11 applications sent vs. 1 who reached step 5).
+  const [first] = (await sql`select min(day)::text as day from funnel_daily`) as { day: string | null }[];
+  const tracking = first?.day ? `${first.day}T00:00:00.000Z` : null;
+  const wanted = days ? new Date(Date.now() - days * 86_400_000).toISOString() : "-infinity";
+  const since = tracking && (wanted === "-infinity" || tracking > wanted) ? tracking : wanted;
   const sinceDay = since === "-infinity" ? "-infinity" : since.slice(0, 10);
 
   const counts = (await sql`
@@ -98,17 +113,19 @@ export async function report(sql: Sql, url: URL) {
 
   return {
     days,
+    countingSince: first?.day ?? null,
+    // detail: what the step means, so a drop tells you where people stopped.
     steps: [
-      { key: "visit", label: "Landing page visits", n: by.visit ?? 0 },
-      { key: "code_sent", label: "Asked for an email code", n: by.code_sent ?? 0 },
-      { key: "verified", label: "Verified their email", n: by.verified ?? 0 },
-      ...[1, 2, 3, 4, 5].map((i) => ({ key: `apply_${i}`, label: `Reached form step ${i} of 5`, n: by[`apply_${i}`] ?? 0 })),
-      { key: "submitted", label: "Sent the application", n: apps.submitted },
-      { key: "accepted", label: "Accepted", n: apps.accepted },
-      { key: "ai_connected", label: "AI tool connected (first tool call)", n: learners.ai_connected },
-      { key: "first_check", label: "First readiness check", n: learners.first_check },
-      { key: "production_deploy", label: "First production deploy started", n: learners.production_deploy },
-      { key: "all_checks_live", label: "All checks passing on a live URL", n: learners.all_checks_live },
+      { key: "visit", label: "Landing page visits", detail: "Opened the home page. Once per browser tab.", n: by.visit ?? 0 },
+      { key: "code_sent", label: "Asked for an email code", detail: "Typed a new email on the pilot page and got a code. Resends don't count.", n: by.code_sent ?? 0 },
+      { key: "verified", label: "Verified their email", detail: "Entered the code from their email.", n: by.verified ?? 0 },
+      ...FORM_STEPS.map(([title, detail], i) => ({ key: `apply_${i + 1}`, label: `Form step ${i + 1} of 5: ${title}`, detail, n: by[`apply_${i + 1}`] ?? 0 })),
+      { key: "submitted", label: "Sent the application", detail: "Pressed Send. The application is in the waitlist.", n: apps.submitted },
+      { key: "accepted", label: "Accepted", detail: "You accepted them and the email went out.", n: apps.accepted },
+      { key: "ai_connected", label: "AI tool connected", detail: "Their AI tool made its first launchwright call.", n: learners.ai_connected },
+      { key: "first_check", label: "First readiness check", detail: "Their first check_readiness that finished.", n: learners.first_check },
+      { key: "production_deploy", label: "First production deploy started", detail: "Asked to deploy to production for the first time.", n: learners.production_deploy },
+      { key: "all_checks_live", label: "All checks passing on a live URL", detail: "A live URL with all 8 readiness checks passing.", n: learners.all_checks_live },
     ],
   };
 }

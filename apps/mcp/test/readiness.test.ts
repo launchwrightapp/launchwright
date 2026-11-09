@@ -42,6 +42,21 @@ describe("readiness checks", () => {
     expect(statusOf({ ...ready, paths: ready.paths.filter((p) => !p.startsWith(".github/")) }, "ci")).toBe("fail");
   });
 
+  it("asks for branch protection once CI runs tests", () => {
+    const off = { ...ready, protection: { protected: false, requiresPr: false, requiredChecks: [] } };
+    const c = runChecks(off).find((x) => x.id === "ci")!;
+    expect(c.status).toBe("warn");
+    expect(c.detail).toContain("isn't protected");
+    expect(c.detail).toContain("Require status checks to pass");
+    expect(c.detail).not.toContain("Student Developer Pack");
+    expect(runChecks({ ...off, private: true }).find((x) => x.id === "ci")!.detail).toContain("Student Developer Pack");
+    expect(statusOf({ ...ready, protection: { protected: true, requiresPr: true, requiredChecks: [] } }, "ci")).toBe("warn"); // no checks required
+    expect(statusOf({ ...ready, protection: { protected: true, requiresPr: false, requiredChecks: ["Checks"] } }, "ci")).toBe("warn"); // direct pushes allowed
+    expect(statusOf({ ...ready, protection: { protected: true, requiresPr: true, requiredChecks: ["Secret scan", "Checks"] } }, "ci")).toBe("pass");
+    expect(statusOf({ ...ready, protection: { protected: true, requiresPr: null, requiredChecks: null } }, "ci")).toBe("pass"); // classic: details hidden
+    expect(statusOf({ ...ready, protection: null }, "ci")).toBe("pass"); // couldn't tell
+  });
+
   it("skips migrations when there is no database", () => {
     const noDb = { paths: ["package.json"], files: { "package.json": JSON.stringify({ dependencies: { next: "15" } }) } };
     expect(statusOf(noDb, "migrations")).toBe("skip");
