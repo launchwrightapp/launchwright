@@ -1,10 +1,10 @@
 {{headline}}
 
-You have one of the 10 seats in the free launchwright pilot. Over the next weeks you'll take your own app to production and understand every step.
+You're one of the 10 learners in the free launchwright pilot. Over the next few weeks you'll take your own website or web app to production, and we'll explain each part as you go.
 
 YOUR NEXT STEP
 Sign in with GitHub and follow the 4-step setup on your dashboard: https://platform.launchwright.app
-Connect the AI tool you already use, your Cloudflare account and a free database, then ask your AI tool to check your project. About 10 minutes. After that, launchwright explains every step as you go.
+Connect the AI tool you already use, your Cloudflare account and a free database, then ask your AI tool to check your project. About 10 minutes. After that, launchwright explains what each tool did and why.
 
 WHAT YOU'LL NEED
 - A GitHub account
@@ -17,5 +17,5 @@ Welcome aboard. Questions? Just reply to this email.
 The launchwright team
 
 --
-You're getting this because you applied to the pilot at launchwright.app. Changed your mind? Reply and we'll give your seat to someone else. To have your email deleted, write to privacy@launchwright.app.
+You're getting this because you applied to the pilot at launchwright.app. Changed your mind? Reply and we'll give your place to someone else. To have your email deleted, write to privacy@launchwright.app.
 Privacy policy: https://launchwright.app/privacy
