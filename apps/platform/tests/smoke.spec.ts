@@ -64,7 +64,7 @@ test("overview with a project leads with now, then progress, then history", asyn
   await expect(main.getByRole("heading", { name: "Fix auth on API routes" })).toBeVisible();
   await expect(main.getByText("5", { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(main.getByRole("heading", { name: "Readiness checks", exact: true })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Auth on API routes: Failed" })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Auth: Auth on API routes, Failed" })).toBeVisible();
   await expect(main.getByRole("heading", { name: "Lesson progress" })).toBeVisible();
   await expect(main.getByText("2 of 8 Level 1 modules")).toBeVisible();
 });
@@ -260,7 +260,7 @@ test("the signed-in person appears in the title bar and can sign out", async ({ 
   await page.goto("/");
   await expect(page.getByRole("main")).toContainText(", Test.");
   if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
-  else await page.getByRole("button", { name: "Account", exact: true }).click();
+  else await page.getByRole("button", { name: /^Account menu/ }).click();
   await expect(page.getByText("@test-learner").locator("visible=true")).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).locator("visible=true").click();
   await expect(page).toHaveURL(/\/signin\?signed_out=1/);
