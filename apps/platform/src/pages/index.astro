@@ -183,9 +183,9 @@ const kindName: Record<EventKind, string> = { action: "Action", approval: "Appro
     <section class="flex flex-col gap-3" aria-labelledby="history-title">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 id="history-title" class={level}>Recent activity</h2>
-        <div class="flex flex-wrap gap-1" role="group" aria-label="Filter activity" data-filter="activity-list">
+        <div class="pill-tabs" role="group" aria-label="Filter activity" data-filter="activity-list">
           {kinds.map((k) => (
-            <button type="button" data-kind={k.id} aria-pressed={k.id === "all" ? "true" : "false"} class="min-h-8 cursor-pointer rounded-full border border-line px-3 text-[13px] font-semibold text-muted hover:text-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-on-ink">{k.label}</button>
+            <button type="button" data-kind={k.id} aria-pressed={k.id === "all" ? "true" : "false"} class="pill-tab">{k.label}</button>
           ))}
         </div>
       </div>

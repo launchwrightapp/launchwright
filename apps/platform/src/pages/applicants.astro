@@ -16,13 +16,46 @@ import App from "../layouts/App.astro";
 
     <p class="rounded-xl border border-line bg-warn-bg px-4 py-3 text-[15px] text-warn">The acceptance email says people can start right away. Accept only once the workspace works end to end.</p>
 
-    <div role="tablist" aria-label="Filter applicants" data-filter class="flex flex-wrap gap-2">
-      <button type="button" role="tab" aria-selected="true" data-show="waiting" class="tag cursor-pointer border border-line bg-surface aria-selected:border-ink aria-selected:bg-ink aria-selected:text-on-ink">Waiting <span data-count="waiting" class="tabular-nums"></span></button>
-      <button type="button" role="tab" aria-selected="false" data-show="accepted" class="tag cursor-pointer border border-line bg-surface aria-selected:border-ink aria-selected:bg-ink aria-selected:text-on-ink">Accepted <span data-count="accepted" class="tabular-nums"></span></button>
-      <button type="button" role="tab" aria-selected="false" data-show="all" class="tag cursor-pointer border border-line bg-surface aria-selected:border-ink aria-selected:bg-ink aria-selected:text-on-ink">All <span data-count="all" class="tabular-nums"></span></button>
+    <div role="tablist" aria-label="Filter applicants" data-filter class="pill-tabs">
+      <button type="button" role="tab" aria-selected="true" data-show="waiting" class="pill-tab">Waiting <span data-count="waiting" class="count"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-show="accepted" class="pill-tab">Accepted <span data-count="accepted" class="count"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-show="all" class="pill-tab">All <span data-count="all" class="count"></span></button>
     </div>
 
     <p data-applicants-empty hidden class="rounded-xl border border-dashed border-line px-5 py-6 text-muted"></p>
-    <ul data-applicants aria-busy="true" aria-live="polite" class="grid grid-cols-1 gap-3 @4xl:grid-cols-2"></ul>
+    <div class="overflow-x-auto rounded-xl border border-line bg-surface">
+      <table class="w-full border-collapse text-left text-[15px]">
+        <thead class="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
+          <tr class="border-b border-line">
+            <th scope="col" class="px-3 py-3 @xl:px-5 font-semibold">Name</th>
+            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @2xl:table-cell">Email</th>
+            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @4xl:table-cell">Building</th>
+            <th scope="col" class="hidden px-3 py-3 @xl:px-5 font-semibold @xl:table-cell">Applied</th>
+            <th scope="col" class="px-3 py-3 @xl:px-5 font-semibold">Status</th>
+            <th scope="col" class="px-3 py-3 @xl:px-5"><span class="sr-only">Details</span></th>
+          </tr>
+        </thead>
+        <tbody data-applicants aria-busy="true" aria-live="polite"></tbody>
+      </table>
+    </div>
   </div>
+
+  <dialog data-sheet aria-labelledby="sheet-title" class="sheet">
+    <div class="mx-auto flex w-full flex-col gap-5 px-5 pb-8 pt-3 md:px-10">
+      <span class="mx-auto h-1.5 w-12 rounded-full bg-line" aria-hidden="true"></span>
+      <div class="flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <h2 id="sheet-title" data-sheet-name class="truncate text-2xl font-bold tracking-[-0.01em]"></h2>
+          <p data-sheet-meta class="break-words text-[15px] text-muted"></p>
+        </div>
+        <span data-sheet-status class="tag flex-none text-[13px]"></span>
+        <button type="button" data-sheet-close aria-label="Close" class="grid size-10 flex-none cursor-pointer place-items-center rounded-full border border-line text-xl leading-none hover:border-ink">&times;</button>
+      </div>
+      <dl data-sheet-answers class="grid grid-cols-1 gap-x-6 gap-y-1 text-[15px] md:grid-cols-[minmax(10rem,auto)_minmax(0,1fr)]"></dl>
+      <div class="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+        <button type="button" data-sheet-accept class="btn btn-sm"></button>
+        <p data-sheet-note role="status" class="text-[14px] text-muted"></p>
+      </div>
+    </div>
+  </dialog>
 </App>
