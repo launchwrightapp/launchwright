@@ -42,6 +42,8 @@ if (form) {
         action: "pilot",
         appearance: "interaction-only",
         callback: (t: string) => { token = t; waiting?.(t); },
+        // Shown only when Cloudflare wants a click (rare for real visitors).
+        "before-interactive-callback": () => show("Please tick “Verify you are human” below, then send.", "err"),
         "expired-callback": () => { token = ""; },
         "error-callback": () => { token = ""; },
       });
@@ -230,7 +232,7 @@ if (form) {
     }
 
     submit.disabled = true;
-    show("Sending...");
+    show(token || !sitekey ? "Sending..." : "Checking you're not a bot...");
     const botToken = await getToken();
     if (sitekey && !botToken) {
       show("Still checking you're not a bot. Please try again in a moment.", "err");
