@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { sendAcknowledgement, sendAcceptance, type Applicant } from "./emails";
+import { sendAcknowledgement, sendAcceptance, sendNewApplication, type Applicant } from "./emails";
 import { cleanAnswers } from "./options";
 import { crossSite, underLimit } from "./guard";
 import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
@@ -8,6 +8,7 @@ import { checkCode, clearSession, endSession, hasSessionCookie, requestCode, ses
 interface Env extends VerifyEnv {
   ASSETS: Fetcher;
   ADMIN_TOKEN?: string; // secret; enables /api/admin/* (unset = those routes 404)
+  NOTIFY_EMAIL?: string; // secret; where "new application" alerts go (unset = no alerts)
 }
 
 const PILOT_SEATS = 10;
@@ -71,6 +72,13 @@ async function waitlist(req: Request, env: Env, url: URL, ctx: ExecutionContext)
         sendAcknowledgement(mail, { email, name: name || null, building: building || null })
           .then(() => sql`update waitlist set acknowledged_at = now() where email = ${email}`)
           .catch((err) => console.error("acknowledgement email failed", err)),
+      );
+    }
+    // Tell the team. Same rules: after the response, and a failed send never fails the signup.
+    if (rows.length && env.EMAIL && env.NOTIFY_EMAIL) {
+      ctx.waitUntil(
+        sendNewApplication(env.EMAIL, env.NOTIFY_EMAIL, { email, name: name || null, building: building || null, answers: answers ? Object.keys(answers).length : 0 })
+          .catch((err) => console.error("new application alert failed", err)),
       );
     }
   } catch (err) {
