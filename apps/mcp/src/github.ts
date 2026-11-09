@@ -1,9 +1,10 @@
 // Reads a learner's repo with their own GitHub token (read-only API calls).
-import { workflowFiles, type RepoSnapshot } from "./readiness";
+import { workflowFiles, workspaceGlobs, workspacePackageFiles, type RepoSnapshot } from "./readiness";
 
 export const REPO_RE = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 const MAX_FILE = 64 * 1024; // skip anything bigger: we only read small config files
 const MAX_WORKFLOWS = 10;
+const MAX_WORKSPACE_PACKAGES = 20;
 
 export class RepoError extends Error {}
 
@@ -32,13 +33,19 @@ export async function readRepo(repo: string, token: string): Promise<RepoSnapsho
   const paths = blobs.map((t) => t.path);
   const size = new Map(blobs.map((t) => [t.path, t.size ?? 0]));
 
-  const wanted = ["package.json", ".gitignore", ...workflowFiles(paths).slice(0, MAX_WORKFLOWS)].filter((p) => size.has(p) && size.get(p)! <= MAX_FILE);
   const files: Record<string, string> = {};
-  await Promise.all(
-    wanted.map(async (p) => {
-      const r = await gh(`/repos/${repo}/contents/${p.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(meta.default_branch)}`, "application/vnd.github.raw+json");
-      if (r.ok) files[p] = (await r.text()).slice(0, MAX_FILE);
-    }),
-  );
+  const fetchFiles = (list: string[]) =>
+    Promise.all(
+      list
+        .filter((p) => size.has(p) && size.get(p)! <= MAX_FILE)
+        .map(async (p) => {
+          const r = await gh(`/repos/${repo}/contents/${p.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(meta.default_branch)}`, "application/vnd.github.raw+json");
+          if (r.ok) files[p] = (await r.text()).slice(0, MAX_FILE);
+        }),
+    );
+  await fetchFiles(["package.json", "pnpm-workspace.yaml", ".gitignore", ...workflowFiles(paths).slice(0, MAX_WORKFLOWS)]);
+  // Monorepo: the framework and database usually live in the workspace packages, not the root.
+  const globs = workspaceGlobs(files["package.json"], files["pnpm-workspace.yaml"]);
+  if (globs.length) await fetchFiles(workspacePackageFiles(paths, globs).slice(0, MAX_WORKSPACE_PACKAGES));
   return { repo: meta.full_name, branch: meta.default_branch, private: meta.private, paths, files, truncated: tree.truncated };
 }

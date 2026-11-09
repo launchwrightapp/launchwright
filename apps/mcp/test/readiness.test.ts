@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runChecks, score, type RepoSnapshot } from "../src/readiness";
+import { runChecks, score, workspaceGlobs, workspacePackageFiles, type RepoSnapshot } from "../src/readiness";
 import { detectStack, projectStatus } from "../src/project";
 import { deliver } from "../src/lessons";
 
@@ -60,6 +60,30 @@ describe("project status", () => {
     expect(detectStack(ready)).toEqual({ framework: "Astro", supported: true, packageManager: "npm", database: "Neon", hosting: "Cloudflare Workers", monorepo: false });
     const vite = { paths: ["pnpm-lock.yaml", "vercel.json"], files: { "package.json": JSON.stringify({ devDependencies: { vite: "6", vue: "3" } }) } };
     expect(detectStack(vite)).toMatchObject({ framework: "Vite (Vue)", packageManager: "pnpm", hosting: "Vercel" });
+  });
+
+  it("finds workspace packages in a monorepo", () => {
+    const paths = [
+      "package.json", "package-lock.json", "apps/web/package.json", "apps/web/node_modules/x/package.json",
+      "packages/ui/package.json", "tools/deep/x/package.json", "examples/demo/package.json",
+    ];
+    const npmRoot = JSON.stringify({ workspaces: ["apps/*", "packages/*", "tools/**"] });
+    expect(workspaceGlobs(npmRoot, undefined)).toEqual(["apps/*", "packages/*", "tools/**"]);
+    expect(workspaceGlobs(JSON.stringify({ workspaces: { packages: ["apps/*"] } }), undefined)).toEqual(["apps/*"]);
+    expect(workspaceGlobs(undefined, "packages:\n  - 'apps/*'\n  - \"packages/*\"\n  - '!**/test/**'\ncatalog:\n  - nope\n")).toEqual(["apps/*", "packages/*"]);
+    expect(workspacePackageFiles(paths, workspaceGlobs(npmRoot, undefined))).toEqual([
+      "apps/web/package.json", "packages/ui/package.json", "tools/deep/x/package.json",
+    ]);
+    expect(workspacePackageFiles(paths, [])).toEqual([]);
+
+    const mono: RepoSnapshot = {
+      paths: [...paths, "apps/web/wrangler.jsonc"],
+      files: {
+        "package.json": npmRoot,
+        "apps/web/package.json": JSON.stringify({ dependencies: { astro: "5", "@neondatabase/serverless": "1" } }),
+      },
+    };
+    expect(detectStack(mono)).toMatchObject({ framework: "Astro", supported: true, database: "Neon", hosting: "Cloudflare Workers", monorepo: true });
   });
 
   it("points at the first failure as the next step", () => {
