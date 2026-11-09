@@ -142,17 +142,29 @@ jobs:
         run: |
           node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "SESSION_SECRET", "DATABASE_URL", "FORWARD_TO"]) if (process.env[k]) s[k] = process.env[k];
             require("fs").writeFileSync(process.env.RUNNER_TEMP + "/platform-secrets.json", JSON.stringify(s), { mode: 0o600 })'
+          # The MCP server signs in with the same GitHub App and keeps lesson progress in the same database.
+          node -e 'const s = {}; for (const k of ["GITHUB_CLIENT_SECRET", "DATABASE_URL"]) if (process.env[k]) s[k] = process.env[k];
+            require("fs").writeFileSync(process.env.RUNNER_TEMP + "/mcp-secrets.json", JSON.stringify(s), { mode: 0o600 })'
       - name: Deploy site
         working-directory: apps/site
         run: npx wrangler deploy --message "${GITHUB_SHA::7}"
       - name: Deploy platform
         run: npm run deploy -w apps/platform -- --message "${GITHUB_SHA::7}" --secrets-file "$RUNNER_TEMP/platform-secrets.json"
+      - name: Deploy MCP server
+        run: npm run deploy -w apps/mcp -- --message "${GITHUB_SHA::7}" --secrets-file "$RUNNER_TEMP/mcp-secrets.json"
       - name: Smoke test production
         run: |
           BASE_URL=https://launchwright.app npm run test:e2e -w apps/site
           BASE_URL=https://platform.launchwright.app npm run test:e2e -w apps/platform
+          # MCP: the home page loads, and /mcp asks for sign-in (401 with where to get a token).
+          curl -fsS -o /dev/null https://mcp.launchwright.app/
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST https://mcp.launchwright.app/mcp)
+          [ "$code" = 401 ] || { echo "::error::/mcp returned $code, expected 401"; exit 1; }
+          curl -fsS https://mcp.launchwright.app/.well-known/oauth-protected-resource/mcp | grep -q '"resource"'
       - name: Roll back if the smoke test failed
         if: failure()
         run: |
           (cd apps/site && npx wrangler rollback --message "Auto rollback: smoke test failed on ${GITHUB_SHA::7}")
           (cd apps/platform && npx wrangler rollback --message "Auto rollback: smoke test failed on ${GITHUB_SHA::7}")
+          # The first MCP deploy has nothing to roll back to, so don't fail the step on that.
+          (cd apps/mcp && npx wrangler rollback --message "Auto rollback: smoke test failed on ${GITHUB_SHA::7}") || true
