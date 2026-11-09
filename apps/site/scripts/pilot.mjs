@@ -3,6 +3,8 @@
 //   npm run pilot -- list                      applicants, newest first
 //   npm run pilot -- accept juan@example.com   send "You're in" and take a seat
 //   npm run pilot -- accept juan@example.com --resend
+//   npm run pilot -- notify-policy --test      privacy update email, one copy to NOTIFY_EMAIL
+//   npm run pilot -- notify-policy --all       privacy update email to every applicant
 // The admin token comes from LW_ADMIN_TOKEN, or the macOS Keychain item "launchwright-admin".
 import { execFileSync } from "node:child_process";
 
@@ -45,7 +47,23 @@ if (cmd === "list") {
 } else if (cmd === "accept" && email) {
   const r = await call("/api/admin/accept", { method: "POST", body: JSON.stringify({ email, resend: flag === "--resend" }) });
   console.log(`Sent "You're in" to ${r.email}. Seats used: ${r.seatsUsed}/${r.seats}.`);
+} else if (cmd === "notify-policy" && email === "--test") {
+  const r = await call("/api/admin/notify-policy", { method: "POST", body: JSON.stringify({ test: true }) });
+  console.log(`Test sent to ${r.to}.`);
+} else if (cmd === "notify-policy" && email === "--all") {
+  const { applicants } = await call("/api/admin/applicants");
+  console.log(`Sending the privacy update to ${applicants.length} applicants.\n`);
+  let sent = 0;
+  for (const a of applicants) {
+    const res = await fetch(SITE + "/api/admin/notify-policy", { method: "POST", headers: { authorization: `Bearer ${token()}`, "content-type": "application/json" }, body: JSON.stringify({ email: a.email }) });
+    const body = await res.json().catch(() => ({}));
+    console.log(`${res.ok ? "sent  " : "FAILED"}  ${a.email}${res.ok ? "" : `  (${body.error ?? res.status})`}`);
+    if (res.ok) sent++;
+    await new Promise((r) => setTimeout(r, 400)); // gentle on the email sender
+  }
+  console.log(`\n${sent} of ${applicants.length} sent.`);
+  if (sent < applicants.length) process.exit(1);
 } else {
-  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- accept <email> [--resend]");
+  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- accept <email> [--resend]\n  npm run pilot -- notify-policy --test | --all");
   process.exit(cmd ? 1 : 0);
 }

@@ -5,12 +5,15 @@ import acceptHtmlModule from "../emails/pilot-accepted.html";
 import acceptText from "../emails/pilot-accepted.txt";
 import codeHtmlModule from "../emails/pilot-code.html";
 import codeText from "../emails/pilot-code.txt";
+import policyHtmlModule from "../emails/policy-update.html";
+import policyText from "../emails/policy-update.txt";
 
 // Wrangler bundles .html as a plain string. Astro's types describe .html imports
 // differently (as components), so tell TypeScript what we actually get.
 const ackHtml = ackHtmlModule as unknown as string;
 const acceptHtml = acceptHtmlModule as unknown as string;
 const codeHtml = codeHtmlModule as unknown as string;
+const policyHtml = policyHtmlModule as unknown as string;
 
 const FROM = { email: "hello@launchwright.app", name: "launchwright" };
 
@@ -88,5 +91,18 @@ export function sendNewApplication(mail: SendEmail, to: string, a: Applicant & {
       "",
       "Review and accept: https://platform.launchwright.app/applicants",
     ].join("\n"),
+  });
+}
+
+// The privacy policy update (AI-assisted review), sent once to people who applied before it.
+export function sendPolicyUpdate(mail: SendEmail, to: string, name: string | null) {
+  const v = { name: firstName(name) || "there" };
+  return mail.send({
+    from: FROM,
+    replyTo: FROM.email,
+    to,
+    subject: "A small update to how we review pilot applications",
+    html: render(policyHtml, v, true),
+    text: render(policyText, v, false),
   });
 }
