@@ -20,7 +20,7 @@ const nav = [
   <div class="flex h-[84px] items-center justify-between gap-4">
     <Logo />
     <nav aria-label="Sections" class="hidden gap-1 text-[17px] font-medium lg:flex" data-scrollspy={home ? "" : undefined}>
-      {nav.map(([href, label]) => <a href={base + href} class="rounded-full px-4 py-2 text-muted no-underline transition hover:text-ink aria-[current=true]:bg-blue aria-[current=true]:text-white">{label}</a>)}
+      {nav.map(([href, label]) => <a href={base + href} class="rounded-lg px-4 py-2 text-muted no-underline transition hover:text-ink aria-[current=true]:bg-blue aria-[current=true]:text-white">{label}</a>)}
     </nav>
     <div class="flex items-center gap-2.5">
       <ThemeToggle />
@@ -32,7 +32,7 @@ const nav = [
           <svg class="size-5 group-aria-expanded:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 14h14" /></svg>
           <svg class="hidden size-5 group-aria-expanded:block" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
         </button>
-        <nav id="site-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-[28px] border border-line bg-surface p-3 shadow-2xl shadow-black/10">
+        <nav id="site-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+12px)] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-2xl border border-line bg-surface p-3 shadow-2xl shadow-black/10">
           {nav.map(([href, label]) => <a href={base + href} class="rounded-2xl px-4 py-3 text-[18px] font-medium text-ink no-underline hover:bg-surface-2">{label}</a>)}
           <a class="btn mt-2" href={pilotHref}>Join the free pilot</a>
         </nav>

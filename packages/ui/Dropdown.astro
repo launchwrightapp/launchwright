@@ -12,8 +12,9 @@ interface Props {
   hideLabelBelow?: "sm" | "md" | "lg" | "xl";
   searchPlaceholder?: string;
   size?: "md" | "sm";
+  align?: "left" | "right"; // which edge the menu lines up with
 }
-const { id, name, label, options, value, tone = "light", hideLabelBelow, searchPlaceholder = "Search", size = "md" } = Astro.props;
+const { id, name, label, options, value, tone = "light", hideLabelBelow, searchPlaceholder = "Search", size = "md", align = "right" } = Astro.props;
 const sizing = size === "sm" ? "min-h-9 gap-1.5 pl-3.5 pr-2.5 text-[14px]" : "min-h-11 gap-2 pl-4 pr-3.5 text-[15px]";
 const current = options.find((o) => o.value === value) ?? options[0];
 const trigger = tone === "dark"
@@ -29,7 +30,7 @@ const labelHide = { sm: "max-sm:hidden", md: "max-md:hidden", lg: "max-lg:hidden
     aria-expanded="false"
     aria-controls={`${id}-pop`}
     aria-label={`${label}: ${current.label}`}
-    class:list={["flex cursor-pointer items-center rounded-full border font-semibold", sizing, trigger]}
+    class:list={["flex cursor-pointer items-center rounded-lg border font-semibold", sizing, trigger]}
   >
     <span class:list={["font-normal opacity-60", hideLabelBelow && labelHide[hideLabelBelow]]}>{label}</span>
     <span data-dropdown-value>{current.label}</span>
@@ -40,7 +41,7 @@ const labelHide = { sm: "max-sm:hidden", md: "max-md:hidden", lg: "max-lg:hidden
     id={`${id}-pop`}
     data-dropdown-pop
     hidden
-    class="absolute right-0 top-[calc(100%+10px)] z-40 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 rounded-[28px] border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/15"
+    class:list={["absolute top-[calc(100%+10px)] z-40 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 rounded-2xl border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/15", align === "left" ? "left-0" : "right-0"]}
   >
     <div class="relative">
       <svg class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -55,7 +56,7 @@ const labelHide = { sm: "max-sm:hidden", md: "max-md:hidden", lg: "max-lg:hidden
         autocomplete="off"
         spellcheck="false"
         placeholder={searchPlaceholder}
-        class="input min-h-11 rounded-full py-2 pl-10 text-[16px]"
+        class="input min-h-11 rounded-lg py-2 pl-10 text-[16px]"
       />
     </div>
     <ul id={`${id}-list`} role="listbox" aria-label={label} class="flex max-h-72 flex-col gap-1 overflow-y-auto">

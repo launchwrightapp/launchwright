@@ -5,16 +5,15 @@ import Composer from "../components/Composer.astro";
 ---
 <App title="Messages" page="messages">
   <script src="../scripts/messages.ts"></script>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col gap-4">
     <div>
       <p class="label">Messages</p>
-      <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">Talk to the team</h1>
-      <p class="mt-1 max-w-[65ch] text-muted">Stuck, have a question, or found a bug? Write to us here. A person reads every message.</p>
-      <p class="mt-1 text-[15px] text-muted" data-email-note></p>
+      <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Talk to the team</h1>
+      <p class="mt-1 text-[14px] text-muted" data-email-note></p>
     </div>
 
     <section aria-label="Conversation" class="flex flex-col gap-4">
-      <p data-thread-empty class="rounded-xl border border-dashed border-line px-5 py-6 text-muted">No messages yet. Say hi, or tell us what you're building.</p>
+      <p data-thread-empty class="rounded-xl border border-dashed border-line px-4 py-4 text-muted">No messages yet. Say hi, or tell us what you're building.</p>
       <ol data-thread aria-busy="true" aria-live="polite" class="flex flex-col gap-4"></ol>
     </section>
 

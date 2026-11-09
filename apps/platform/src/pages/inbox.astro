@@ -2,31 +2,54 @@
 // Team inbox. The worker returns 404 here for anyone not in ADMIN_GITHUB_IDS.
 import App from "../layouts/App.astro";
 import Composer from "../components/Composer.astro";
+import { seg, segGroup, control, toolbar, searchIcon } from "../data/ui";
+
+const views = [
+  { id: "all", label: "All" },
+  { id: "waiting", label: "Needs reply" },
+  { id: "unread", label: "Unread" },
+];
 ---
 <App title="Team inbox" page="inbox">
   <script src="../scripts/inbox.ts"></script>
-  <div class="flex flex-col gap-5">
-    <div>
-      <p class="label">Team inbox</p>
-      <h1 class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold leading-tight tracking-[-0.02em]">Messages from learners</h1>
-      <p class="mt-1 max-w-[70ch] text-muted">Platform messages and email to hello@launchwright.app, in one place. Replies go out from hello@ and also show on the learner's Messages page.</p>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="label">Team inbox</p>
+        <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Messages from learners</h1>
+      </div>
+      <p data-waiting-tag class="tag tag-line text-[14px]" aria-live="polite">Loading…</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 @3xl:grid-cols-[18rem_minmax(0,1fr)]">
-      <nav aria-label="Conversations" class="flex flex-col gap-1 rounded-xl border border-line bg-surface p-2 @3xl:max-h-[70vh] @3xl:overflow-y-auto">
-        <p data-threads-empty hidden class="px-3 py-4 text-muted">No messages yet.</p>
-        <ul data-threads aria-busy="true" class="flex flex-col gap-0.5"></ul>
+    <!-- One card, two panes: conversations on the left, the open one on the right. -->
+    <div class="grid min-h-[28rem] grid-cols-1 rounded-md border border-line bg-surface dark:bg-surface-2 @3xl:h-[min(72vh,46rem)] @3xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <nav aria-label="Conversations" class="flex min-h-0 flex-col border-b border-line @3xl:border-b-0 @3xl:border-r">
+        <div class:list={[toolbar, "rounded-t-md @3xl:rounded-tr-none"]}>
+          <div role="group" aria-label="Show" data-view class:list={[segGroup, "w-full"]}>
+            {views.map((v, i) => (
+              <button type="button" data-show={v.id} aria-pressed={i === 0 ? "true" : "false"} class:list={[seg, "flex-1 justify-center px-2"]}>{v.label} <span data-count={v.id} class="tabular-nums text-muted"></span></button>
+            ))}
+          </div>
+          <div class="relative w-full">
+            <label class="sr-only" for="thread-search">Search conversations</label>
+            <Fragment set:html={searchIcon} />
+            <input id="thread-search" type="search" data-search placeholder="Search name, email, subject…" autocomplete="off" class={`${control} w-full pl-8`} />
+          </div>
+        </div>
+        <ul data-threads aria-busy="true" class="min-h-0 flex-1 overflow-y-auto @max-3xl:max-h-80"></ul>
       </nav>
 
-      <section aria-label="Conversation" class="flex min-w-0 flex-col gap-4">
-        <p data-pane-empty class="rounded-xl border border-dashed border-line px-5 py-6 text-muted">Pick a conversation.</p>
-        <div data-pane hidden class="flex flex-col gap-4">
-          <div>
-            <h2 data-pane-title class="text-xl font-bold tracking-[-0.01em]"></h2>
-            <p data-pane-who class="text-[15px] text-muted"></p>
+      <section aria-label="Conversation" class="flex min-h-0 min-w-0 flex-col">
+        <p data-pane-empty class="m-auto px-4 py-10 text-center text-muted">Pick a conversation.</p>
+        <div data-pane hidden class="flex min-h-0 flex-1 flex-col">
+          <header class="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line bg-canvas px-4 py-2 @3xl:rounded-tr-md">
+            <h2 data-pane-title class="min-w-0 truncate text-[15px] font-semibold"></h2>
+            <p data-pane-who class="min-w-0 truncate text-[13px] text-muted"></p>
+          </header>
+          <ol data-pane-messages aria-live="polite" class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"></ol>
+          <div class="border-t border-line p-3">
+            <Composer data-reply-form="" id="reply-body" label="Reply" placeholder="Write a reply. It's emailed from hello@launchwright.app" />
           </div>
-          <ol data-pane-messages aria-live="polite" class="flex flex-col gap-4"></ol>
-          <Composer data-reply-form="" id="reply-body" label="Reply" placeholder="Write a reply. It's emailed from hello@launchwright.app" />
         </div>
       </section>
     </div>

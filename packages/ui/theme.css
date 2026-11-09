@@ -16,7 +16,7 @@
 }
 
 :root {
-  --canvas: #f4f4f1;
+  --canvas: #f3f4f6;
   --surface: #ffffff;
   --surface-2: #f7f7f5;
   --surface-3: #eeede6;
@@ -96,6 +96,15 @@
 }
 
 @theme {
+  /* Corners: tighter than Tailwind's defaults. Every rounded-* class uses these. */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius: 4px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
   --color-blue: #2a17ff;
   --color-lime: #d6ff3d;
   --color-orange: #ff4f1a;
@@ -127,6 +136,9 @@
   :is(.bg-night, .bg-blue) :is(.bg-surface, .bg-canvas) { --focus: var(--focus-base); }
   code { @apply font-mono rounded-md bg-surface-3 px-1.5 py-0.5 text-[0.85em]; }
   summary { list-style: none; }
+  /* Tailwind v4 dropped the pointer cursor on buttons: bring it back for everything clickable. */
+  :is(button, [role="button"], [role="tab"], [type="button"], [type="submit"], [type="reset"], summary, select, label[for], input[type="checkbox"], input[type="radio"], input[type="file"]):not(:disabled, [aria-disabled="true"]) { cursor: pointer; }
+  :is(button, [role="button"], [role="tab"], input, select):is(:disabled, [aria-disabled="true"]) { cursor: not-allowed; }
 
   /* Apple-style continuous corners (squircles) on every rounded corner.
      Browsers without corner-shape fall back to normal rounded corners. */
@@ -146,12 +158,12 @@
   }
   .gutter { @apply px-4 md:px-10 xl:px-16; }
   .btn {
-    @apply inline-flex min-h-[50px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-ink bg-ink px-6 text-[17px] font-semibold leading-none text-on-ink no-underline transition hover:opacity-85 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45;
+    @apply inline-flex min-h-[50px] items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-ink bg-ink px-6 text-[17px] font-semibold leading-none text-on-ink no-underline transition hover:opacity-85 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45;
   }
   .btn-sm { @apply min-h-10 gap-1.5 px-4 text-[15px]; }
   .btn-outline { @apply border-line bg-surface text-ink shadow-xs hover:bg-surface-2 hover:opacity-100; }
   .tag {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-3 px-3 py-1 text-[15px] font-medium leading-snug text-ink;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-surface-3 px-3 py-1 text-[15px] font-medium leading-snug text-ink;
   }
   .tag-ok { @apply bg-ok-bg text-ok; }
   .tag-warn { @apply bg-warn-bg text-warn; }
@@ -167,12 +179,12 @@
   .tab .count:empty { @apply hidden; }
   /* Bottom sheet: a <dialog> that slides up from the bottom edge, full width. */
   .sheet {
-    @apply fixed inset-x-0 top-auto bottom-0 m-0 max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[14px] border border-b-0 border-line bg-surface p-0 text-ink;
+    @apply fixed inset-x-0 top-auto bottom-0 m-0 max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-xl border border-b-0 border-line bg-surface p-0 text-ink;
   }
   .sheet[open] { animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
   .sheet::backdrop { background: rgb(0 0 0 / 0.45); }
   @media (prefers-reduced-motion: reduce) { .sheet[open] { animation: none; } }
-  .card { @apply rounded-[40px] border border-line bg-surface-2 p-7; }
+  .card { @apply rounded-2xl border border-line bg-surface-2 p-7; }
   .label { @apply text-base font-medium text-muted; }
   .input {
     @apply min-h-[54px] w-full rounded-2xl border border-line bg-surface px-[18px] py-3.5 text-[17px] text-ink placeholder:text-muted focus:border-transparent focus:outline-2 focus:outline-offset-0 focus:outline-(--focus);

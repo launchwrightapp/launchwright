@@ -5,7 +5,7 @@ interface Props { id: string; label: string; placeholder?: string; [attr: `data-
 const { id, label, placeholder, ...rest } = Astro.props;
 ---
 <form {...rest} class="flex flex-col gap-1.5">
-  <div class="flex items-end gap-2 rounded-[14px] border border-line bg-surface py-2 pl-5 pr-2 shadow-xs focus-within:border-transparent focus-within:outline-2 focus-within:outline-(--focus) dark:bg-surface-2">
+  <div class="flex items-end gap-2 rounded-xl border border-line bg-surface py-2 pl-5 pr-2 shadow-xs focus-within:border-transparent focus-within:outline-2 focus-within:outline-(--focus) dark:bg-surface-2">
     <label for={id} class="sr-only">{label}</label>
     <textarea id={id} name="body" rows="1" maxlength="5000" required data-composer-input placeholder={placeholder} class="max-h-60 min-h-9 flex-1 resize-none bg-transparent py-1.5 text-[16px] leading-6 text-ink placeholder:text-muted focus:outline-none focus-visible:outline-none"></textarea>
     <button type="submit" aria-label="Send" title="Send" disabled data-composer-send class="grid size-9 flex-none cursor-pointer place-items-center rounded-full bg-ink text-on-ink transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-30">

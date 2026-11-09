@@ -1,18 +1,25 @@
 // Applicants: a table with filter tabs. View opens a bottom sheet with the answers and Accept.
 // Everything shown comes from people, so it's set with textContent only.
 import { add, api } from "./conversation";
+import { OPTIONS } from "../../../site/worker/options";
 
 interface Applicant { email: string; name: string | null; building: string | null; answers: Record<string, unknown> | null; appliedAt: string; acceptedAt: string | null }
 type Filter = "waiting" | "accepted" | "all";
 
 const listEl = document.querySelector<HTMLTableSectionElement>("[data-applicants]")!;
-const empty = document.querySelector<HTMLElement>("[data-applicants-empty]")!;
 const seatsEl = document.querySelector<HTMLElement>("[data-seats]")!;
 const tabs = [...document.querySelectorAll<HTMLButtonElement>("[data-filter] [data-show]")];
+// Role and stage filters are design-system Dropdowns; picking one fires lw:dropdown-change.
+const picked: Record<string, string> = { role: "", stage: "" };
+const search = document.querySelector<HTMLInputElement>("[data-search]")!;
+const sortBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-sort]")];
+type SortKey = "name" | "email" | "building" | "applied" | "status";
 
 let people: Applicant[] = [];
 let seats = 10;
 let filter: Filter = "waiting";
+let sortKey: SortKey = "applied";
+let sortDir: 1 | -1 = -1; // newest first
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string) => {
   const e = document.createElement(tag);
@@ -22,6 +29,22 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: s
 };
 const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 const human = (k: string) => k.replace(/[_-]+/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+// Pilot form steps and their fields, in form order. Labels for stored values come from
+// the site's own option list, so the sheet reads like the form the applicant filled in.
+type Section = "about" | "experience" | "project" | "goals";
+const SECTIONS: Section[] = ["about", "experience", "project", "goals"];
+const STEP_FIELDS: Record<Section, string[]> = {
+  about: ["role", "city"],
+  experience: ["experience", "tools"],
+  project: ["stage", "github"],
+  goals: ["learn", "hours", "heard"],
+};
+const FIELDS: Record<string, string> = {
+  role: "Describes them", city: "City", experience: "Coding so far", tools: "AI tools",
+  stage: "Where it is", github: "GitHub", learn: "Wants to learn", hours: "Hours a week", heard: "Heard about us",
+};
+const optionLabel = (k: string, v: unknown) =>
+  (OPTIONS as Record<string, readonly (readonly [string, string])[]>)[k]?.find(([val]) => val === v)?.[1] ?? v;
 const show = (v: unknown) => (Array.isArray(v) ? v.join(", ") : typeof v === "object" && v ? JSON.stringify(v) : String(v ?? ""));
 
 // The sheet: one <dialog> reused for whoever is open.
@@ -42,12 +65,26 @@ function fillSheet(a: Applicant) {
   q("[data-sheet-name]").textContent = a.name || a.email.split("@")[0];
   q("[data-sheet-meta]").textContent = `${a.email} · applied ${day(a.appliedAt)}`;
   status(q("[data-sheet-status]"), a);
-  const rows: [string, string][] = [];
-  if (a.building) rows.push(["Building", a.building]);
-  for (const [k, v] of Object.entries(a.answers ?? {})) if (show(v)) rows.push([human(k), show(v)]);
-  const dl = q("[data-sheet-answers]");
-  dl.replaceChildren(...rows.flatMap(([k, v]) => [el("dt", "pt-2 text-muted md:pt-0", k), el("dd", "break-words", v)]));
-  if (!rows.length) dl.replaceChildren(el("dd", "text-muted", "No answers saved."));
+  // One tab per pilot form step. Answers we don't know yet land in the last tab.
+  const answers: Record<string, unknown> = { ...(a.answers ?? {}) };
+  const take = (k: string): [string, string] | null => {
+    const v = answers[k];
+    delete answers[k];
+    const text = show(Array.isArray(v) ? v.map((x) => optionLabel(k, x)) : typeof v === "string" ? optionLabel(k, v) : v);
+    return text ? [FIELDS[k] ?? human(k), text] : null;
+  };
+  const rows: Record<Section, [string, string][]> = { about: [], experience: [], project: [], goals: [] };
+  if (a.name) rows.about.push(["Name", a.name]);
+  rows.about.push(["Email", a.email]);
+  if (a.building) rows.project.push(["Building", a.building]);
+  for (const s of SECTIONS) for (const k of STEP_FIELDS[s]) { const r = take(k); if (r) rows[s].push(r); }
+  for (const k of Object.keys(answers)) { const r = take(k); if (r) rows.goals.push(r); }
+  for (const s of SECTIONS) {
+    const dl = q(`[data-sheet-section="${s}"]`);
+    dl.replaceChildren(...rows[s].flatMap(([k, v]) => [el("dt", "pt-2 text-muted md:pt-0", k), el("dd", "break-words", v)]));
+    if (!rows[s].length) dl.replaceChildren(el("dd", "text-muted", "Nothing answered here."));
+  }
+  q<HTMLButtonElement>('[role="tab"]').click(); // every applicant opens on the first tab
   armed = false;
   acceptBtn.disabled = false;
   acceptBtn.className = a.acceptedAt ? "btn btn-sm btn-outline" : "btn btn-sm";
@@ -106,24 +143,47 @@ acceptBtn.addEventListener("click", async () => {
 });
 
 function row(a: Applicant) {
-  const tr = el("tr", "border-t border-line first:border-t-0 hover:bg-surface-2");
+  // The whole row opens the sheet; the View button stays for keyboard and screen reader users
+  // (its click bubbles up to the row, so there's one handler).
+  const tr = el("tr", "cursor-pointer border-t border-line first:border-t-0 hover:bg-surface-2");
+  tr.addEventListener("click", () => { if (!sheet.open) openSheet(a); });
   // Narrow screens keep Name, Status and View; the email moves under the name.
-  const name = el("td", "w-full max-w-0 px-3 py-3 @xl:px-5");
+  const name = el("td", "w-full max-w-0 px-3 py-2.5 @xl:px-4");
   add(name, el("p", "truncate font-semibold", a.name || a.email.split("@")[0]), el("p", "truncate text-[14px] text-muted @2xl:hidden", a.email));
-  const email = el("td", "hidden max-w-[18rem] truncate px-3 py-3 @xl:px-5 text-muted @2xl:table-cell", a.email);
-  const building = el("td", "hidden max-w-[18rem] truncate px-3 py-3 @xl:px-5 text-muted @4xl:table-cell", a.building ?? "");
-  const applied = el("td", "hidden whitespace-nowrap px-3 py-3 @xl:px-5 tabular-nums text-muted @xl:table-cell", day(a.appliedAt));
-  const st = el("td", "px-3 py-3 @xl:px-5");
+  const email = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @2xl:table-cell", a.email);
+  const building = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @4xl:table-cell", a.building ?? "");
+  const applied = el("td", "hidden whitespace-nowrap px-3 py-2.5 @xl:px-4 tabular-nums text-muted @xl:table-cell", day(a.appliedAt));
+  const st = el("td", "px-3 py-2.5 @xl:px-4");
   const tag = el("span", "");
   status(tag, a);
   add(st, tag);
-  const act = el("td", "px-3 py-3 @xl:px-5 text-right");
+  const act = el("td", "px-3 py-2.5 @xl:px-4 text-right");
   const view = el("button", "btn btn-sm btn-outline", "View") as HTMLButtonElement;
   view.type = "button";
   view.setAttribute("aria-label", `View ${a.name || a.email}`);
-  view.addEventListener("click", () => openSheet(a));
   add(act, view);
   add(tr, name, email, building, applied, st, act);
+  return tr;
+}
+
+const nameOf = (a: Applicant) => a.name || a.email.split("@")[0];
+const sortValue: Record<SortKey, (a: Applicant) => string> = {
+  name: (a) => nameOf(a).toLowerCase(),
+  email: (a) => a.email,
+  building: (a) => (a.building ?? "").toLowerCase(),
+  applied: (a) => a.appliedAt,
+  status: (a) => a.acceptedAt ?? "", // waiting first, then by accept date
+};
+// Everything a search can match: who they are and what they told us.
+const haystack = (a: Applicant) =>
+  [a.name, a.email, a.building, ...Object.values(a.answers ?? {}).flat().map((v) => optionLabel("", v))]
+    .filter(Boolean).join(" ").toLowerCase();
+
+function emptyRow(text: string) {
+  const tr = el("tr", "");
+  const td = el("td", "px-4 py-8 text-center text-muted", text);
+  td.colSpan = 6;
+  add(tr, td);
   return tr;
 }
 
@@ -135,17 +195,50 @@ function draw() {
     const c = document.querySelector(`[data-count="${k}"]`);
     if (c) c.textContent = String(n);
   }
-  const shown = people.filter((p) => (filter === "all" ? true : filter === "accepted" ? !!p.acceptedAt : !p.acceptedAt));
-  listEl.replaceChildren(...shown.map(row));
-  listEl.closest("div")!.hidden = shown.length === 0;
-  empty.hidden = shown.length > 0;
-  empty.textContent = filter === "waiting" ? "No one is waiting." : filter === "accepted" ? "No one accepted yet." : "No applications yet.";
+  const q = search.value.trim().toLowerCase();
+  const shown = people
+    .filter((p) => (filter === "all" ? true : filter === "accepted" ? !!p.acceptedAt : !p.acceptedAt))
+    .filter((p) => Object.entries(picked).every(([k, v]) => !v || p.answers?.[k] === v))
+    .filter((p) => !q || haystack(p).includes(q))
+    .sort((a, b) => sortValue[sortKey](a).localeCompare(sortValue[sortKey](b)) * sortDir);
+
+  for (const b of sortBtns) {
+    const on = b.dataset.sort === sortKey;
+    const th = b.closest("th")!;
+    if (on) th.setAttribute("aria-sort", sortDir === 1 ? "ascending" : "descending");
+    else th.removeAttribute("aria-sort");
+    const icon = b.querySelector<HTMLElement>("[data-sort-icon]")!;
+    icon.textContent = on && sortDir === 1 ? "▲" : "▼";
+    icon.classList.toggle("opacity-0", !on);
+    b.classList.toggle("text-ink", on);
+  }
+
+  const filtered = q || Object.values(picked).some(Boolean);
+  listEl.replaceChildren(
+    ...(shown.length
+      ? shown.map(row)
+      : [emptyRow(filtered ? "No one matches. Try another search or filter." : filter === "waiting" ? "No one is waiting." : filter === "accepted" ? "No one accepted yet." : "No applications yet.")]),
+  );
 }
 
 for (const t of tabs) {
   t.addEventListener("click", () => {
     filter = t.dataset.show as Filter;
-    for (const x of tabs) x.setAttribute("aria-selected", String(x === t));
+    for (const x of tabs) x.setAttribute("aria-pressed", String(x === t));
+    draw();
+  });
+}
+document.addEventListener("lw:dropdown-change", (e) => {
+  const { name, value } = (e as CustomEvent<{ name: string; value: string }>).detail;
+  const key = name.replace(/^applicants-/, "");
+  if (name.startsWith("applicants-") && key in picked) { picked[key] = value; draw(); }
+});
+search.addEventListener("input", draw);
+for (const b of sortBtns) {
+  b.addEventListener("click", () => {
+    const key = b.dataset.sort as SortKey;
+    if (key === sortKey) sortDir = sortDir === 1 ? -1 : 1;
+    else { sortKey = key; sortDir = key === "applied" ? -1 : 1; }
     draw();
   });
 }
@@ -155,8 +248,7 @@ for (const t of tabs) {
   listEl.setAttribute("aria-busy", "false");
   if (!ok) {
     seatsEl.textContent = "Seats unavailable";
-    empty.hidden = false;
-    empty.textContent = data.error ?? "Couldn't load applicants.";
+    listEl.replaceChildren(emptyRow(data.error ?? "Couldn't load applicants."));
     return;
   }
   people = data.applicants;
