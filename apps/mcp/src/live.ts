@@ -74,11 +74,13 @@ export async function securityHeaders(f: Fetcher, base: URL): Promise<Check> {
 
 export async function apiAuth(f: Fetcher, base: URL, s: RepoSnapshot): Promise<Check> {
   const title = "Auth on API routes";
-  const routes = apiRoutes(s.paths).filter((r) => !PUBLIC_ROUTE.test(r));
+  const routes = apiRoutes(s.paths, s.files).filter((r) => !PUBLIC_ROUTE.test(r));
   if (!routes.length) {
-    return { id: "api_auth", title, status: "skip", detail: "No private-looking API routes found in the repo (Next.js and Astro route files are read). If your API lives elsewhere, make sure every private route checks the session." };
+    return { id: "api_auth", title, status: "skip", detail: "No private-looking API routes found in the repo (Next.js and Astro route files, and /api/... paths in Worker, Hono and server code are read). If your API lives elsewhere, make sure every private route checks the session." };
   }
-  const probed = routes.sort((a, b) => Number(PRIVATE_ROUTE.test(b)) - Number(PRIVATE_ROUTE.test(a))).slice(0, MAX_ROUTES);
+  // Private-looking first, then shortest, so a few probes cover more of the API (not 5 /api/admin/* routes).
+  const depth = (r: string) => r.split("/").length;
+  const probed = routes.sort((a, b) => Number(PRIVATE_ROUTE.test(b)) - Number(PRIVATE_ROUTE.test(a)) || depth(a) - depth(b)).slice(0, MAX_ROUTES);
   const open: string[] = [];
   const openPrivate: string[] = [];
   for (const r of probed) {
