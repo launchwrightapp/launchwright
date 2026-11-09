@@ -63,6 +63,37 @@ async function body(req) {
   try { return JSON.parse(raw || "{}"); } catch { return {}; }
 }
 
+const sampleChecks = [
+  { id: "secrets", title: "No secrets in the repo", status: "pass", detail: "No .env or key files are committed, .gitignore keeps .env out, and CI scans the whole history for keys on every push." },
+  { id: "env_config", title: "Env config is documented", status: "pass", detail: "There is an example env file." },
+  { id: "ci", title: "CI runs your tests", status: "pass", detail: "A workflow runs your tests on GitHub.", files: [".github/workflows/ci.yml"] },
+  { id: "e2e", title: "E2E smoke test", status: "warn", detail: "CI runs Playwright, but only against a local server. Run it against the preview deploy too." },
+  { id: "api_auth", title: "Auth on API routes", status: "fail", detail: "These routes answered with data to a request with no login: /api/bookings. Anyone can call them directly." },
+  { id: "migrations", title: "Database migrations", status: "pass", detail: "Schema changes live in the repo as migration files." },
+  { id: "security_headers", title: "HTTPS and security headers", status: "pass", detail: "barbershop.juan.dev redirects to HTTPS and sends HSTS, CSP, nosniff and a frame policy." },
+  { id: "uptime", title: "Uptime check", status: "warn", detail: "barbershop.juan.dev is up (180 ms), but nothing checks it on a schedule." },
+];
+const me = {
+  user: { id: 1, login: "juandc", name: "Juan Dela Cruz" },
+  configured: { database: true, encryption: true, supabase: false },
+  projects: [{ repo: "juan/barbershop-booking", framework: "Next.js", packageManager: "npm", database: "Neon", hosting: "Cloudflare Workers", worker: "barbershop", productionUrl: "https://barbershop.juan.dev", readiness: { passed: 5, total: 8 }, checks: sampleChecks, checkedAt: ago(20), updatedAt: ago(20) }],
+  conceptsSeen: ["project_status", "pull_requests", "env_config", "secrets", "secret_storage", "env_drift", "database", "migrations", "ci", "secret_scanning", "e2e", "readiness", "api_auth"],
+  connections: [
+    { provider: "cloudflare", method: "api_key", label: "Juan's account", scopes: "Workers Scripts: Edit · Workers Observability: Read", connectedAt: ago(3 * DAY) },
+    { provider: "neon", method: "api_key", label: "juan@example.com", scopes: "Neon API key", connectedAt: ago(3 * DAY) },
+  ],
+  approvals: [{ id: "a1", repo: "juan/barbershop-booking", client: "Claude Code", tool: "deploy", action: "deploy:production:main", title: "Deploy juan/barbershop-booking (main) to production", summary: "Builds main and replaces what your users see on barbershop.juan.dev. If the smoke test fails afterwards, it rolls back on its own.", detail: { workflow: "launchwright-deploy.yml", branch: "main" }, createdAt: ago(4), expiresAt: ago(-DAY) }],
+  audit: [
+    { actor: "ai", client: "Claude Code", tool: "deploy", repo: "juan/barbershop-booking", summary: "Asked for approval: Deploy to production", outcome: "pending", at: ago(4) },
+    { actor: "ai", client: "Claude Code", tool: "check_readiness", repo: "juan/barbershop-booking", summary: "5 of 8 checks passed", outcome: "ok", at: ago(20) },
+    { actor: "learner", client: "Dashboard", tool: "set_secret", repo: "juan/barbershop-booking", summary: "Typed the value of RESEND_API_KEY on the dashboard (hidden)", outcome: "ok", at: ago(40) },
+    { actor: "ai", client: "Cursor", tool: "get_logs", repo: "juan/barbershop-booking", summary: "Read CI logs of run 812 (failure)", outcome: "ok", at: ago(90) },
+    { actor: "ai", client: "Claude Code", tool: "setup_ci", repo: "juan/barbershop-booking", summary: "Opened PR #7 with 4 files", outcome: "ok", at: ago(120) },
+  ],
+  secrets: [{ repo: "juan/barbershop-booking", name: "DATABASE_URL", target: "cloudflare_worker", updatedAt: ago(3 * DAY) }, { repo: "juan/barbershop-booking", name: "RESEND_API_KEY", target: "github_actions", updatedAt: ago(40) }],
+  mcp: { connected: true, client: "Claude Code", lastSeen: ago(4) },
+};
+
 function send(res, status, data) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json");
@@ -119,6 +150,21 @@ async function handle(req, res) {
       return send(res, 200, { message });
     }
   }
+
+  // Learner dashboard (same shape as worker/learner.ts). Made-up data for UI work only.
+  if (p === "/api/me" && m === "GET") return send(res, 200, me);
+  const ap = p.match(/^\/api\/approvals\/(.+)$/);
+  if (ap && m === "POST") {
+    const data = await body(req);
+    me.approvals = me.approvals.filter((a) => a.id !== ap[1]);
+    me.audit.unshift({ actor: "learner", client: "Dashboard", tool: data.decision, repo: "juan/barbershop-booking", summary: `${data.decision === "approve" ? "Approved" : "Rejected"} (sample)`, outcome: "ok", at: ago(0) });
+    return send(res, 200, { ok: true });
+  }
+  if (p.startsWith("/api/secret-requests/")) {
+    if (m === "GET") return send(res, 200, { id: "sample", repo: "juan/barbershop-booking", name: "RESEND_API_KEY", target: "both", status: "waiting", expiresAt: ago(-60) });
+    return send(res, 200, { ok: true, status: "submitted" });
+  }
+  if (p.startsWith("/api/connections/")) return send(res, 200, { ok: true, label: "Sample account" });
 
   return send(res, 404, { error: "Not found (dev mock API)." });
 }

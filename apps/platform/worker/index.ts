@@ -2,8 +2,9 @@
 import { SESSION_COOKIE, SESSION_DAYS, cookie, readCookie, sign, verify, type User } from "./session";
 import { handleApplicantsApi } from "./applicants";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
+import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
 
-interface Env extends MessagesEnv {
+interface Env extends MessagesEnv, LearnerEnv {
   ASSETS: Fetcher;
   GITHUB_CLIENT_ID: string; // public, in wrangler.jsonc
   GITHUB_CLIENT_SECRET?: string; // secret
@@ -11,7 +12,7 @@ interface Env extends MessagesEnv {
 }
 
 const STATE_COOKIE = "__Host-lw_oauth";
-const PUBLIC = /^\/(signin\/?|favicon\.svg|robots\.txt|_astro\/.*)$/;
+const PUBLIC = /^\/(signin\/?|favicon\.svg|robots\.txt|health|_astro\/.*)$/;
 
 const redirect = (to: string, headers: Record<string, string> = {}, cookies: string[] = []) => {
   const h = new Headers({ location: to, "cache-control": "no-store", ...headers });
@@ -97,6 +98,11 @@ function personalize(res: Response, user: User, admin: boolean) {
 export default {
   async fetch(req, env, ctx): Promise<Response> {
     const url = new URL(req.url);
+    // For the uptime workflow. Says only whether sign-in and storage are configured.
+    if (url.pathname === "/health") {
+      const ok = !!env.SESSION_SECRET && !!env.GITHUB_CLIENT_SECRET;
+      return Response.json({ ok, database: !!env.DATABASE_URL, encryption: !!env.TOKEN_KEY }, { status: ok ? 200 : 503, headers: { "cache-control": "no-store" } });
+    }
     // Fail closed: without secrets nobody can sign in, and nothing private is served.
     if (!env.SESSION_SECRET || !env.GITHUB_CLIENT_SECRET) {
       if (PUBLIC.test(url.pathname)) return env.ASSETS.fetch(req);
@@ -117,7 +123,16 @@ export default {
     if (!user && api) return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: { "content-type": "application/json", "cache-control": "no-store" } });
     if (!user) return redirect(`/signin?next=${encodeURIComponent(url.pathname + url.search)}`);
 
-    if (api) return (await handleApplicantsApi(req, url, env, user)) ?? (await handleMessagesApi(req, url, env, user, ctx)) ?? new Response("Not found", { status: 404 });
+    const connect = await handleLearnerAuth(req, url, env, user);
+    if (connect) return connect;
+    if (api) {
+      return (
+        (await handleApplicantsApi(req, url, env, user)) ??
+        (await handleMessagesApi(req, url, env, user, ctx)) ??
+        (await handleLearnerApi(req, url, env, user)) ??
+        new Response("Not found", { status: 404 })
+      );
+    }
     const admin = isAdmin(user, env);
     // Team pages don't exist for anyone else.
     if (/^\/(inbox|applicants)(\/|\.html|$)/.test(url.pathname) && !admin) return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });

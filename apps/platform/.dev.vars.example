@@ -6,3 +6,10 @@ SESSION_SECRET=paste-a-random-string
 # Optional: messages and the team inbox. Same Neon connection string as the site.
 # DATABASE_URL=postgres://...
 # FORWARD_TO=you@example.com
+# Optional: the learner dashboard's accounts and secrets. Same value as the MCP server's.
+# Make one with: openssl rand -base64 32
+# TOKEN_KEY=
+# Optional: "Connect Supabase" (an OAuth app in the launchwright Supabase org).
+# Callback URL: https://platform.launchwright.app/auth/supabase/callback
+# SUPABASE_CLIENT_ID=
+# SUPABASE_CLIENT_SECRET=

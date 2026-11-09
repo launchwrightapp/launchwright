@@ -2,7 +2,7 @@
 import App from "../layouts/App.astro";
 import CopyBox from "../components/CopyBox.astro";
 
-// Sample: the MCP server isn't live yet. URL and commands show the planned setup.
+// The MCP server is live at mcp.launchwright.app. The status card is filled in from /api/me.
 const url = "https://mcp.launchwright.app/mcp";
 const tools = [
   { id: "claude", label: "Claude Code", where: "In your project folder, in the terminal:", text: `claude mcp add --transport http launchwright ${url}` },
@@ -12,13 +12,13 @@ const tools = [
 const steps = [
   { t: "Add Launchwright to your AI tool", d: "One line. Pick your tool below." },
   { t: "Sign in when it asks", d: "A browser window opens. Sign in with GitHub." },
-  { t: "Ask it to check your project", d: "Try: \"Use launchwright to check my project\"." },
+  { t: "Ask it to check your project", d: "Try: \"Use launchwright project_status on owner/repo\"." },
 ];
 ---
 <App title="Connect AI tool" page="connect">
   <div class="flex flex-col gap-4">
     <div>
-      <p class="flex items-center gap-2"><span class="label">Connect AI tool</span><span class="tag tag-line">Sample</span></p>
+      <p class="label">Connect AI tool</p>
       <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Keep using the AI tool you have</h1>
     </div>
 
@@ -48,10 +48,32 @@ const steps = [
 
     <div class="card rounded-xl flex flex-wrap items-center justify-between gap-4 p-4">
       <div>
-        <p class="text-base font-semibold">Waiting for your first connection</p>
-        <p class="text-muted">This page updates on its own once your AI tool connects.</p>
+        <p class="text-base font-semibold"><span data-unless="mcp.connected">Waiting for your first connection</span><span hidden data-if="mcp.connected">Your AI tool is connected</span></p>
+        <p class="text-muted"><span data-unless="mcp.connected">Once your AI tool makes its first launchwright call, it shows up here (refresh the page).</span><span hidden data-if="mcp.connected" data-bind="mcp.lastSeen"></span></p>
       </div>
-      <span class="tag tag-line"><span class="size-2 rounded-full bg-muted" aria-hidden="true"></span>Not connected yet</span>
+      <span class="tag tag-line" data-class="tag-ok:mcp.connected"><span class="size-2 rounded-full bg-muted" data-class="bg-ok:mcp.connected" aria-hidden="true"></span><span data-bind="mcp.label">Not connected yet</span></span>
+    </div>
+
+    <div class="card rounded-xl flex flex-col gap-2 p-4">
+      <p class="text-base font-semibold">Then connect your accounts</p>
+      <p class="text-muted">Deploys, secrets and databases need your own Cloudflare account and a Neon or Supabase database (free tiers are enough). Your AI tool never sees their keys.</p>
+      <a class="btn btn-sm self-start" href="/security#accounts">Connect accounts</a>
+    </div>
+
+    <div class="card rounded-xl flex flex-col gap-2 p-4">
+      <p class="text-base font-semibold">What your AI tool can do with launchwright</p>
+      <ul class="grid grid-cols-1 gap-x-6 gap-y-1 text-[14px] @2xl:grid-cols-2">
+        <li><code>project_status</code> <span class="text-muted">what your app is built with, and the next step</span></li>
+        <li><code>check_readiness</code> <span class="text-muted">the 8 production readiness checks</span></li>
+        <li><code>check_env</code> <span class="text-muted">settings the code needs vs. what production has</span></li>
+        <li><code>set_secret</code> <span class="text-muted">you type the value here; the AI only knows the name</span></li>
+        <li><code>connect_database</code> <span class="text-muted">Neon or Supabase, connection string never shown</span></li>
+        <li><code>setup_ci</code> <span class="text-muted">a pull request with CI, previews and deploys</span></li>
+        <li><code>deploy</code> <span class="text-muted">previews now; production after you approve</span></li>
+        <li><code>get_logs</code> <span class="text-muted">CI and Worker logs, secrets hidden</span></li>
+        <li><code>explain_error</code> <span class="text-muted">an error in plain words, and the smallest fix</span></li>
+      </ul>
+      <p class="text-[14px] text-muted">Guided lessons are MCP prompts: look for <code>lesson-deploy</code>, <code>lesson-secrets</code>, <code>lesson-debug</code> and friends in your tool's prompt or slash-command list.</p>
     </div>
   </div>
 </App>

@@ -9,7 +9,6 @@ import Mark from "../../../../packages/ui/Mark.astro";
 import Dropdown from "../../../../packages/ui/Dropdown.astro";
 import Check from "../../../../packages/ui/Check.astro";
 import Explain from "../components/Explain.astro";
-import { project, checks, passing, modules, modulesDone, audit, connections, lesson } from "../data/sample";
 
 type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox" | "applicants";
 interface Props { title: string; page: PageId }
@@ -38,7 +37,7 @@ const nav: NavItem[] = [
   { id: "overview", href: "/", label: "Overview" },
   { id: "lessons", href: "/lessons", label: "Lessons" },
   { id: "readiness", href: "/readiness", label: "Readiness" },
-  { id: "security", href: "/security", label: "Security", badge: "1" },
+  { id: "security", href: "/security", label: "Security", badge: "approvals" },
   { id: "connect", href: "/connect", label: "Connect AI tool" },
   { id: "messages", href: "/messages", label: "Messages", learner: true },
 ];
@@ -47,9 +46,6 @@ const levels = [
   { value: "simple", label: "Simple", hint: "Plain words. Best if you're new." },
   { value: "tech", label: "Technical", hint: "Exact commands, status codes, and config." },
 ];
-const problems = checks.filter((c) => c.status !== "pass");
-const attention = checks.filter((c) => c.status !== "pass");
-const passed = checks.filter((c) => c.status === "pass");
 const sectionHead = "flex min-h-9 w-full cursor-pointer items-center gap-1.5 px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted hover:text-ink";
 const chevron = "size-3.5 transition in-aria-expanded:rotate-90";
 const row = "flex min-h-9 items-center gap-2.5 rounded-lg px-3 text-[14px] text-ink no-underline hover:bg-surface-3/70";
@@ -58,11 +54,12 @@ const subHead = "flex min-h-8 w-full cursor-pointer items-center gap-1.5 px-3 te
 // whole project; every other page shows only its own section, opened.
 // On Overview, low-priority groups start closed so only what needs you stands out.
 const allSections = [
-  { id: "checks", label: "Checks", meta: `${passing}/${checks.length}`, open: true },
-  { id: "modules", label: "Lessons", meta: `${modulesDone}/${modules.length}`, open: true },
-  { id: "accounts", label: "Accounts", meta: `${connections.filter((c) => c.on).length}/${connections.length}`, open: false },
-  { id: "messages", label: "Messages", meta: "", open: true },
-  { id: "ops", label: "Operations", meta: "", open: true },
+  // meta: a view-model path (src/scripts/view.ts) shown next to the heading.
+  { id: "checks", label: "Checks", meta: "passing", total: "total", open: true },
+  { id: "modules", label: "Lessons", meta: "modulesDone", total: "modulesTotal", open: true },
+  { id: "accounts", label: "Accounts", meta: "connectedCount", total: "connections.length", open: false },
+  { id: "messages", label: "Messages", meta: "", total: "", open: true },
+  { id: "ops", label: "Operations", meta: "", total: "", open: true },
 ];
 const focus: Record<PageId, string[]> = {
   overview: ["checks", "modules", "accounts"],
@@ -80,21 +77,22 @@ const sections = allSections
 ---
 <Base title={`${title} · Launchwright`} noindex>
   <script src="../scripts/app.ts"></script>
+  {!isOps && <script src="../scripts/learner.ts"></script>}
   <div class="app-shell relative flex min-h-svh flex-col bg-canvas lg:h-svh lg:overflow-hidden">
     <!-- Title bar -->
     <header class="sticky top-0 z-30 flex min-h-14 flex-none items-center gap-3 bg-night px-3 text-white lg:static lg:px-4">
       <a href="/" class="logo inline-flex flex-none items-center gap-[0.3em] text-[20px] text-white sm:text-[20px]" aria-label="Launchwright home"><Mark class="h-[0.95em] w-auto" />launchwright</a>
-      <span class="hidden truncate text-[14px] text-white/55 md:inline">/ {isOps ? "team" : project.name} / <span class="text-white/85">{title}</span></span>
+      <span class="hidden truncate text-[14px] text-white/55 md:inline">/ {isOps ? "team" : <span data-bind="crumb">…</span>} / <span class="text-white/85">{title}</span></span>
       <div class="ml-auto flex flex-none items-center gap-2">
         <Dropdown id="level" name="level" label="Explain" options={levels} value="simple" tone="dark" hideLabelBelow="sm" searchPlaceholder="Search levels" size="sm" />
         <ThemeToggle tone="dark" compact />
         <!-- Account (filled in by the worker for the signed-in person) -->
         <div class="relative hidden lg:block" data-popover>
           <button type="button" data-popover-trigger aria-expanded="false" aria-controls="account-menu" aria-label="Account" class="grid size-8 cursor-pointer place-items-center overflow-hidden rounded-full bg-lime text-[12px] font-semibold text-night hover:ring-2 hover:ring-white/40">
-            <span data-user-avatar class="grid size-full place-items-center" role="img" aria-label={project.user.name}>{project.user.initials}</span>
+            <span data-user-avatar class="grid size-full place-items-center" role="img" aria-label="Account"></span>
           </button>
           <div id="account-menu" data-popover-panel hidden class="absolute right-0 top-[calc(100%+10px)] z-30 w-64 rounded-xl border border-line bg-surface p-2 text-ink shadow-2xl shadow-black/20">
-            <p class="px-3 pb-2 pt-1.5"><span class="block truncate font-semibold" data-user-name>{project.user.name}</span><span class="block truncate text-[14px] text-muted" data-user-login>Sample learner</span></p>
+            <p class="px-3 pb-2 pt-1.5"><span class="block truncate font-semibold" data-user-name></span><span class="block truncate text-[14px] text-muted" data-user-login></span></p>
             <form method="post" action="/auth/logout" class="border-t border-line pt-1.5"><button type="submit" class="flex min-h-10 w-full cursor-pointer items-center rounded-xl px-3 text-left text-[15px] font-medium hover:bg-surface-2">Sign out</button></form>
           </div>
         </div>
@@ -104,18 +102,18 @@ const sections = allSections
             <svg class="hidden size-5 group-aria-expanded:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
           <nav id="app-menu" data-popover-panel hidden aria-label="Menu" class="absolute right-0 top-[calc(100%+10px)] z-30 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-1 rounded-2xl border border-line bg-surface p-2.5 text-ink shadow-2xl shadow-black/20">
-            <p class="px-3.5 pb-1.5 pt-1 text-[14px] text-muted">{project.name}</p>
+            <p class="px-3.5 pb-1.5 pt-1 text-[14px] text-muted">{isOps ? "launchwright team" : <span data-bind="title"></span>}</p>
             {nav.map((n) => (
               <>
               {n.id === "overview" && <p data-admin-only class="mt-1 border-t border-line px-3.5 pb-1 pt-2.5 text-[13px] text-muted">Learner view</p>}
               <a href={n.href} {...visibility(n)} aria-current={n.id === page ? "page" : undefined} class="flex min-h-11 items-center justify-between rounded-2xl px-3.5 font-medium text-ink no-underline hover:bg-surface-2 aria-[current=page]:bg-surface-3">
                 {n.label}
-                {n.badge && <span class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night">{n.badge}</span>}
+                {n.badge && <span hidden data-if="approvalBadge" data-bind="approvalBadge" class="grid size-6 place-items-center rounded-full bg-orange text-[13px] font-semibold text-night"></span>}
               </a>
               </>
             ))}
             <div class="mt-1 flex items-center justify-between gap-3 border-t border-line px-3.5 pt-2.5">
-              <span class="min-w-0"><span class="block truncate text-[15px] font-semibold" data-user-name>{project.user.name}</span><span class="block truncate text-[13px] text-muted" data-user-login>Sample learner</span></span>
+              <span class="min-w-0"><span class="block truncate text-[15px] font-semibold" data-user-name></span><span class="block truncate text-[13px] text-muted" data-user-login></span></span>
               <form method="post" action="/auth/logout"><button type="submit" class="btn btn-sm btn-outline">Sign out</button></form>
             </div>
           </nav>
@@ -138,7 +136,7 @@ const sections = allSections
           >
             <svg class="size-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons[n.id]} /></svg>
             <span class="sr-only">{n.label}</span>
-            {n.badge && <span class="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-orange text-[10px] font-bold text-night" aria-hidden="true">{n.badge}</span>}
+            {n.badge && <span hidden data-if="approvalBadge" data-bind="approvalBadge" class="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-orange text-[10px] font-bold text-night" aria-hidden="true"></span>}
           </a>
           </>
         ))}
@@ -155,10 +153,10 @@ const sections = allSections
           ) : (
             <>
           <p class="flex items-center gap-2">
-            <span class="size-2 flex-none rounded-full bg-ok ring-4 ring-ok-bg" aria-hidden="true"></span>
-            <span class="truncate text-[15px] font-semibold">{project.name}</span>
+            <span class="size-2 flex-none rounded-full bg-muted ring-4 ring-surface-3" data-class="bg-ok ring-ok-bg:hasProject" aria-hidden="true"></span>
+            <span class="truncate text-[15px] font-semibold" data-bind="title">…</span>
           </p>
-          <p class="mt-1 truncate pl-4 text-[13px] text-muted">{project.framework} · {project.branch} · {project.stack}</p>
+          <p class="mt-1 truncate pl-4 text-[13px] text-muted"><span data-if="hasProject" hidden data-bind="project.stack"></span><span data-unless="hasProject">No project yet</span></p>
             </>
           )}
         </div>
@@ -166,41 +164,42 @@ const sections = allSections
           <section class="border-t border-line px-1.5 pt-1.5">
             <button type="button" class={sectionHead} aria-expanded={String(s.open)} aria-controls={`exp-${s.id}`} data-collapse={`exp-${s.id}`}>
               <svg class={chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-              {s.label}<span class="ml-auto font-medium normal-case tracking-normal tabular-nums">{s.meta}</span>
+              {s.label}{s.meta && <span class="ml-auto font-medium normal-case tracking-normal tabular-nums"><span data-bind={s.meta}></span>/<span data-bind={s.total}></span></span>}
             </button>
             <div id={`exp-${s.id}`} hidden={!s.open} class="pb-2">
               {s.id === "checks" && (
                 <>
                   <p class="px-3 pb-0.5 pt-1 text-[13px] font-medium text-muted">Needs attention</p>
-                  <ul class="flex flex-col">
-                    {attention.map((c) => (
-                      <li><a class:list={[row, c.status === "fail" && "bg-bad-bg font-medium text-bad"]} href={`/readiness#check-${c.id}`}>
-                        <span class:list={["size-2 flex-none rounded-full", c.status === "fail" ? "bg-bad" : "border border-dashed border-muted"]} aria-hidden="true"></span>
-                        <span class="truncate">{c.name}</span>
-                        <span class="ml-auto text-[12px] font-normal">{c.status === "fail" ? "Failed" : "Not started"}</span>
+                  <ul class="flex flex-col" data-each="attention">
+                    <template>
+                      <li><a class={row} data-class="bg-bad-bg font-medium text-bad:isFail" data-attr="href:href">
+                        <span class="size-2 flex-none rounded-full border border-dashed border-muted" data-class="bg-bad border-transparent:isFail;bg-orange border-transparent:isWarn" aria-hidden="true"></span>
+                        <span class="truncate" data-bind="title"></span>
+                        <span class="ml-auto text-[12px] font-normal" data-bind="statusLabel"></span>
                       </a></li>
-                    ))}
+                    </template>
                   </ul>
                   <button type="button" class={subHead} aria-expanded="false" aria-controls="exp-passed" data-collapse="exp-passed">
                     <svg class={chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-                    Passed<span class="ml-auto tabular-nums">{passed.length}</span>
+                    Passed<span class="ml-auto tabular-nums" data-bind="passedCount"></span>
                   </button>
-                  <ul id="exp-passed" hidden class="flex flex-col">
-                    {passed.map((c) => (
-                      <li><a class:list={[row, "text-muted"]} href={`/readiness#check-${c.id}`}><Check class="size-3.5 flex-none" /><span class="truncate">{c.name}</span><span class="sr-only">: passed</span></a></li>
-                    ))}
+                  <ul id="exp-passed" hidden class="flex flex-col" data-each="passed">
+                    <template>
+                      <li><a class:list={[row, "text-muted"]} data-attr="href:href"><Check class="size-3.5 flex-none" /><span class="truncate" data-bind="title"></span><span class="sr-only">: passed</span></a></li>
+                    </template>
                   </ul>
                 </>
               )}
               {s.id === "modules" && (
-                <ul class="flex flex-col">
-                  {modules.map((m) => (
-                    <li><a class:list={[row, m.status === "current" && "bg-surface-3/70 font-medium", m.status === "done" && "text-muted"]} href="/lessons" aria-current={m.status === "current" ? "step" : undefined}>
-                      {m.status === "done" ? <Check class="size-3.5 flex-none" /> : <span class:list={["size-2 flex-none rounded-full", m.status === "current" ? "bg-blue" : "border border-muted"]} aria-hidden="true"></span>}
-                      <span class:list={["truncate", m.status === "next" && "text-muted"]}>{m.n} {m.name}</span>
-                      {m.status === "current" && <span class="ml-auto text-[12px] font-normal text-muted">Now</span>}
+                <ul class="flex flex-col" data-each="modules">
+                  <template>
+                    <li><a class={row} href="/lessons" data-class="bg-surface-3/70 font-medium:isCurrent;text-muted:isDone" data-attr="aria-current:ariaCurrent">
+                      <span data-if="isDone"><Check class="size-3.5 flex-none" /></span>
+                      <span data-unless="isDone" class="size-2 flex-none rounded-full border border-muted" data-class="bg-blue border-transparent:isCurrent" aria-hidden="true"></span>
+                      <span class="truncate" data-class="text-muted:isNext" data-bind="label"></span>
+                      <span data-if="isCurrent" class="ml-auto text-[12px] font-normal text-muted">Now</span>
                     </a></li>
-                  ))}
+                  </template>
                 </ul>
               )}
               {s.id === "messages" && (
@@ -227,10 +226,10 @@ const sections = allSections
                 </ul>
               )}
               {s.id === "accounts" && (
-                <ul class="flex flex-col">
-                  {connections.map((c) => (
-                    <li><a class={row} href="/security"><span class="truncate">{c.name}</span><span class:list={["ml-auto text-[12px]", c.on ? "text-ok" : "text-muted"]}>{c.on ? "Connected" : "Not connected"}</span></a></li>
-                  ))}
+                <ul class="flex flex-col" data-each="connections">
+                  <template>
+                    <li><a class={row} href="/security#accounts"><span class="truncate" data-bind="name"></span><span class="ml-auto text-[12px] text-muted" data-class="text-ok:connected" data-bind="stateLabel"></span></a></li>
+                  </template>
                 </ul>
               )}
             </div>
@@ -260,7 +259,9 @@ const sections = allSections
 )}
         </div>
 
-        <main class="@container relative min-h-0 flex-1 bg-surface px-4 pb-6 pt-4 text-[15px] md:px-5 lg:overflow-y-auto lg:pt-5" data-editor>
+        <main class="@container relative min-h-0 flex-1 bg-surface px-4 pb-6 pt-4 text-[15px] md:px-5 lg:overflow-y-auto lg:pt-5" data-editor data-learner-page={isOps ? undefined : ""}>
+          {!isOps && <p id="load-error" hidden role="alert" class="mb-4 rounded-lg bg-warn-bg px-4 py-2.5 text-[14px] text-warn"></p>}
+          {!isOps && <p hidden data-if="setupIncomplete" class="mb-4 rounded-lg bg-warn-bg px-4 py-2.5 text-[14px] text-warn">This server isn't fully set up yet (no database or encryption key), so nothing is saved. Real data appears once it is.</p>}
           <slot />
         </main>
 
@@ -270,34 +271,35 @@ const sections = allSections
           <div class="flex h-9 items-center gap-1 px-2">
             <div role="tablist" aria-label="Panel" data-tabs class="flex h-full items-stretch">
               <button type="button" role="tab" id="pt-calls" aria-controls="pp-calls" aria-selected="true" class="cursor-pointer border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Tool calls</button>
-              <button type="button" role="tab" id="pt-problems" aria-controls="pp-problems" aria-selected="false" class="flex cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Problems <span class="grid size-5 place-items-center rounded-full bg-orange text-[11px] tracking-normal text-night">{problems.length}</span></button>
+              <button type="button" role="tab" id="pt-problems" aria-controls="pp-problems" aria-selected="false" class="flex cursor-pointer items-center gap-2 border-b-2 border-transparent px-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-white/55 aria-selected:border-lime aria-selected:text-white">Problems <span class="grid size-5 place-items-center rounded-full bg-orange text-[11px] tracking-normal text-night" data-bind="attention.length"></span></button>
             </div>
-            <span class="ml-3 hidden text-[13px] text-white/45 xl:inline">Live from your AI tool · Sample</span>
+            <span class="ml-3 hidden text-[13px] text-white/45 xl:inline">From your AI tool</span>
             <button type="button" data-collapse="panel-body" aria-controls="panel-body" aria-expanded="true" aria-label="Show or hide the panel" class="ml-auto grid size-8 cursor-pointer place-items-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white">
               <svg class="size-4 rotate-180 transition in-aria-expanded:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
           </div>
           <div id="panel-body" class="h-28 overflow-y-auto px-4 pb-2 [@media(min-height:1000px)]:h-40">
-            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-0.5 text-[13px]">
-              {audit.map((r) => (
+            <ol id="pp-calls" role="tabpanel" aria-labelledby="pt-calls" class="flex flex-col gap-0.5 text-[13px]" data-each="toolCalls">
+              <template>
                 <li class="grid grid-cols-[3.5rem_9.5rem_7rem_minmax(0,1fr)] gap-3">
-                  <span class="tabular-nums text-white/45">{r.time}</span>
-                  <span class="text-lime">{r.tool}</span>
-                  <span class="text-white/55">{r.client}</span>
-                  <span class:list={["truncate", r.tone === "warn" ? "text-orange" : r.tone === "ok" ? "text-[#5fd39a]" : "text-white/85"]}>{r.result}</span>
+                  <span class="tabular-nums text-white/45" data-bind="time"></span>
+                  <span class="text-lime" data-bind="tool"></span>
+                  <span class="truncate text-white/55" data-bind="who"></span>
+                  <span class="truncate text-white/85" data-class="text-orange:isPending;text-[#ff7a70]:isProblem" data-bind="summary"></span>
                 </li>
-              ))}
+              </template>
+              <li class="mt-1" hidden data-unless="toolCalls"><span class="text-white/55">No tool calls yet. Connect your AI tool and ask it to check your project.</span></li>
               <li class="mt-1"><span class="inline-block h-4 w-2 translate-y-0.5 bg-white/60 motion-safe:animate-pulse" aria-hidden="true"></span><span class="sr-only">Waiting for the next tool call</span></li>
             </ol>
-            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-0.5 text-[13px]">
-              {problems.map((c) => (
+            <ul id="pp-problems" role="tabpanel" aria-labelledby="pt-problems" class="flex flex-col gap-0.5 text-[13px]" data-each="attention">
+              <template>
                 <li>
-                  <a href={`/readiness#check-${c.id}`} class="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-0.5 text-white/85 no-underline hover:bg-white/5">
-                    <span class:list={["mt-1.5 size-2 rounded-full", c.status === "fail" ? "bg-[#ff7a70]" : "bg-white/40"]} aria-hidden="true"></span>
-                    <span><span class="font-semibold text-white">{c.name}</span> <span class="text-white/60"><Explain simple={c.simple} tech={c.tech} /></span></span>
+                  <a data-attr="href:href" class="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 rounded-md px-1 py-0.5 text-white/85 no-underline hover:bg-white/5">
+                    <span class="mt-1.5 size-2 rounded-full bg-white/40" data-class="bg-[#ff7a70]:isFail;bg-orange:isWarn" aria-hidden="true"></span>
+                    <span><span class="font-semibold text-white" data-bind="title"></span> <span class="text-white/60" data-bind="detail"></span></span>
                   </a>
                 </li>
-              ))}
+              </template>
             </ul>
           </div>
         </section>
@@ -309,21 +311,15 @@ const sections = allSections
 <aside id="inspector" aria-labelledby="insp-title" class="hidden w-72 flex-none flex-col gap-4 overflow-y-auto border-l border-line bg-canvas p-4 xl:flex">
         <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Lesson</p>
         <div class="flex flex-col gap-2 rounded-xl bg-blue p-4 text-white">
-          <p class="text-[13px] text-white/75">Module {lesson.module} · {lesson.area} · ~{lesson.minutes} min</p>
-          <h2 id="insp-title" class="text-[19px] font-bold leading-tight tracking-[-0.02em]">{lesson.title}</h2>
+          <p class="text-[13px] text-white/75" data-bind="next.module">Your next lesson</p>
+          <h2 id="insp-title" class="text-[19px] font-bold leading-tight tracking-[-0.02em]"><span data-if="next" hidden data-bind="next.lesson"></span><span data-unless="next" data-bind="current.name">Getting started</span></h2>
         </div>
         <div>
-          <p class="label text-[13px]">You'll learn</p>
-          <ol class="mt-2 flex flex-col gap-2 text-[14px]">
-            {lesson.steps.map((st, i) => (
-              <li class="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2">
-                <span class="grid size-6 place-items-center rounded-full bg-surface-3 text-[12px] font-semibold tabular-nums">{i + 1}</span>
-                <span class="pt-0.5"><Explain simple={st.simple} tech={st.tech} /></span>
-              </li>
-            ))}
-          </ol>
+          <p class="label text-[13px]">Why it matters</p>
+          <p class="mt-2 text-[14px]" data-if="next" hidden data-bind="next.lessonFull"></p>
+          <p class="mt-2 text-[14px]" data-unless="next">Connect your AI tool and run project_status. Each tool call teaches the concept behind it: the full lesson the first time, one line after that.</p>
         </div>
-        <a class="btn btn-sm" href="/lessons">Start the lesson</a>
+        <a class="btn btn-sm" href="/lessons">See all lessons</a>
         <p class="text-[13px] text-muted">Lessons run inside your AI tool. Each step explains what changed and why.</p>
       </aside>
 )}
@@ -332,13 +328,12 @@ const sections = allSections
     <!-- Status bar -->
     <footer class="flex min-h-8 flex-none flex-wrap items-center gap-x-4 gap-y-1 bg-blue px-3 py-1 text-[13px] text-white">
       {isOps ? <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>Operations · team only</span> : (<>
-      <span class="flex items-center gap-1.5"><svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="7" r="2" /><path d="M6 7v10M18 9c0 5-12 3-12 8" /></svg>main</span>
-      <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>Live · {project.commit}</span>
-      <a class="text-white no-underline hover:underline" href="/readiness">{passing}/{checks.length} checks</a>
-      <a class="text-white no-underline hover:underline" href="/security">1 approval waiting</a>
-      <span class="ml-auto hidden sm:inline">Claude Code connected</span>
+      <span class="flex items-center gap-1.5"><svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2" /><circle cx="6" cy="19" r="2" /><circle cx="18" cy="7" r="2" /><path d="M6 7v10M18 9c0 5-12 3-12 8" /></svg><span data-bind="crumb"></span></span>
+      <span hidden data-if="project.host" class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span><span data-bind="project.host"></span></span>
+      <a class="text-white no-underline hover:underline" href="/readiness"><span data-bind="passing"></span>/<span data-bind="total"></span> checks</a>
+      <a hidden data-if="hasApprovals" class="text-white no-underline hover:underline" href="/security#approvals" data-bind="approvalsLabel"></a>
+      <span class="ml-auto hidden sm:inline" data-bind="mcp.label"></span>
       <span class="hidden sm:inline">Explain: <Explain simple="Simple" tech="Technical" /></span>
-      <span class="rounded-md bg-white/15 px-2">Sample data</span>
     </>)}
     </footer>
   </div>

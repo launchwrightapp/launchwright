@@ -1,42 +1,63 @@
 ---
 import App from "../layouts/App.astro";
 import Check from "../../../../packages/ui/Check.astro";
-import { modules, modulesDone, conceptsCovered } from "../data/sample";
 
-const current = modules.find((m) => m.status === "current")!;
+// Level 1 curriculum (packages/core/curriculum.ts) with this learner's progress.
+// A concept counts as covered once a tool call has taught it.
 ---
 <App title="Lessons" page="lessons">
   <div class="flex flex-col gap-4">
     <div>
       <p class="label">Lessons · Level 1</p>
-      <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">{modulesDone} of {modules.length} modules done</h1>
+      <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]" data-bind="lessonsHeading">Lessons</h1>
+      <p class="mt-1 text-[14px] text-muted">Lessons happen inside your AI tool: every launchwright tool call explains what it did and why. The first time you meet a concept you get the full lesson; after that, one line. <span data-bind="conceptsCovered">0</span> concepts covered so far.</p>
     </div>
 
-    <section class="card rounded-xl grid grid-cols-1 gap-4 bg-surface p-4 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
+    <section hidden data-if="current" class="card rounded-xl grid grid-cols-1 gap-4 bg-surface p-4 @3xl:grid-cols-[minmax(0,1fr)_auto] @3xl:items-end" aria-labelledby="current-title">
       <div>
-        <p class="flex items-center gap-2"><span class="tag bg-blue text-white">In progress</span><span class="text-muted">Module {current.n}</span></p>
-        <h2 id="current-title" class="mt-3 text-3xl font-bold tracking-[-0.02em]">{current.name}</h2>
-        <p class="mt-2 text-base text-muted">{current.blurb} {current.concepts} of {current.total} concepts done.</p>
-        <div class="mt-3 grid h-2 max-w-md grid-cols-4 gap-1" role="img" aria-label={`${current.concepts} of ${current.total} concepts`}>
-          {Array.from({ length: current.total }, (_, i) => <i class:list={["rounded-full", i < current.concepts ? "bg-ink" : "bg-line"]}></i>)}
-        </div>
+        <p class="flex items-center gap-2"><span class="tag bg-blue text-white">In progress</span><span class="text-muted">Module <span data-bind="current.n"></span></span></p>
+        <h2 id="current-title" class="mt-3 text-3xl font-bold tracking-[-0.02em]" data-bind="current.name"></h2>
+        <p class="mt-2 text-base text-muted"><span data-bind="current.blurb"></span> <span data-bind="current.done"></span> of <span data-bind="current.total"></span> concepts done.</p>
+        <span class="mt-3 flex h-2 max-w-md gap-1" role="img" data-attr="aria-label:current.ariaLabel" data-each="current.bars">
+          <template><i class="flex-1 rounded-full bg-line" data-class="bg-ink:done"></i></template>
+        </span>
       </div>
-      <a class="btn btn-sm" href="#">Continue: Auth on API routes</a>
+      <div hidden data-if="current.promptCommand" class="flex flex-col gap-1 text-[14px]">
+        <span class="text-muted">Guided lesson: in your AI tool, run the prompt</span>
+        <code class="text-[15px]" data-bind="current.promptCommand"></code>
+      </div>
     </section>
 
-    <ol class="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
-      {modules.map((m) => (
-        <li class:list={["card rounded-xl flex items-start gap-3 p-4", m.status === "next" && "bg-transparent"]}>
-          <span class:list={["grid size-10 flex-none place-items-center rounded-full text-[14px] font-semibold", m.status === "done" ? "bg-ink text-on-ink" : m.status === "current" ? "bg-blue text-white" : "border border-line text-muted"]}>
-            {m.status === "done" ? <Check class="size-4" /> : m.n}
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="text-base font-semibold">{m.name}</p>
-            <p class="text-muted">{m.blurb}</p>
+    <ol class="grid grid-cols-1 gap-3 @2xl:grid-cols-2" data-each="modules">
+      <template>
+        <li class="card rounded-xl flex flex-col gap-3 p-4" data-class="bg-transparent:isNext">
+          <div class="flex items-start gap-3">
+            <span class="grid size-10 flex-none place-items-center rounded-full border border-line text-[14px] font-semibold text-muted" data-class="bg-ink text-on-ink border-transparent:isDone;bg-blue text-white border-transparent:isCurrent">
+              <span data-if="isDone"><Check class="size-4" /></span><span data-unless="isDone" data-bind="n"></span>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-base font-semibold" data-bind="name"></p>
+              <p class="text-muted" data-bind="blurb"></p>
+            </div>
+            <span class="text-[14px] tabular-nums text-muted" data-bind="count"></span>
           </div>
-          <span class="text-[14px] tabular-nums text-muted">{m.concepts}/{m.total}</span>
+          <ul class="flex flex-col gap-1 border-t border-line pt-2" data-each="concepts">
+            <template>
+              <li>
+                <details class="group">
+                  <summary class="flex cursor-pointer items-center gap-2 py-1 text-[14px]">
+                    <span class="size-2 flex-none rounded-full border border-muted" data-class="bg-ok border-transparent:done" aria-hidden="true"></span>
+                    <span class="flex-1" data-bind="title"></span>
+                    <span class="text-[12px] text-muted" data-bind="state"></span>
+                  </summary>
+                  <p class="pb-2 pl-4 text-[14px] text-muted" data-bind="full"></p>
+                </details>
+              </li>
+            </template>
+          </ul>
+          <p hidden data-if="promptCommand" class="text-[13px] text-muted">Guided lesson: <code data-bind="promptCommand"></code></p>
         </li>
-      ))}
+      </template>
     </ol>
 
     <div class="card rounded-xl flex flex-wrap items-center justify-between gap-3 bg-transparent p-4">

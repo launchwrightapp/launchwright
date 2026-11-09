@@ -2,20 +2,19 @@ import "../../../../packages/ui/dropdown";
 
 // Dashboard behavior. Everything works without this file; it only adds polish.
 
-// Copy buttons next to prompts and commands.
-document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
-  if (!navigator.clipboard) return;
-  btn.hidden = false;
-  btn.addEventListener("click", async () => {
-    const text = btn.parentElement?.querySelector("[data-copy-text]")?.textContent ?? "";
-    try {
-      await navigator.clipboard.writeText(text.trim());
-      btn.textContent = "Copied";
-    } catch {
-      btn.textContent = "Select and copy";
-    }
-    setTimeout(() => (btn.textContent = "Copy"), 1600);
-  });
+// Copy buttons next to prompts and commands (delegated, so rows rendered later work too).
+if (navigator.clipboard) document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => (btn.hidden = false));
+document.addEventListener("click", async (e) => {
+  const btn = (e.target as Element).closest<HTMLButtonElement>("[data-copy]");
+  if (!btn) return;
+  const text = btn.parentElement?.querySelector("[data-copy-text]")?.textContent ?? "";
+  try {
+    await navigator.clipboard.writeText(text.trim());
+    btn.textContent = "Copied";
+  } catch {
+    btn.textContent = "Select and copy";
+  }
+  setTimeout(() => (btn.textContent = "Copy"), 1600);
 });
 
 // Tabs: role=tab buttons with aria-controls. Without JS every panel shows.
@@ -40,19 +39,11 @@ function initTabs(list: HTMLElement) {
       select(tabs[(keys[e.key] + tabs.length) % tabs.length], true);
     });
   });
-  select(tabs.find((t) => t.getAttribute("aria-selected") === "true") ?? tabs[0]);
+  // /security#accounts opens the Accounts tab.
+  const fromHash = list.hasAttribute("data-hash-tabs") && location.hash.length > 1 ? tabs.find((t) => t.getAttribute("aria-controls") === `panel-${location.hash.slice(1)}`) : undefined;
+  select(fromHash ?? tabs.find((t) => t.getAttribute("aria-selected") === "true") ?? tabs[0]);
 }
 document.querySelectorAll<HTMLElement>("[data-tabs]").forEach(initTabs);
-
-// Approve / Reject are a demo: show what would happen instead of doing anything.
-document.querySelectorAll<HTMLButtonElement>("[data-decide]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const status = document.getElementById(btn.dataset.decide!);
-    if (status) status.textContent = btn.value === "approve"
-      ? "Sample only: in the real app, the migration would run now and this would be logged."
-      : "Sample only: in the real app, Claude Code would be told no and nothing would change.";
-  });
-});
 
 // Collapsible sections (explorer groups, bottom panel, lesson panel). The markup
 // sets the default; your choice is remembered per browser.

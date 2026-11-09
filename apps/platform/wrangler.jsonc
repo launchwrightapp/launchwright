@@ -18,7 +18,8 @@
   // Team replies and message notifications go out from hello@. Email Routing also sends
   // incoming hello@ mail to this worker (the email() handler in worker/index.ts).
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@launchwright.app"] }]
-  // Secrets (not in this file): GITHUB_CLIENT_SECRET, SESSION_SECRET, DATABASE_URL, and
-  // FORWARD_TO (the inbox that gets a copy of every message) via
+  // Secrets (not in this file): GITHUB_CLIENT_SECRET, SESSION_SECRET, DATABASE_URL,
+  // FORWARD_TO (the inbox that gets a copy of every message), TOKEN_KEY (seals learners'
+  // account tokens; same value as the MCP server's), SUPABASE_CLIENT_ID/SECRET (optional) via
   // `npx wrangler versions secret put <NAME>`. Locally: .dev.vars (see .dev.vars.example).
 }
