@@ -1,0 +1,7 @@
+{
+  "name": "@launchwright/core",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "version": "0.0.0",
+  "description": "Shared logic for the MCP server and the platform: curriculum, token sealing, untrusted-text handling, API shapes."
+}

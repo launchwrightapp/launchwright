@@ -8,21 +8,31 @@ import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { createMcpHandler } from "agents/mcp";
 import { handleAuth, refreshUpstream, type AuthEnv, type Props } from "./auth";
 import { PAGE_CSP, PAGE_CSS, PAGE_JS, homePage } from "./page";
-import { buildServer } from "./server";
-import { neonProgress, noProgress } from "./progress";
+import { buildServer, VERSION } from "./server";
+import { memoryStore, neonStore } from "./store";
 
 interface Env extends AuthEnv {
   DATABASE_URL?: string;
+  TOKEN_KEY?: string; // base64 32 bytes, shared with the platform: seals connected-account tokens
+  PLATFORM_ORIGIN?: string;
+  SUPABASE_CLIENT_ID?: string;
+  SUPABASE_CLIENT_SECRET?: string;
 }
+
+const noStore = memoryStore({ persistent: false }).store;
 
 const mcpApi = {
   async fetch(req: Request, env: Env, ctx: ExecutionContext) {
     // Set by the OAuth library from the access token's grant (encrypted at rest).
     const props = ctx.props as Props | undefined;
     if (!props?.githubToken) return new Response("Unauthorized", { status: 401 });
-    const store = env.DATABASE_URL ? neonProgress(env.DATABASE_URL) : noProgress;
-    const learner = { id: props.id, login: props.login, githubToken: props.githubToken };
-    return createMcpHandler(() => buildServer(learner, store), { route: "/mcp" })(req, env, ctx);
+    const store = env.DATABASE_URL ? neonStore(env.DATABASE_URL, env.TOKEN_KEY) : noStore;
+    const learner = { id: props.id, login: props.login, githubToken: props.githubToken, client: props.clientName ?? "AI tool" };
+    const config = {
+      platformOrigin: env.PLATFORM_ORIGIN ?? "https://platform.launchwright.app",
+      supabase: env.SUPABASE_CLIENT_ID && env.SUPABASE_CLIENT_SECRET ? { clientId: env.SUPABASE_CLIENT_ID, clientSecret: env.SUPABASE_CLIENT_SECRET } : undefined,
+    };
+    return createMcpHandler(() => buildServer(learner, store, config), { route: "/mcp" })(req, env, ctx);
   },
 };
 
@@ -45,6 +55,14 @@ const site = {
           "x-content-type-options": "nosniff",
         },
       });
+    }
+    // For the uptime workflow: is the Worker up, and is its configuration complete?
+    if (url.pathname === "/health") {
+      const ok = !!env.GITHUB_CLIENT_SECRET;
+      return Response.json(
+        { ok, version: VERSION, database: !!env.DATABASE_URL, encryption: !!env.TOKEN_KEY },
+        { status: ok ? 200 : 503, headers: { "cache-control": "no-store" } },
+      );
     }
     if (url.pathname === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n");
     return new Response("Not found", { status: 404 });

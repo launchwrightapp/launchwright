@@ -152,7 +152,7 @@ export const homePage = (origin: string) =>
 <p class="lead">Connect your AI tool (Claude Code, Codex, Cursor and others) to this address:</p></div>
 <pre>${escape(origin)}/mcp</pre>
 <p>For Claude Code, run <code>claude mcp add --transport http launchwright ${escape(origin)}/mcp</code></p>
-<p>Your tool opens this browser to sign in with GitHub. Then ask it something like “check the readiness of my repo owner/name”.</p>`,
+<p>Your tool opens this browser to sign in with GitHub. Then ask it something like “use launchwright project_status on owner/name”. Connect Cloudflare and your database, approve production deploys, and see every tool call on <a href="https://platform.launchwright.app">your dashboard</a>.</p>`,
     "mcp",
   );
 

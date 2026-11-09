@@ -13,13 +13,13 @@ const ready: RepoSnapshot = {
   files: {
     "package.json": JSON.stringify({ dependencies: { astro: "^5", "@neondatabase/serverless": "^1" } }),
     ".gitignore": "node_modules\n.env*\n!.env.example\n",
-    ".github/workflows/ci.yml": "steps:\n  - run: npm test\n  - run: npx playwright test\n",
+    ".github/workflows/ci.yml": "steps:\n  - run: docker run ghcr.io/gitleaks/gitleaks:v8 detect\n  - run: npm test\n  - run: npx playwright test\n    env:\n      BASE_URL: ${{ steps.preview.outputs.url }}\n",
   },
 };
 
 describe("readiness checks", () => {
   it("passes a repo that has everything", () => {
-    expect(runChecks(ready).map((c) => c.status)).toEqual(["pass", "pass", "pass", "pass", "pass", "not_checked"]);
+    expect(runChecks(ready).map((c) => c.status)).toEqual(["pass", "pass", "pass", "pass", "not_checked", "pass", "not_checked", "not_checked"]);
     expect(score(runChecks(ready))).toEqual({ passed: 5, total: 5 });
   });
 
