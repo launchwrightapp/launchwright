@@ -2,8 +2,8 @@
 // from the step before. Labels and numbers come from our own API; set as text anyway.
 import { api } from "./conversation";
 
-interface Step { key: string; label: string; n: number }
-interface Report { days: number | null; steps: Step[]; sample?: boolean }
+interface Step { key: string; label: string; detail?: string; n: number }
+interface Report { days: number | null; countingSince?: string | null; steps: Step[]; sample?: boolean }
 
 // Site steps end at "accepted"; the rest are learners (GitHub accounts).
 const LEARNER_KEYS = new Set(["ai_connected", "first_check", "production_deploy", "all_checks_live"]);
@@ -28,7 +28,10 @@ const cell = "px-3 py-2.5 @xl:px-4";
 function row(step: Step, top: number, prev: Step | null) {
   const tr = el("tr", "border-b border-line last:border-b-0");
   tr.dataset.step = step.key;
-  tr.appendChild(el("td", cell, step.label));
+  const name = el("td", cell);
+  name.appendChild(el("span", "block", step.label));
+  if (step.detail) name.appendChild(el("span", "block text-[13px] text-muted", step.detail));
+  tr.appendChild(name);
   tr.appendChild(el("td", `${cell} text-right font-semibold tabular-nums`, step.n.toLocaleString()));
 
   const share = el("td", `${cell} hidden @xl:table-cell`);
@@ -42,7 +45,12 @@ function row(step: Step, top: number, prev: Step | null) {
   share.appendChild(wrap);
   tr.appendChild(share);
 
-  tr.appendChild(el("td", `${cell} text-right tabular-nums text-muted`, prev ? pct(step.n, prev.n) : ""));
+  // More than the step before can still happen (a step counted another way, or someone
+  // skipping a step), and "120% made it" means nothing, so show a dash.
+  const fromPrev = !prev ? "" : step.n > prev.n ? "–" : pct(step.n, prev.n);
+  const td = el("td", `${cell} text-right tabular-nums text-muted`, fromPrev);
+  if (prev && step.n > prev.n) td.title = "More than the step before, so there's no drop to show.";
+  tr.appendChild(td);
   return tr;
 }
 
@@ -72,7 +80,10 @@ async function load(days: string) {
     }
   });
 
-  statusEl.textContent = days ? `Last ${days} days.` : "All time.";
+  const started = data.countingSince
+    ? new Date(`${data.countingSince}T00:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+    : null;
+  statusEl.textContent = `${days ? `Last ${days} days.` : "All time."}${started ? ` Counting started ${started}, so nothing before that is included.` : ""}`;
   document.querySelector<HTMLElement>("[data-sample]")!.classList.toggle("hidden", !data.sample);
   const w = worst as { from: Step; to: Step; kept: number } | null;
   biggestEl.hidden = !w;

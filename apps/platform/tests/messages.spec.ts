@@ -127,6 +127,25 @@ test.describe("admin funnel", () => {
     await expect(page.getByRole("button", { name: "30 days" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("a step bigger than the one before shows a dash, not over 100%", async ({ page }) => {
+    const steps = [["visit", 100], ["apply_5", 1], ["submitted", 11]].map(([key, n]) => ({ key, label: `Step ${key}`, n }));
+    await page.route("**/api/admin/funnel*", (r) => r.fulfill({ json: { days: 30, countingSince: "2026-11-09", steps } }));
+    await page.goto("/funnel");
+    const sent = page.locator('[data-step="submitted"] td').last();
+    await expect(sent).toHaveText("–");
+    await expect(page.locator('[data-step="apply_5"] td').last()).toHaveText("1%");
+    await expect(page.getByText("Counting started Nov 9, 2026")).toBeVisible();
+    await expect(page.getByText("1100%")).toHaveCount(0);
+  });
+
+  test("each funnel step says what it means", async ({ page }) => {
+    const steps = [{ key: "visit", label: "Landing page visits", n: 10 }, { key: "apply_3", label: "Form step 3 of 5: Your project", detail: "What they want to ship, where it is now, GitHub username.", n: 4 }];
+    await page.route("**/api/admin/funnel*", (r) => r.fulfill({ json: { days: 30, steps } }));
+    await page.goto("/funnel");
+    await expect(page.locator('[data-step="apply_3"]')).toContainText("Form step 3 of 5: Your project");
+    await expect(page.locator('[data-step="apply_3"]')).toContainText("GitHub username");
+  });
+
   test("the funnel API only answers GET", async ({ page }) => {
     await page.goto("/funnel");
     expect((await page.request.post("/api/admin/funnel", { data: {} })).status()).toBe(405);
