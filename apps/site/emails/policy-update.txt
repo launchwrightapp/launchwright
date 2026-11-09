@@ -1,0 +1,27 @@
+Hi {{name}},
+
+A small update to how we review applications.
+
+Before we start reviewing, we want you to know about one change. An AI model (Anthropic's Claude) may help us see who is most likely to finish the pilot and ship their app. We've updated our privacy policy to say so.
+
+WHAT THE AI GETS
+Your answers to the pilot questions and what you're building, under a random label. We remove anything in your project description that looks like contact details first.
+
+WHAT IT NEVER GETS
+Your name, email, GitHub username or city.
+
+WHAT STAYS THE SAME
+1. A person on our team reads every application and makes every decision.
+2. Anthropic doesn't use your data to train its models.
+3. You can still ask us to delete your application at any time.
+
+Prefer that only a person reviews yours? Just reply to this email with "no AI" and we will. You don't need to give a reason, and it won't affect your chances.
+
+Read the privacy policy: https://launchwright.app/privacy
+
+Questions? Just reply to this email.
+The launchwright team
+
+--
+You're getting this because you applied to the pilot at launchwright.app. To have your email deleted, reply "delete" or write to privacy@launchwright.app.
+Privacy policy: https://launchwright.app/privacy

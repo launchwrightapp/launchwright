@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { sendAcknowledgement, sendAcceptance, sendNewApplication, type Applicant } from "./emails";
+import { sendAcknowledgement, sendAcceptance, sendNewApplication, sendPolicyUpdate, type Applicant } from "./emails";
 import { cleanAnswers } from "./options";
 import { crossSite, underLimit } from "./guard";
 import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
@@ -141,6 +141,33 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     await sql`update waitlist set accepted_at = coalesce(accepted_at, now()) where email = ${email}`;
     const [{ n }] = await sql`select count(*)::int as n from waitlist where accepted_at is not null`;
     return json({ ok: true, email, seatsUsed: n, seats: PILOT_SEATS });
+  }
+
+  // Privacy policy update email to one applicant, or { test: true } for a copy to NOTIFY_EMAIL
+  // (tests can't go anywhere else). `npm run pilot -- notify-policy` drives it.
+  if (url.pathname === "/api/admin/notify-policy" && req.method === "POST") {
+    if (!env.EMAIL) return json({ error: "Email sending isn't set up yet." }, 503);
+    const parsed = await readBody(req);
+    if (parsed?.data.test === true) {
+      if (!env.NOTIFY_EMAIL) return json({ error: "Set NOTIFY_EMAIL to send a test." }, 503);
+      try {
+        await sendPolicyUpdate(env.EMAIL, env.NOTIFY_EMAIL, null);
+      } catch (err) {
+        return json({ error: `The email didn't send: ${(err as Error).message}` }, 502);
+      }
+      return json({ ok: true, to: env.NOTIFY_EMAIL, test: true });
+    }
+    const email = clean(parsed?.data.email, 254).toLowerCase();
+    if (!EMAIL_RE.test(email)) return json({ error: "Give the applicant's email." }, 400);
+    const [row] = await sql`select email, name from waitlist where email = ${email}`;
+    if (!row) return json({ error: `No application from ${email}.` }, 404);
+    try {
+      await sendPolicyUpdate(env.EMAIL, row.email as string, (row.name as string | null) ?? null);
+    } catch (err) {
+      console.error("policy update email failed", err);
+      return json({ error: `The email didn't send: ${(err as Error).message}` }, 502);
+    }
+    return json({ ok: true, to: email });
   }
 
   return json({ error: "Not found." }, 404);
