@@ -32,12 +32,14 @@ export function api(token: string) {
     });
 }
 
+import { GITHUB_APP_INSTALL_URL } from "../../../packages/core/github-app";
+
 const enc = (p: string) => p.split("/").map(encodeURIComponent).join("/");
 
 function explain(status: number, repo: string, what: string): RepoError {
   if (status === 401) return new RepoError("Your GitHub sign-in expired. Reconnect Launchwright in your AI tool.");
-  if (status === 403) return new RepoError(`GitHub didn't allow ${what} on ${repo}. Install the Launchwright GitHub App on this repo (or accept its updated permissions) at https://github.com/apps/launchwright/installations/new`);
-  if (status === 404) return new RepoError(`Launchwright can't see ${repo}. Check the name. If the repo is private, install the Launchwright GitHub App on it.`);
+  if (status === 403) return new RepoError(`GitHub didn't allow ${what} on ${repo}. Install the Launchwright GitHub App on this repo (or accept its updated permissions) at ${GITHUB_APP_INSTALL_URL}`);
+  if (status === 404) return new RepoError(`Launchwright can't see ${repo}. Check the name. If the repo is private, install the Launchwright GitHub App on it: ${GITHUB_APP_INSTALL_URL}`);
   return new RepoError(`GitHub answered ${status} while ${what}. Please try again in a minute.`);
 }
 
@@ -328,4 +330,29 @@ export async function runsForCommit(token: string, repo: string, sha: string): P
   const r = await api(token)(`/repos/${repo}/actions/runs?head_sha=${encodeURIComponent(sha)}&per_page=20`);
   if (!r.ok) throw explain(r.status, repo, "listing workflow runs");
   return ((await r.json()) as { workflow_runs: Record<string, unknown>[] }).workflow_runs.map(toRun);
+}
+
+// Is the Launchwright app installed on this repo? Uses the learner's own token: it lists the app
+// installations they can see, then the repos in the one for the repo's owner. null = couldn't tell.
+export async function appInstalled(token: string, repo: string): Promise<boolean | null> {
+  const gh = api(token);
+  const owner = repo.split("/")[0].toLowerCase();
+  try {
+    const r = await gh(`/user/installations?per_page=100`);
+    if (!r.ok) return null;
+    const { installations } = (await r.json()) as { installations: { id: number; account: { login: string } | null; repository_selection: "all" | "selected" }[] };
+    const inst = installations.find((i) => i.account?.login.toLowerCase() === owner);
+    if (!inst) return false;
+    if (inst.repository_selection === "all") return true;
+    for (let page = 1; page <= 5; page++) {
+      const rr = await gh(`/user/installations/${inst.id}/repositories?per_page=100&page=${page}`);
+      if (!rr.ok) return null;
+      const { repositories } = (await rr.json()) as { repositories: { full_name: string }[] };
+      if (repositories.some((x) => x.full_name.toLowerCase() === repo.toLowerCase())) return true;
+      if (repositories.length < 100) return false;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

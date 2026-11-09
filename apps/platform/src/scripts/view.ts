@@ -1,4 +1,5 @@
 // Turns the /api/me response into what the pages show. Pure, so it's easy to reason about.
+import { GITHUB_APP_INSTALL_URL } from "../../../../packages/core/github-app";
 import { EXERCISES, LESSONS, MODULES, progress, type Concept } from "../../../../packages/core/curriculum";
 
 export interface Me {
@@ -146,9 +147,10 @@ export function view(me: Me, now = Date.now()) {
 
   const onboarding = [
     { n: 1, title: "Connect your AI tool", detail: "One line in Claude Code, Cursor or Codex.", href: "/connect", done: me.mcp.connected, cta: "Connect" },
-    { n: 2, title: "Connect Cloudflare", detail: "Where your app runs. You create a limited token; the AI never sees it.", href: "/security#connect-cloudflare", done: cloudflareConnected, cta: "Connect" },
-    { n: 3, title: "Connect a database", detail: "Neon or Supabase, both have free tiers.", href: "/security#connect-neon", done: hasDatabase, cta: "Connect" },
-    { n: 4, title: "Check your project", detail: "Ask your AI tool: \"Use launchwright project_status on owner/repo\".", href: "/connect", done: !!project, cta: "How" },
+    { n: 2, title: "Give launchwright your repo", detail: "Install the launchwright GitHub App on the repo you'll work on. You pick the repos.", href: GITHUB_APP_INSTALL_URL, done: !!project, cta: "Install" },
+    { n: 3, title: "Connect Cloudflare", detail: "Where your app runs. You create a limited token; the AI never sees it.", href: "/security#connect-cloudflare", done: cloudflareConnected, cta: "Connect" },
+    { n: 4, title: "Connect a database", detail: "Neon or Supabase, both have free tiers.", href: "/security#connect-neon", done: hasDatabase, cta: "Connect" },
+    { n: 5, title: "Check your project", detail: "Ask your AI tool: \"Use launchwright project_status on owner/repo\".", href: "/connect", done: !!project, cta: "How" },
   ].map((s) => ({ ...s, todo: !s.done, label: `Step ${s.n}: ${s.title}${s.done ? " (done)" : ""}` }));
   const setupDone = onboarding.filter((s) => s.done).length;
 
