@@ -757,19 +757,21 @@ const faq = [
         </ol>
       </div>
     </section>
-    <!-- FAQ -->
+    <!-- FAQ: without JS every answer shows; site.ts turns each question into a toggle. -->
     <section id="faq" aria-labelledby="faq-title" class="gutter scroll-mt-24 py-20 md:py-28">
       <div class="mx-auto flex max-w-[52rem] flex-col gap-10">
         <h2 id="faq-title" class="text-center text-title font-bold text-balance" data-reveal>Questions?</h2>
         <div>
-          {faq.map(([q, a]) => (
-            <details class="group border-t border-line last:border-b">
-              <summary class="flex cursor-pointer items-center justify-between gap-4 py-6 text-xl font-semibold tracking-[-0.01em]">
-                {q}
-                <span class="text-2xl font-normal leading-none text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
-              </summary>
-              <p class="mb-6 text-[17px] text-muted">{a}</p>
-            </details>
+          {faq.map(([q, a], i) => (
+            <div class="border-t border-line last:border-b" data-faq>
+              <h3>
+                <button type="button" class="group flex w-full cursor-pointer items-center justify-between gap-4 py-6 text-left text-xl font-semibold tracking-[-0.01em]" aria-expanded="true" aria-controls={`faq-${i}`}>
+                  {q}
+                  <span class="text-2xl font-normal leading-none text-muted transition rotate-45 group-aria-[expanded=false]:rotate-0" aria-hidden="true">+</span>
+                </button>
+              </h3>
+              <p id={`faq-${i}`} class="mb-6 text-[17px] text-muted">{a}</p>
+            </div>
           ))}
         </div>
         <p class="text-center text-[17px] text-muted">Want in? <a class="font-semibold text-ink underline underline-offset-4" href="#pilot">Apply for the pilot</a></p>
