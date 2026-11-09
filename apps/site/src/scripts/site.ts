@@ -1,5 +1,8 @@
 import "../../../../packages/ui/dropdown";
 import { codeForm } from "./code-form";
+import { track } from "./funnel";
+
+if (location.pathname === "/") track("visit");
 
 // Walkthrough tabs. Without JS every step stays visible, one after another.
 function initTabs(list: HTMLElement) {

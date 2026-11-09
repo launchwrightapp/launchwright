@@ -5,6 +5,7 @@
 // edit: "Save and review" returns to the review, "Cancel" undoes the changes and returns.
 // Answers are kept in this tab (sessionStorage) so a refresh or a re-verify loses nothing.
 import "../../../../packages/ui/dropdown";
+import { track } from "./funnel";
 
 const form = document.getElementById("pilot-form") as HTMLFormElement | null;
 const DRAFT = "lw-pilot-draft";
@@ -54,6 +55,7 @@ if (form) {
     if (n === last) snapshot = null;
     current = n;
     furthest = Math.max(furthest, n);
+    track(`apply_${n}`); // drop-off: how many reach each step (once per tab)
 
     steps.forEach((s, i) => {
       s.hidden = i + 1 !== n;

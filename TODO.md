@@ -1,15 +1,10 @@
 # TODO
 
 ## Next
-- [ ] **Measure the pilot funnel.** Track: landing visit → application started → submitted →
-  accepted learner connects an AI tool → first readiness check → first successful deploy.
-  The number that matters most: accepted learners who reach a verified first deploy.
-- [ ] **Watch application drop-off.** See where people leave the 5-step form before shortening it.
 - [ ] **Smooth the first run.** First project connection, first readiness check, and first deploy
   should work without help.
-- [ ] **Reword the pilot emails.** They still say "one of the 10 seats".
-- [ ] **Install MCP test deps in the main checkout.** `tweetnacl` is missing there, so
-  `apps/mcp` tests only run in CI or fresh worktrees.
+- [ ] **Read the funnel.** `npm run pilot -- funnel 30` (in `apps/site`). Once a few weeks of data are in,
+  shorten the application where people leave it.
 
 ## Curriculum
 - [ ] **Lesson: dummy data with an API spec (OpenAPI).** Teach learners to write an OpenAPI spec for
@@ -22,6 +17,13 @@
     lesson's worked example.
 
 ## Done
+- [x] Pilot funnel and application drop-off: anonymous daily counts from landing visit to
+  verified email and each form step, plus learner steps from the MCP audit log, read with
+  `npm run pilot -- funnel` (#PR)
+- [x] Pilot emails no longer talk about seats (#41)
+- [x] FAQ uses button toggles instead of `<details>` (#42)
+- [x] Landing page says it's for websites and web apps, not mobile apps (#38)
+- [x] MCP test dependencies installed in the main checkout
 - [x] Site copy matches what's built: production deploys (not migrations) wait for approval,
   "secure" no longer reads as a guarantee, cost note by the pilot offer, Level 2 marked
   "Not in the pilot", walkthrough tested at 360px (#33)

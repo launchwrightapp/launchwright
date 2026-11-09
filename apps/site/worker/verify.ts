@@ -10,8 +10,9 @@ import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { clean, cleanEmail, EMAIL_RE, json, readBody, seeOther } from "./http";
 import { underLimit, verifyTurnstile, type GuardEnv } from "./guard";
 import { sendCode } from "./emails";
+import { countLater, type FunnelEnv } from "./funnel";
 
-export interface VerifyEnv extends GuardEnv {
+export interface VerifyEnv extends GuardEnv, FunnelEnv {
   DATABASE_URL?: string;
   EMAIL?: SendEmail;
 }
@@ -86,7 +87,7 @@ export async function sessionEmail(req: Request, sql: Sql): Promise<string | nul
 // Done with verification (application saved): forget the code and the session.
 export const endSession = (sql: Sql, email: string) => sql`delete from pilot_codes where email = ${email}`;
 
-export async function requestCode(req: Request, env: VerifyEnv, url: URL): Promise<Response> {
+export async function requestCode(req: Request, env: VerifyEnv, url: URL, ctx: ExecutionContext): Promise<Response> {
   const parsed = await readBody(req);
   if (!parsed) return json({ error: "Invalid request." }, 400);
   const { data, isForm } = parsed;
@@ -135,12 +136,13 @@ export async function requestCode(req: Request, env: VerifyEnv, url: URL): Promi
         window_start = case when pilot_codes.window_start > now() - interval '15 minutes' then pilot_codes.window_start else now() end
       where pilot_codes.sent_at < now() - make_interval(secs => ${RESEND_SECONDS})
         and (pilot_codes.window_start <= now() - interval '15 minutes' or pilot_codes.sends < ${SENDS_PER_15_MIN})
-      returning email
+      returning email, (xmax = 0) as fresh
     `;
     if (!rows.length) {
       return json({ error: "We just sent a code to this email. Check your inbox and spam folder, or wait a few minutes before asking again." }, 429, { "retry-after": String(RESEND_SECONDS) });
     }
     await sendCode(env.EMAIL, email, code);
+    if (rows[0].fresh) countLater(env, url, ctx, "code_sent"); // a new email, not a resend
   } catch (err) {
     console.error("pilot code failed", err);
     return json({ error: "We couldn't send the code. Please check the address and try again." }, 502);
@@ -149,7 +151,7 @@ export async function requestCode(req: Request, env: VerifyEnv, url: URL): Promi
   return isForm ? seeOther(next) : json({ ok: true, resendIn: RESEND_SECONDS });
 }
 
-export async function checkCode(req: Request, env: VerifyEnv, url: URL): Promise<Response> {
+export async function checkCode(req: Request, env: VerifyEnv, url: URL, ctx: ExecutionContext): Promise<Response> {
   const parsed = await readBody(req);
   if (!parsed) return json({ error: "Invalid request." }, 400);
   const { data, isForm } = parsed;
@@ -194,6 +196,7 @@ export async function checkCode(req: Request, env: VerifyEnv, url: URL): Promise
         session_expires_at = now() + make_interval(hours => ${SESSION_HOURS})
       where email = ${email}
     `;
+    countLater(env, url, ctx, "verified");
     const setCookie = { "set-cookie": cookie(url, token, SESSION_HOURS * 3600) };
     return isForm ? seeOther("/pilot/apply", setCookie) : json({ ok: true, next: "/pilot/apply" }, 200, setCookie);
   } catch (err) {
