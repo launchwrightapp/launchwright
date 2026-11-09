@@ -12,9 +12,10 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { Concept, ExerciseId } from "../../../packages/core/curriculum";
 import { evidenceFiles, exerciseEvidence, exerciseKey } from "../../../packages/core/curriculum";
+import { GITHUB_APP_INSTALL_URL } from "../../../packages/core/github-app";
 import { EXERCISES, MODULES } from "../../../packages/core/curriculum";
 import { untrustedBlock, redact } from "../../../packages/core/untrusted";
-import { REPO_RE, branchHead, branchProtection, dispatchWorkflow, openPulls, pullFiles, pullRequest, runsForCommit, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
+import { REPO_RE, appInstalled, branchHead, branchProtection, dispatchWorkflow, openPulls, pullFiles, pullRequest, runsForCommit, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
 import { PROTECT_HOW, protectionGap, runChecks, score, type Check } from "./readiness";
 import { diffText, reviewPull, safePath } from "./review";
 import { checkUrl, liveChecks } from "./live";
@@ -104,11 +105,15 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
     async ({ repo }) =>
       runTool(ctx, "project_status", repo, async () => {
         const { snap, apps, worker, productionUrl } = await repoContext(ctx, repo);
-        snap.protection = await branchProtection(learner.githubToken, snap.repo, snap.branch);
+        const [protection, installed] = await Promise.all([branchProtection(learner.githubToken, snap.repo, snap.branch), appInstalled(learner.githubToken, snap.repo)]);
+        snap.protection = protection;
         const status = projectStatus(snap);
         const s = status.stack;
         const [cf, neon, supa] = await Promise.all((["cloudflare", "neon", "supabase"] as const).map((p) => store.getConnection(learner.id, p).catch(() => null)));
         const lines = [
+          installed === false
+            ? `Action needed: the Launchwright GitHub App isn't installed on ${snap.repo}. Reading works for public repos, but setup_ci, deploy and set_secret will fail until it is. Ask the learner to install it on this repo (they choose which repos; it only gets the permissions it asks for): ${GITHUB_APP_INSTALL_URL}`
+            : "",
           `Repo: ${snap.repo} (${snap.private ? "private" : "public"}, branch ${snap.branch})`,
           `Framework: ${s.framework}${s.supported ? "" : " (Launchwright supports Next.js, Vite + React/Vue, Astro and Hono for now)"}`,
           `Package manager: ${s.packageManager ?? "not detected"}`,
@@ -127,7 +132,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         await store.saveProject(learner.id, { repo: snap.repo, framework: s.framework, packageManager: s.packageManager, database: s.database, hosting: s.hosting, workerName: worker });
         const concepts: Concept[] = ["project_status"];
         if (status.nextStep && isLessonConcept(status.nextStep.check)) concepts.push(status.nextStep.check);
-        return { result: lines.join("\n"), data: { repo: snap.repo, ...status, productionUrl, apps: apps.map((a) => ({ name: a.name, dir: a.dir, pages: a.pages })) }, concepts, audit: { repo: snap.repo, summary: `${s.framework}, readiness ${status.readiness.passed}/${status.readiness.total}` } };
+        return { result: lines.join("\n"), data: { repo: snap.repo, ...status, productionUrl, appInstalled: installed, apps: apps.map((a) => ({ name: a.name, dir: a.dir, pages: a.pages })) }, concepts, audit: { repo: snap.repo, summary: `${s.framework}, readiness ${status.readiness.passed}/${status.readiness.total}` } };
       }),
   );
 

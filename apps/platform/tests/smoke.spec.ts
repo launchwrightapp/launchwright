@@ -36,8 +36,9 @@ test("a new learner sees the setup checklist and a not-set-up notice", async ({ 
   await loaded(page);
   const setup = page.getByRole("region", { name: "Get set up" });
   await expect(setup).toBeVisible();
-  await expect(setup.getByText("0 of 4 setup steps done")).toBeVisible();
+  await expect(setup.getByText("0 of 5 setup steps done")).toBeVisible();
   await expect(setup.getByRole("link", { name: "Connect" }).first()).toHaveAttribute("href", "/connect");
+  await expect(setup.getByRole("link", { name: "Install" })).toHaveAttribute("href", "https://github.com/apps/launchwright-app/installations/new");
   await expect(page.getByText("This server isn't fully set up yet")).toBeVisible();
   await expect(page.getByRole("main")).not.toContainText("Sample");
 });
@@ -61,7 +62,7 @@ test("overview with a project leads with now, then progress, then history", asyn
   const order = await main.getByRole("heading", { level: 2 }).filter({ visible: true }).allTextContents();
   expect(order).toEqual(["Get set up", "Now", "Progress", "Recent activity"]);
   await expect(main.getByRole("heading", { name: "Fix auth on API routes" })).toBeVisible();
-  await expect(main.getByText("5", { exact: true }).first()).toBeVisible();
+  await expect(main.getByText("5", { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(main.getByRole("heading", { name: "Readiness checks", exact: true })).toBeVisible();
   await expect(main.getByRole("link", { name: "Auth on API routes: Failed" })).toBeVisible();
   await expect(main.getByRole("heading", { name: "Lesson progress" })).toBeVisible();

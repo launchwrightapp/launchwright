@@ -23,6 +23,7 @@ let headSha = "c0ffee1234567890";
 let rules: unknown[] = [];
 const FAKE_STRIPE = ["sk", "live", "abcdefghijklmnop123"].join("_"); // built at runtime: the repo's own secret scan would flag a literal
 let prFiles: unknown[] = [];
+let installedRepos: string[] | "all" | null = [REPO]; // null = no installation for the owner
 
 function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const url = new URL(String(input));
@@ -41,6 +42,8 @@ function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Respon
     }
   }
   if (url.hostname !== "api.github.com") return Promise.reject(new Error(`unexpected ${url}`));
+  if (path === "/user/installations") return json({ installations: installedRepos === null ? [] : [{ id: 7, account: { login: "juan" }, repository_selection: installedRepos === "all" ? "all" : "selected" }] });
+  if (path === "/user/installations/7/repositories") return json({ repositories: (installedRepos === "all" || !installedRepos ? [] : installedRepos).map((full_name) => ({ full_name })) });
   const r = `/repos/${REPO}`;
   if (path === r) return json({ default_branch: "main", private: false, full_name: REPO });
   if (path === `${r}/git/trees/main`) return json({ tree: Object.keys(all).map((p) => ({ path: p, type: "blob", size: all[p].length })), truncated: false });
@@ -100,6 +103,7 @@ beforeEach(() => {
   headSha = "c0ffee1234567890";
   rules = [];
   prFiles = [];
+  installedRepos = [REPO];
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
 });
 afterEach(() => vi.restoreAllMocks());
@@ -160,6 +164,19 @@ describe("MCP tools", () => {
     expect(calls.filter((c) => c.method === "PATCH").map((c) => c.path)).toEqual([`/repos/${REPO}/git/refs/heads/launchwright/setup-ci`]);
     expect(r.text).toContain("git config core.hooksPath .githooks");
     expect(r.text).toContain("Branch protection: main isn't protected yet");
+  });
+
+  it("project_status says when the GitHub App isn't installed on the repo, with the install link", async () => {
+    const { call } = await connect();
+    expect((await call("project_status", { repo: REPO })).text).not.toContain("isn't installed");
+    installedRepos = ["juan/other"];
+    const missing = await call("project_status", { repo: REPO });
+    expect(missing.text).toContain("Action needed: the Launchwright GitHub App isn't installed on juan/shop");
+    expect(missing.text).toContain("https://github.com/apps/launchwright-app/installations/new");
+    installedRepos = null;
+    expect((await call("project_status", { repo: REPO })).text).toContain("isn't installed");
+    installedRepos = "all";
+    expect((await call("project_status", { repo: REPO })).text).not.toContain("isn't installed");
   });
 
   it("check_readiness asks for branch protection until main requires the checks", async () => {
