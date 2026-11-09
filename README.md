@@ -20,15 +20,19 @@ npm run test:e2e -w apps/site
 
 ## Shipping changes (GitHub flow)
 
-Never deploy from a laptop and never push straight to `main`.
+Never deploy from a laptop and never push straight to `main`. Every branch gets its own
+git worktree, cut from the latest `main`, so the main checkout always stays on a clean `main`.
 
-1. `git checkout -b feat/short-name`
+1. `npm run wt:new -- feat/short-name` pulls `main`, creates `.claude/worktrees/feat-short-name`
+   on a new branch, and installs dependencies. Work there.
 2. Commit, push, open a pull request.
 3. CI runs the secret scan, typecheck, and Playwright tests, then uploads a **preview** of both apps
    (`pr-<number>-…workers.dev`), runs the E2E tests against it, and comments the links on the PR.
-4. Review the preview, then merge.
+4. Review the preview, then merge. GitHub deletes the remote branch on merge.
 5. Merging to `main` deploys `launchwright.app` and `platform.launchwright.app`, runs the smoke tests
    against production, and rolls back automatically if they fail.
+6. `npm run wt:done -- feat/short-name` removes the worktree and the local branch and pulls `main`.
+   It refuses while the PR isn't merged (`FORCE=1` to drop an abandoned branch).
 
 Needs `CLOUDFLARE_API_TOKEN` (secret) and `CLOUDFLARE_ACCOUNT_ID` (variable) in the repo settings.
 

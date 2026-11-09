@@ -15,7 +15,9 @@ npm run test:e2e -w apps/platform
 
 ## Pull requests
 
-1. Fork, then branch from `main` (`feat/short-name` or `fix/short-name`).
+1. Fork, then branch from the latest `main` (`feat/short-name` or `fix/short-name`).
+   Maintainers use one worktree per branch: `npm run wt:new -- feat/short-name`, then
+   `npm run wt:done -- feat/short-name` after the merge (see the README).
 2. Keep each PR to one change. Add or update a Playwright test when behavior changes.
 3. CI runs the secret scan, typecheck, and E2E tests. Preview deploys run only for branches in
    this repo (forks don't get deploy secrets), so a maintainer will check the preview for you.
