@@ -56,6 +56,8 @@ const show = (v: unknown) => (Array.isArray(v) ? v.join(", ") : typeof v === "ob
 const sheet = document.querySelector<HTMLDialogElement>("[data-sheet]")!;
 const q = <T extends HTMLElement>(sel: string) => sheet.querySelector<T>(sel)!;
 const acceptBtn = q<HTMLButtonElement>("[data-sheet-accept]");
+const removeBtn = q<HTMLButtonElement>("[data-sheet-remove]");
+let removeArmed = false;
 const note = q<HTMLElement>("[data-sheet-note]");
 let open: Applicant | null = null;
 let armed = false;
@@ -104,6 +106,10 @@ function fillSheet(a: Applicant) {
   acceptBtn.disabled = false;
   acceptBtn.className = a.acceptedAt ? "btn btn-sm btn-outline" : "btn btn-sm";
   acceptBtn.textContent = label(a);
+  removeArmed = false;
+  removeBtn.hidden = !a.acceptedAt;
+  removeBtn.disabled = false;
+  removeBtn.textContent = "Remove access";
   note.className = "text-[14px] text-muted";
   note.textContent = "";
 }
@@ -154,6 +160,44 @@ acceptBtn.addEventListener("click", async () => {
   if (open === a) {
     fillSheet(a);
     note.textContent = resent ? "Email sent again." : "Accepted. The email is on its way.";
+  }
+});
+
+// Remove access also takes two clicks. It frees the seat and signs them out of the dashboard
+// and their AI tool. No email goes out; they move back to Waiting.
+removeBtn.addEventListener("click", async () => {
+  const a = open;
+  if (!a?.acceptedAt) return;
+  if (!removeArmed) {
+    removeArmed = true;
+    removeBtn.textContent = "Confirm: remove access";
+    note.className = "text-[14px] text-muted";
+    note.textContent = `${a.email} loses access to the dashboard and the AI tool connection, and the seat opens up. No email is sent.`;
+    setTimeout(() => {
+      if (removeArmed && open === a && !removeBtn.disabled) {
+        removeArmed = false;
+        removeBtn.textContent = "Remove access";
+        note.textContent = "";
+      }
+    }, 6000);
+    return;
+  }
+  removeArmed = false;
+  removeBtn.disabled = true;
+  note.textContent = "Removing…";
+  const { ok, data } = await api<{ accepted: number }>("/api/admin/applicants/remove", { method: "POST", body: { email: a.email } });
+  removeBtn.disabled = false;
+  if (!ok) {
+    removeBtn.textContent = "Remove access";
+    note.textContent = data.error ?? "That didn't work. Try again.";
+    note.className = "text-[14px] text-bad";
+    return;
+  }
+  a.acceptedAt = null;
+  draw();
+  if (open === a) {
+    fillSheet(a);
+    note.textContent = "Access removed. The seat is open again.";
   }
 });
 

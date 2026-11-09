@@ -129,6 +129,13 @@ async function handle(req, res) {
     a.acceptedAt ??= ago(0);
     return send(res, 200, { ok: true, email, acceptedAt: a.acceptedAt, accepted: applicants.filter((x) => x.acceptedAt).length, seats: SEATS });
   }
+  if (p === "/api/admin/applicants/remove" && m === "POST") {
+    const { email } = await body(req);
+    const a = applicants.find((x) => x.email === email);
+    if (!a?.acceptedAt) return send(res, 404, { error: `${email} isn't accepted.` });
+    a.acceptedAt = null;
+    return send(res, 200, { ok: true, email, accepted: applicants.filter((x) => x.acceptedAt).length, seats: SEATS });
+  }
 
   if (p === "/api/admin/threads" && m === "GET") {
     return send(res, 200, { threads: [...threads].sort((a, b) => (summary(b).at > summary(a).at ? 1 : -1)).map(summary) });
