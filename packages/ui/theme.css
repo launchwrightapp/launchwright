@@ -132,6 +132,8 @@
      Browsers without corner-shape fall back to normal rounded corners. */
   @supports (corner-shape: squircle) {
     *, *::before, *::after { corner-shape: squircle; }
+    /* Except inside the platform's content area ([data-editor]): plain round corners there. */
+    [data-editor] *, [data-editor] *::before, [data-editor] *::after { corner-shape: round; }
   }
   summary::-webkit-details-marker { display: none; }
 }
