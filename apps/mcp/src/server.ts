@@ -11,11 +11,12 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { Concept, ExerciseId } from "../../../packages/core/curriculum";
+import { evidenceFiles, exerciseEvidence, exerciseKey } from "../../../packages/core/curriculum";
 import { EXERCISES, MODULES } from "../../../packages/core/curriculum";
 import { untrustedBlock, redact } from "../../../packages/core/untrusted";
 import { REPO_RE, branchHead, branchProtection, dispatchWorkflow, openPulls, pullFiles, pullRequest, runsForCommit, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
 import { PROTECT_HOW, protectionGap, runChecks, score, type Check } from "./readiness";
-import { diffText, reviewPull } from "./review";
+import { diffText, reviewPull, safePath } from "./review";
 import { checkUrl, liveChecks } from "./live";
 import { detectStack, projectStatus } from "./project";
 import { isLessonConcept } from "./lessons";
@@ -149,6 +150,11 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         const checks = runChecks(rc.snap, live);
         const { passed, total } = score(checks);
         const stack = detectStack(rc.snap);
+        // Practice exercises: evidence on the default branch marks them done (and they stay done).
+        await readFiles(learner.githubToken, rc.snap, evidenceFiles(rc.snap.paths).filter((p) => (rc.snap.sizes?.[p] ?? 0) <= 64 * 1024));
+        const evidence = exerciseEvidence(rc.snap.paths, rc.snap.files);
+        const practiced = evidence.filter((e) => e.done);
+        await store.record(learner.id, practiced.map((e) => exerciseKey(e.id))).catch((e) => console.error("exercise progress write failed", e));
         await store.saveProject(learner.id, {
           repo: rc.snap.repo, framework: stack.framework, packageManager: stack.packageManager, database: stack.database, hosting: stack.hosting, workerName: rc.worker,
           productionUrl: target?.origin ?? null, readiness: { passed, total, checks },
@@ -161,13 +167,21 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
           lines.join("\n"),
           rc.snap.truncated ? "\nNote: the repo is very large, so GitHub sent only part of the file list." : "",
           `\nThe dashboard shows the same results: ${dashboard(ctx, "/readiness")}`,
-          `\nThese checks are a baseline, not proof the app is production-ready; that depends on its users, data and failure risks. What they can't verify is practised with the lesson-practice prompt: ${EXERCISES.map((e) => `${e.title} (${e.id})`).join(", ")}.`,
+          `\nThese checks are a baseline, not proof the app is production-ready; that depends on its users, data and failure risks. What they can't verify is practised with the lesson-practice prompt (exercise=<id>). Practice exercises found on ${rc.snap.branch}: ${practiced.length} of ${EXERCISES.length}.`,
+          evidence
+            .map((e) => {
+              const ex = EXERCISES.find((x) => x.id === e.id)!;
+              return e.done
+                ? `- [done] ${ex.title} (${e.id}): found ${e.found.map((f) => `\`${safePath(f)}\``).join(", ")}.${ex.unchecked ? ` Not checked automatically: ${ex.unchecked}` : ""}`
+                : `- [todo] ${ex.title} (${e.id}): needs ${e.missing.join("; ")}.`;
+            })
+            .join("\n"),
         ].join("\n");
         const failing = checks.filter((c) => (c.status === "fail" || c.status === "warn") && isLessonConcept(c.id)).map((c) => c.id as Concept);
         const concepts: Concept[] = ["readiness", ...failing];
         if (checks.find((c) => c.id === "secrets")?.status === "warn") concepts.push("secret_scanning");
         if (stack.database) concepts.push("data_privacy");
-        return { result, data: { repo: rc.snap.repo, passed, total, checks, url: target?.origin ?? null }, concepts, audit: { repo: rc.snap.repo, summary: `${passed} of ${total} checks passed` } };
+        return { result, data: { repo: rc.snap.repo, passed, total, checks, url: target?.origin ?? null, exercises: evidence }, concepts, audit: { repo: rc.snap.repo, summary: `${passed} of ${total} checks passed` } };
       }),
   );
 
@@ -723,7 +737,7 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
             role: "user",
             content: {
               type: "text",
-              text: `I'm practising production fundamentals on my own app ${repo}: "${ex.title}". Start with launchwright project_status so you know my stack, then guide me through this one step at a time. Use launchwright tools where they fit (check_readiness, review_pr, get_logs, deploy, set_secret). Make changes in a branch and open a pull request for me to review; never touch production data, and ask before anything destructive.\n\n${ex.task}\n\nAt the end, summarise what we verified and what's still open. Remind me that finishing this exercise doesn't by itself make the app production-ready: that depends on its users, data and failure risks.\n\nGround rules: explain each step in plain words before doing it, wait for me before moving on, and never print or ask me to paste secrets into the chat. Explain in Taglish (casual Tagalog-English, technical terms in English) by default. Use another language only if I explicitly ask for it or have clearly shown that preference in my own messages; don't infer my language from this generated prompt.`,
+              text: `I'm practising production fundamentals on my own app ${repo}: "${ex.title}". Start with launchwright project_status so you know my stack, then guide me through this one step at a time. Use launchwright tools where they fit (check_readiness, review_pr, get_logs, deploy, set_secret). Make changes in a branch and open a pull request for me to review; never touch production data, and ask before anything destructive.\n\n${ex.task}\n\nThis exercise counts as done on my Launchwright dashboard once the default branch has: ${ex.doneWhen.map((n) => n.what).join("; ")}. ${ex.unchecked ? `That's only evidence. Not checked automatically: ${ex.unchecked} We verify those together. ` : ""}After I merge the pull request, run launchwright check_readiness to record it.\n\nAt the end, summarise what we verified and what's still open. Remind me that finishing this exercise doesn't by itself make the app production-ready: that depends on its users, data and failure risks.\n\nGround rules: explain each step in plain words before doing it, wait for me before moving on, and never print or ask me to paste secrets into the chat. Explain in Taglish (casual Tagalog-English, technical terms in English) by default. Use another language only if I explicitly ask for it or have clearly shown that preference in my own messages; don't infer my language from this generated prompt.`,
             },
           },
         ],

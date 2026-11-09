@@ -11,7 +11,7 @@ import { apiAuth, checkUrl, securityHeaders, uptime } from "../src/live";
 import { openSealedBox, sealedBox } from "../src/sealedbox";
 import { looksLikeSecret, redact, untrustedBlock } from "../../../packages/core/untrusted";
 import { seal, unseal } from "../../../packages/core/seal";
-import { CONCEPTS, EXERCISES, LESSONS, MODULES, progress } from "../../../packages/core/curriculum";
+import { CONCEPTS, EXERCISES, LESSONS, MODULES, evidenceFiles, exerciseEvidence, exercisesDoneIn, progress } from "../../../packages/core/curriculum";
 
 describe("check_env analysis", () => {
   const files = {
@@ -106,14 +106,37 @@ describe("curriculum", () => {
     expect(p[1]).toMatchObject({ status: "current", done: 1, total: 4 });
     expect(p.filter((m) => m.status === "current")).toHaveLength(1);
   });
-  it("lists practice exercises per module without counting them as progress", () => {
+  it("counts practice exercises toward their module", () => {
     expect(new Set(EXERCISES.map((e) => e.id)).size).toBe(EXERCISES.length);
     for (const e of EXERCISES) expect(MODULES.map((m) => m.id)).toContain(e.module);
-    const p = progress(CONCEPTS.filter((c) => LESSONS[c].module === "database"));
-    const db = p.find((m) => m.id === "database")!;
-    expect(db).toMatchObject({ status: "done", done: db.total });
-    expect(db.exercises.map((e) => e.id)).toEqual(["backup_restore"]);
-    expect(p.find((m) => m.id === "security")!.exercises.map((e) => e.id)).toEqual(["access_tests", "abuse_and_deps", "data_lifecycle"]);
+    const dbConcepts = CONCEPTS.filter((c) => LESSONS[c].module === "database");
+    const without = progress(dbConcepts).find((m) => m.id === "database")!;
+    expect(without).toMatchObject({ status: "next", done: dbConcepts.length, total: dbConcepts.length + 1 });
+    const withEx = progress([...dbConcepts, "exercise:backup_restore"]).find((m) => m.id === "database")!;
+    expect(withEx).toMatchObject({ status: "done", done: withEx.total });
+    expect(withEx.exercises).toEqual([expect.objectContaining({ id: "backup_restore", done: true })]);
+    expect(progress([]).find((m) => m.id === "security")!.exercises.map((e) => e.id)).toEqual(["access_tests", "abuse_and_deps", "data_lifecycle"]);
+    expect(exercisesDoneIn(["secrets", "exercise:backup_restore", "exercise:nope"])).toEqual(["backup_restore"]);
+  });
+  it("finds exercise evidence in repo files, ignoring node_modules and wrong content", () => {
+    const paths = ["RECOVERY.md", "node_modules/x/RUNBOOK.md", "tests/access.spec.ts", "tests/other.spec.ts", ".github/dependabot.yml", "apps/web/package.json", "apps/web/playwright.config.ts", "DATA.md"];
+    expect(evidenceFiles(paths)).not.toContain("node_modules/x/RUNBOOK.md");
+    expect(evidenceFiles(paths)).not.toContain("tests/other.spec.ts");
+    const files = {
+      "RECOVERY.md": "We restored to a branch.",
+      "node_modules/x/RUNBOOK.md": "rollback",
+      "tests/access.spec.ts": "expect(res.status()).toBe(403)",
+      "apps/web/package.json": JSON.stringify({ devDependencies: { "@axe-core/playwright": "4" } }),
+      "apps/web/playwright.config.ts": "projects: [{ name: 'mobile', use: { ...devices['Pixel 7'] } }]",
+      "DATA.md": "Emails: kept while the account exists.",
+    };
+    const by = Object.fromEntries(exerciseEvidence(paths, files).map((e) => [e.id, e]));
+    expect(by.backup_restore).toMatchObject({ done: true, found: ["RECOVERY.md"] });
+    expect(by.incident_runbook.done).toBe(false);
+    expect(by.access_tests).toMatchObject({ done: true, found: ["tests/access.spec.ts"] });
+    expect(by.abuse_and_deps.done).toBe(true);
+    expect(by.launch_quality).toMatchObject({ done: true, found: ["apps/web/package.json", "apps/web/playwright.config.ts"] });
+    expect(by.data_lifecycle).toMatchObject({ done: false, missing: ["DATA.md with retention periods"] });
   });
 });
 

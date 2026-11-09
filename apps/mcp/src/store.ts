@@ -2,7 +2,7 @@
 // Without DATABASE_URL nothing is remembered: every lesson is the full one and tools that need
 // state (approvals, connections, secret requests) explain that they aren't available.
 import { neon } from "@neondatabase/serverless";
-import type { Concept } from "../../../packages/core/curriculum";
+import type { Concept, ExerciseKey } from "../../../packages/core/curriculum";
 import { connectionAad, seal, secretRequestAad, unseal } from "../../../packages/core/seal";
 
 export type Provider = "cloudflare" | "neon" | "supabase";
@@ -52,7 +52,7 @@ export interface Store {
   readonly persistent: boolean;
   readonly canSeal: boolean;
   seen(githubId: number, concepts: Concept[]): Promise<Partial<Record<Concept, number>>>;
-  record(githubId: number, concepts: Concept[]): Promise<void>;
+  record(githubId: number, concepts: (Concept | ExerciseKey)[]): Promise<void>; // exercises share the table
   saveProject(githubId: number, p: ProjectInfo): Promise<void>;
   getProject(githubId: number, repo: string): Promise<ProjectInfo | null>;
   audit(githubId: number, e: { client: string; tool: string; repo?: string | null; summary: string; outcome: Outcome }): Promise<void>;

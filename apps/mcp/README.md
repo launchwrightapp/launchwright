@@ -34,7 +34,8 @@ and ask. `check_env` then reads only that app's folder. Each app gets its own `l
 Prompts (guided lessons): `lesson-readiness`, `lesson-secrets`, `lesson-database`, `lesson-ci`,
 `lesson-deploy`, `lesson-debug`, `lesson-security`, `lesson-connect`, `lesson-review`, and
 `lesson-practice` (hands-on exercises: backup and restore, launch quality, alerts and a runbook,
-access tests, abuse and dependencies, personal data lifecycle).
+access tests, abuse and dependencies, personal data lifecycle). `check_readiness` marks an
+exercise done when its evidence is on the default branch (`doneWhen` in the curriculum).
 
 ## Security model
 

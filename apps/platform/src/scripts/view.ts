@@ -1,5 +1,5 @@
 // Turns the /api/me response into what the pages show. Pure, so it's easy to reason about.
-import { LESSONS, MODULES, progress, type Concept } from "../../../../packages/core/curriculum";
+import { EXERCISES, LESSONS, MODULES, progress, type Concept } from "../../../../packages/core/curriculum";
 
 export interface Me {
   user: { id: number; login: string; name: string };
@@ -10,6 +10,7 @@ export interface Me {
     checks: { id: string; title: string; status: string; detail: string; files?: string[] }[] | null; checkedAt: string | null; updatedAt: string | null;
   }[];
   conceptsSeen: string[];
+  exercisesDone?: string[];
   connections: { provider: string; method: string; label: string | null; scopes: string; connectedAt: string | null }[];
   approvals: { id: string; repo: string; client: string | null; tool: string; action: string; title: string; summary: string; detail: Record<string, unknown>; createdAt: string | null; expiresAt: string | null }[];
   audit: { actor: string; client: string | null; tool: string; repo: string | null; summary: string; outcome: string; at: string | null }[];
@@ -91,7 +92,7 @@ export function view(me: Me, now = Date.now()) {
   const nextLesson = next ? LESSONS[next.id] : null;
   const nextModule = nextLesson ? MODULES.find((m) => m.id === nextLesson.module) ?? null : null;
 
-  const modules = progress(me.conceptsSeen).map((m) => ({
+  const modules = progress([...me.conceptsSeen, ...(me.exercisesDone ?? []).map((id) => `exercise:${id}`)]).map((m) => ({
     ...m,
     isDone: m.status === "done",
     isCurrent: m.status === "current",
@@ -99,12 +100,16 @@ export function view(me: Me, now = Date.now()) {
     ariaCurrent: m.status === "current" ? "step" : null,
     label: `${m.n} ${m.name}`,
     count: `${m.done}/${m.total}`,
-    ariaLabel: `${m.done} of ${m.total} concepts${m.status === "current" ? ", in progress" : ""}`,
-    bars: m.concepts.map((c) => ({ done: c.done, doneCurrent: c.done && m.status === "current", doneOther: c.done && m.status !== "current" })),
+    ariaLabel: `${m.done} of ${m.total} done${m.status === "current" ? ", in progress" : ""}`,
+    bars: [...m.concepts, ...m.exercises].map((c) => ({ done: c.done, doneCurrent: c.done && m.status === "current", doneOther: c.done && m.status !== "current" })),
     concepts: m.concepts.map((c) => ({ ...c, state: c.done ? "Covered" : "Not yet" })),
     promptCommand: m.prompt ? `/${m.prompt}` : null,
     hasExercises: m.exercises.length > 0,
-    exercises: m.exercises.map((e) => ({ title: e.title, why: e.why, command: `/lesson-practice exercise=${e.id}` })),
+    exercises: m.exercises.map((e) => ({
+      title: e.title, why: e.why, done: e.done, state: e.done ? "Done" : "Not yet",
+      doneWhen: `Counts as done when your default branch has ${e.doneWhen.map((n) => n.what).join(" and ")}, and you run check_readiness.`,
+      command: `/lesson-practice exercise=${e.id}`,
+    })),
   }));
   const current = modules.find((m) => m.isCurrent) ?? null;
 
@@ -188,6 +193,8 @@ export function view(me: Me, now = Date.now()) {
     modulesDone: modules.filter((m) => m.isDone).length,
     modulesTotal: modules.length,
     conceptsCovered: me.conceptsSeen.length,
+    exercisesDone: (me.exercisesDone ?? []).length,
+    exercisesTotal: EXERCISES.length,
     lessonsHeading: `${modules.filter((m) => m.isDone).length} of ${modules.length} modules done`,
     connections,
     account,
