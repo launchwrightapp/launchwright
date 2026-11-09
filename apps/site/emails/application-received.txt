@@ -2,7 +2,7 @@ Hi {{name}},
 
 Thanks for applying. You're on the list.
 
-The free pilot has 10 seats. We read every application ourselves, so there's nothing else you need to do right now.
+The free pilot is for 10 learners. We read every application ourselves, so there's nothing else you need to do right now.
 
 What you're building:
 {{building}}
