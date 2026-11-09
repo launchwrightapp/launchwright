@@ -60,7 +60,8 @@ jobs:
     name: Preview deploy + E2E
     # Forks don't get deploy secrets, so previews run only for branches in this repo.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    needs: [secrets, test]
+    # Runs alongside the local tests: a preview only touches its pr-N alias, never production.
+    needs: [secrets]
     runs-on: ubuntu-latest
     permissions:
       contents: read
