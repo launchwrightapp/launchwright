@@ -1,0 +1,67 @@
+name: Uptime
+
+# Checks the live site, platform and MCP server every 10 minutes. On failure it opens (or
+# comments on) one "Outage" issue, which notifies the maintainers; it closes the issue when
+# everything is back. Dogfoods the uptime check we teach (Module 07).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Live services answer
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check
+        id: check
+        run: |
+          failed=""
+          check() {
+            if ! out=$(curl --fail --silent --show-error --max-time 20 --retry 2 --retry-delay 15 "$2" 2>&1); then
+              failed="$failed\n- $1 ($2): $out"
+            elif [ -n "${3:-}" ] && ! echo "$out" | grep -q "$3"; then
+              failed="$failed\n- $1 ($2): unexpected response"
+            fi
+          }
+          check "Site" https://launchwright.app/
+          check "Platform" https://platform.launchwright.app/health '"ok":true'
+          check "MCP server" https://mcp.launchwright.app/health '"ok":true'
+          check "MCP OAuth metadata" https://mcp.launchwright.app/.well-known/oauth-protected-resource/mcp '"resource"'
+          if [ -n "$failed" ]; then
+            printf "Down:%b\n" "$failed" | tee "$RUNNER_TEMP/down.md"
+            echo "down=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open or update the outage issue
+        if: steps.check.outputs.down == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue=$(gh issue list -R "$GITHUB_REPOSITORY" --label outage --state open --json number -q '.[0].number')
+          body="$(cat "$RUNNER_TEMP/down.md")
+
+          Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" -R "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh label create outage -R "$GITHUB_REPOSITORY" --color B60205 --description "Uptime check failing" 2>/dev/null || true
+            gh issue create -R "$GITHUB_REPOSITORY" --label outage --title "Outage: a launchwright service is down" --body "$body"
+          fi
+          exit 1
+      - name: Close the outage issue when everything is back
+        if: steps.check.outputs.down != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list -R "$GITHUB_REPOSITORY" --label outage --state open --json number -q '.[].number'); do
+            gh issue close "$n" -R "$GITHUB_REPOSITORY" --comment "Back up: every check passes ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+          done
