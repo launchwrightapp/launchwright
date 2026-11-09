@@ -24,7 +24,7 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: gitleaks
@@ -39,8 +39,8 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -52,7 +52,7 @@ jobs:
       - uses: ./.github/actions/playwright
       - run: npm run test:e2e -w apps/site
       - run: npm run test:e2e -w apps/platform
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-local
@@ -70,8 +70,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -117,7 +117,7 @@ jobs:
           body=$(printf '### Preview\n\n| App | URL |\n|---|---|\n| Site | %s |\n| Platform | %s |\n\nE2E on preview: **%s** · commit `%s`' \
             "${{ steps.up.outputs.site }}" "${{ steps.up.outputs.platform }}" "${{ job.status }}" "${GITHUB_SHA::7}")
           gh pr comment ${{ github.event.number }} --body "$body" --edit-last --create-if-none
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-preview
@@ -133,8 +133,8 @@ jobs:
       group: production
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
