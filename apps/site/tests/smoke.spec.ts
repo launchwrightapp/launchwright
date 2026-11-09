@@ -307,6 +307,28 @@ test("says it is for websites and web apps, not mobile apps", async ({ page }) =
   await expect(page.locator("#faq").getByText("Can I ship a mobile app?")).toBeVisible();
 });
 
+test("FAQ answers open and close without <details>", async ({ page }) => {
+  await page.goto("/#faq");
+  const faq = page.locator("#faq");
+  await expect(faq.locator("details")).toHaveCount(0);
+  const q = faq.getByRole("button", { name: "Can I ship a mobile app?" });
+  const answer = faq.getByText("Native iOS and Android apps aren't supported.");
+  await expect(q).toHaveAttribute("aria-expanded", "false");
+  await expect(answer).toBeHidden();
+  await q.click();
+  await expect(q).toHaveAttribute("aria-expanded", "true");
+  await expect(answer).toBeVisible();
+  await q.click();
+  await expect(answer).toBeHidden();
+});
+
+test("FAQ answers all show without JavaScript", async ({ browser }) => {
+  const page = await browser.newPage({ javaScriptEnabled: false });
+  await page.goto("/#faq");
+  await expect(page.locator("#faq").getByText("Native iOS and Android apps aren't supported.")).toBeVisible();
+  await page.close();
+});
+
 test("walkthrough fits and works on a small phone", async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
   await page.goto("/#how");

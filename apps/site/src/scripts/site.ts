@@ -29,6 +29,18 @@ function initTabs(list: HTMLElement) {
 }
 document.querySelectorAll<HTMLElement>("[data-tabs]").forEach(initTabs);
 
+// FAQ: each question toggles its answer. Without JS every answer stays visible.
+for (const item of document.querySelectorAll<HTMLElement>("[data-faq]")) {
+  const btn = item.querySelector<HTMLButtonElement>("button[aria-controls]")!;
+  const answer = document.getElementById(btn.getAttribute("aria-controls")!)!;
+  const set = (open: boolean) => {
+    btn.setAttribute("aria-expanded", String(open));
+    answer.hidden = !open;
+  };
+  set(false);
+  btn.addEventListener("click", () => set(btn.getAttribute("aria-expanded") !== "true"));
+}
+
 // Active nav link: highlights the section you're reading.
 // The current section is the last one whose top has passed just under the header.
 // Sections without a nav link (hero, pilot form) clear the highlight.
