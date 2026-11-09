@@ -13,7 +13,7 @@ import { z } from "zod";
 import type { Concept } from "../../../packages/core/curriculum";
 import { MODULES } from "../../../packages/core/curriculum";
 import { untrustedBlock, redact } from "../../../packages/core/untrusted";
-import { REPO_RE, dispatchWorkflow, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
+import { REPO_RE, branchHead, dispatchWorkflow, listActionsSecrets, listRuns, openPullRequest, putActionsSecret, readFiles, runLogs, setVariable } from "./github";
 import { runChecks, score, type Check } from "./readiness";
 import { checkUrl, liveChecks } from "./live";
 import { detectStack, projectStatus } from "./project";
@@ -51,6 +51,9 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
     if (id) {
       if (!isUuid(id)) throw new UserError("That approval_id isn't valid. Start again without it.");
       const a = await store.getApproval(learner.id, id);
+      // Actions tied to a commit end in "@<sha>": same action, new commits means the code changed since the learner approved.
+      if (a && a.repo.toLowerCase() === repoName.toLowerCase() && a.action !== action && a.action.includes("@") && a.action.split("@")[0] === action.split("@")[0])
+        throw new UserError(`New commits landed since the learner approved (approved ${a.action.split("@")[1].slice(0, 7)}, now ${action.split("@")[1]?.slice(0, 7)}). An approval covers one exact commit, so start again without approval_id to ask for a new one.`, "blocked");
       if (!a || a.repo.toLowerCase() !== repoName.toLowerCase() || a.action !== action) throw new UserError("That approval is for a different action or repo. Start again without approval_id.");
       if (a.status === "pending") throw new UserError(`Still waiting for the learner to decide on the dashboard: ${dashboard(ctx, `/security?approval=${id}#approvals`)}`, "pending");
       if (a.status === "rejected") throw new UserError("The learner rejected this on the dashboard. Don't retry it; ask them what they'd like instead.", "blocked");
@@ -473,15 +476,18 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
         if (missing.length && (!cf || cf.method !== "api_key")) notConnected(ctx, "cloudflare", "The deploy workflow needs a Cloudflare API token in the repo's Actions secrets, copied from the connected account.");
 
         const url = production_url ? checkUrl(production_url).origin : rc.productionUrl;
+        // A production deploy is approved for one exact commit; the workflow then deploys that commit.
+        const head = prod && !rollback ? await branchHead(learner.githubToken, snap.repo, branch) : null;
+        const pinnable = /^\s+sha:/m.test(snap.files[`.github/workflows/${workflow}`] ?? "");
         if (prod) {
-          const action = (rollback ? "rollback:production" : `deploy:production:${branch}`) + (which ? `:${rc.worker ?? rc.app!.dir}` : "");
+          const action = (rollback ? "rollback:production" : `deploy:production:${branch}`) + (which ? `:${rc.worker ?? rc.app!.dir}` : "") + (head ? `@${head.sha}` : "");
           const ask = await gate(snap.repo, action, approval_id, {
             tool: "deploy",
-            title: rollback ? `Roll back ${snap.repo}${which} in production` : `Deploy ${snap.repo}${which} (${branch}) to production`,
+            title: rollback ? `Roll back ${snap.repo}${which} in production` : `Deploy ${snap.repo}${which} (${branch} at ${head!.sha.slice(0, 7)}) to production`,
             summary: rollback
               ? "Puts the previous production version back. Users get the old version within seconds."
-              : `Builds ${branch} and replaces what your users see${url ? ` on ${new URL(url).host}` : ""}. If the smoke test fails afterwards, it rolls back on its own.`,
-            detail: { workflow, branch, environment, rollback: !!rollback, worker: rc.worker, url, setsSecrets: missing },
+              : `Builds commit ${head!.sha.slice(0, 7)} ("${head!.message}") on ${branch} and replaces what your users see${url ? ` on ${new URL(url).host}` : ""}. This approval covers only that commit. If the smoke test fails afterwards, it rolls back on its own.`,
+            detail: { workflow, branch, ...(head ? { commit: head.sha, message: head.message } : {}), environment, rollback: !!rollback, worker: rc.worker, url, setsSecrets: missing },
           });
           if (ask) return { ...ask, concepts: ["deploy", ...ask.concepts, ...(rollback ? (["rollback"] as Concept[]) : [])] };
         }
@@ -495,12 +501,12 @@ export function buildServer(learner: Learner, store: Store, config: Config) {
           await setVariable(learner.githubToken, snap.repo, "PRODUCTION_URL", url).catch((e) => console.error("PRODUCTION_URL variable", e));
           await store.saveProject(learner.id, { repo: snap.repo, productionUrl: url });
         }
-        await dispatchWorkflow(learner.githubToken, snap.repo, workflow, branch, { environment, rollback: String(!!rollback) });
+        await dispatchWorkflow(learner.githubToken, snap.repo, workflow, branch, { environment, rollback: String(!!rollback), ...(head && pinnable ? { sha: head.sha } : {}) });
         await new Promise((r) => setTimeout(r, config.dispatchDelayMs ?? 2500)); // let GitHub register the run
         const [run] = await listRuns(learner.githubToken, snap.repo, { workflow, per: 1 }).catch(() => []);
         const what = rollback ? "Rollback" : prod ? "Production deploy" : "Preview deploy";
         return {
-          result: `${what} started for ${snap.repo}${which} (${branch}).${missing.length ? ` First copied ${list(missing)} from the connected Cloudflare account into the repo's Actions secrets (values hidden).` : ""}\n\nRun: ${run?.url ?? `https://github.com/${snap.repo}/actions/workflows/${workflow}`}\n\nIt usually takes 1 to 3 minutes. Use get_logs (source "ci") to follow it.${prod && !url ? "\n\nNo production URL is known, so the post-deploy smoke test is skipped. Pass production_url next time." : ""}`,
+          result: `${what} started for ${snap.repo}${which} (${branch}${head ? ` at ${head.sha.slice(0, 7)}` : ""}).${head && !pinnable ? ` This repo's deploy workflow predates commit pinning, so it builds whatever ${branch} points at when the run starts (checked just now: still ${head.sha.slice(0, 7)}). Run setup_ci again to update it.` : ""}${missing.length ? ` First copied ${list(missing)} from the connected Cloudflare account into the repo's Actions secrets (values hidden).` : ""}\n\nRun: ${run?.url ?? `https://github.com/${snap.repo}/actions/workflows/${workflow}`}\n\nIt usually takes 1 to 3 minutes. Use get_logs (source "ci") to follow it.${prod && !url ? "\n\nNo production URL is known, so the post-deploy smoke test is skipped. Pass production_url next time." : ""}`,
           data: { status: "started", run: run ?? null, environment, rollback: !!rollback },
           concepts: prod ? (rollback ? ["rollback"] : ["deploy", "production_approval"]) : ["preview_deploys", "deploy"],
           audit: { repo: snap.repo, summary: `${what}${which} started (${branch})${run ? ` run ${run.id}` : ""}` },

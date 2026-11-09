@@ -59,8 +59,8 @@ const run = (pm: CiPlan["packageManager"], script: string) => (pm === "npm" ? `n
 const install = (pm: CiPlan["packageManager"]) =>
   ({ npm: "npm ci", pnpm: "pnpm install --frozen-lockfile", yarn: "yarn install --frozen-lockfile", bun: "bun install --frozen-lockfile" })[pm];
 
-function setupSteps(p: CiPlan, indent = "      "): string {
-  const lines = ["- uses: actions/checkout@v4"];
+function setupSteps(p: CiPlan, indent = "      ", ref?: string): string {
+  const lines = ["- uses: actions/checkout@v4", ...(ref ? ["  with:", `    ref: ${ref}`] : [])];
   if (p.packageManager === "pnpm") lines.push("- uses: pnpm/action-setup@v4");
   if (p.packageManager === "bun") lines.push("- uses: oven-sh/setup-bun@v2");
   lines.push("- uses: actions/setup-node@v4", "  with:", "    node-version: 22", ...(p.packageManager === "bun" ? [] : [`    cache: ${p.packageManager}`]));
@@ -167,6 +167,10 @@ on:
         description: Roll production back to the previous version instead of deploying
         type: boolean
         default: false
+      sha:
+        description: Exact commit to deploy (launchwright passes the one you approved)
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -207,7 +211,7 @@ ${playwrightSteps(p)}
     runs-on: ubuntu-latest
     environment: production
     steps:
-${setupSteps(p)}${build}
+${setupSteps(p, undefined, "\${{ inputs.sha || github.sha }}")}${build}
       - name: Roll back
         if: inputs.rollback${wd}
         run: ${rollback}

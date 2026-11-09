@@ -19,6 +19,7 @@ let workflows: Record<string, string> = {};
 let calls: { method: string; path: string; body?: unknown }[] = [];
 let actionsSecrets: string[] = [];
 let workerSecrets: string[] = [];
+let headSha = "c0ffee1234567890";
 
 function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const url = new URL(String(input));
@@ -45,6 +46,7 @@ function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Respon
     if (url.searchParams.get("ref") !== "main") return json({ message: "Not Found" }, 404);
     return p in all ? Promise.resolve(new Response(all[p])) : json({ message: "Not Found" }, 404);
   }
+  if (path === `${r}/commits/main`) return json({ sha: headSha, commit: { message: "Add checkout page\n\nlong body" } });
   if (path === `${r}/git/ref/heads/main`) return json({ object: { sha: "abc123" } });
   if (path === `${r}/git/refs` && method === "POST") return json({ ref: body.ref }, 201);
   if (path.startsWith(`${r}/contents/`) && method === "PUT") return json({}, 201);
@@ -82,6 +84,7 @@ beforeEach(() => {
   calls = [];
   actionsSecrets = [];
   workerSecrets = [];
+  headSha = "c0ffee1234567890";
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
 });
 afterEach(() => vi.restoreAllMocks());
@@ -167,6 +170,30 @@ describe("MCP tools", () => {
     expect(calls.filter((c) => c.path.endsWith("/dispatches")).map((c) => (c.body as { inputs: { environment: string } }).inputs.environment)).toEqual(["preview", "production"]);
     const again = await call("deploy", { repo: REPO, environment: "production", approval_id: approvalId });
     expect(again.text).toContain("already used");
+  });
+
+  it("deploy: a production approval covers one exact commit, and the workflow deploys that commit", async () => {
+    const { call, mem } = await connect();
+    workflows[".github/workflows/launchwright-deploy.yml"] = "on:\n  workflow_dispatch:\n    inputs:\n      sha:\n        type: string\n";
+    actionsSecrets = ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"];
+
+    const ask = await call("deploy", { repo: REPO, environment: "production" });
+    const id = ask.data.approvalId as string;
+    const pending = mem.approvals.get(id)!;
+    expect(pending.action).toBe("deploy:production:main@c0ffee1234567890");
+    expect(pending.title).toContain("main at c0ffee1");
+    expect(pending.detail).toMatchObject({ commit: "c0ffee1234567890", message: "Add checkout page" });
+    mem.approve(id);
+
+    headSha = "badbad0000000000"; // someone merged after the learner approved
+    const moved = await call("deploy", { repo: REPO, environment: "production", approval_id: id });
+    expect(moved.text).toContain("New commits landed");
+    expect(calls.some((c) => c.path.endsWith("/dispatches"))).toBe(false);
+
+    headSha = "c0ffee1234567890";
+    const go = await call("deploy", { repo: REPO, environment: "production", approval_id: id });
+    expect(go.text).toContain("at c0ffee1");
+    expect((calls.find((c) => c.path.endsWith("/dispatches"))!.body as { inputs: Record<string, string> }).inputs.sha).toBe("c0ffee1234567890");
   });
 
   it("deploy refuses without the workflow and asks for Cloudflare when it's not connected", async () => {
