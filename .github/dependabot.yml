@@ -1,0 +1,28 @@
+# Dependency updates (practice exercise "abuse_and_deps", Security module).
+# Security fixes come as soon as GitHub knows about them; routine updates once a week, grouped
+# so they arrive as a few pull requests instead of dozens. Every PR runs the required checks.
+# Dependabot PRs can't read Actions secrets, so the preview deploy is skipped for them
+# (pipeline.yml); the local typecheck and E2E tests still gate the merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /            # the root lockfile covers every workspace
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Manila
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: Asia/Manila
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [dependencies]
