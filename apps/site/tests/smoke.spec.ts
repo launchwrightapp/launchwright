@@ -301,6 +301,12 @@ test("Level 2 is marked as not part of the pilot", async ({ page }) => {
   await expect(page.locator("#curriculum").getByText("Level 2 · Not in the pilot")).toBeVisible();
 });
 
+test("says it is for websites and web apps, not mobile apps", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("For websites and web apps.")).toBeVisible();
+  await expect(page.locator("#faq").getByText("Can I ship a mobile app?")).toBeVisible();
+});
+
 test("walkthrough fits and works on a small phone", async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
   await page.goto("/#how");
