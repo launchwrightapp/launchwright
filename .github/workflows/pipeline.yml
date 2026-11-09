@@ -44,6 +44,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck -w apps/site
       - run: npm run typecheck -w apps/platform
+      - run: npm run typecheck -w apps/mcp
+      - run: npm test -w apps/mcp
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e -w apps/site
       - run: npm run test:e2e -w apps/platform
