@@ -86,6 +86,7 @@ test.describe("email and code", () => {
   });
 
   test("resend waits 30 seconds, then sends a new code", async ({ page }) => {
+    test.skip(isDeployed, "The real Turnstile sitekey only works on launchwright.app, not preview URLs");
     await page.route("**/api/pilot/code", (r) => r.fulfill({ json: { ok: true, resendIn: 30 } }));
     await page.goto("/pilot/verify?email=juan@example.com");
     await page.evaluate(() => sessionStorage.setItem("lw-pilot-sent", String(Date.now())));

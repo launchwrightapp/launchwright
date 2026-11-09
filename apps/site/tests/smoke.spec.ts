@@ -111,6 +111,7 @@ test("home form checks the email before sending a code", async ({ page }) => {
 });
 
 test("home form sends the code itself and goes straight to the code page", async ({ page }) => {
+  test.skip(!!process.env.BASE_URL && !process.env.BASE_URL.includes("localhost"), "The real Turnstile sitekey only works on launchwright.app, not preview URLs");
   // The API is mocked: a real call would email someone.
   let sent: unknown;
   await page.route("**/api/pilot/code", async (r) => {
@@ -122,10 +123,8 @@ test("home form sends the code itself and goes straight to the code page", async
   await page.locator("#waitlist").getByRole("button", { name: "Send code" }).click();
   await expect(page).toHaveURL(/\/pilot\/verify\?email=juan%40example\.com/);
   expect(sent).toMatchObject({ email: "juan@example.com" });
-  if (!process.env.BASE_URL || process.env.BASE_URL.includes("localhost")) {
-    // Locally the page runs Cloudflare's always-pass test widget.
-    expect((sent as Record<string, string>)["cf-turnstile-response"]).toBeTruthy();
-  }
+  // Locally the page runs Cloudflare's always-pass test widget.
+  expect((sent as Record<string, string>)["cf-turnstile-response"]).toBeTruthy();
 });
 
 test("theme switch toggles and remembers the choice", async ({ page }) => {
