@@ -13,7 +13,12 @@ const tabs = [...document.querySelectorAll<HTMLButtonElement>("[data-filter] [da
 const picked: Record<string, string> = { role: "", stage: "" };
 const search = document.querySelector<HTMLInputElement>("[data-search]")!;
 const sortBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-sort]")];
-type SortKey = "name" | "email" | "building" | "applied" | "status";
+type SortKey = "name" | "email" | "building" | "applied" | "status" | "fit";
+interface Review { email: string; score: number; fit: "strong" | "maybe" | "weak"; reason: string; risk: string }
+// Claude's ranking (worker/review.ts), kept only for this page view.
+let reviews = new Map<string, Review>();
+const FIT_TAG: Record<Review["fit"], string> = { strong: "tag-ok", maybe: "tag-warn", weak: "tag-bad" };
+const fitText = (r: Review) => `${r.fit[0].toUpperCase()}${r.fit.slice(1)} fit · ${r.score}`;
 
 let people: Applicant[] = [];
 let seats = 10;
@@ -65,6 +70,16 @@ function fillSheet(a: Applicant) {
   q("[data-sheet-name]").textContent = a.name || a.email.split("@")[0];
   q("[data-sheet-meta]").textContent = `${a.email} · applied ${day(a.appliedAt)}`;
   status(q("[data-sheet-status]"), a);
+  const rv = reviews.get(a.email);
+  const box = q("[data-sheet-review]");
+  box.hidden = !rv;
+  if (rv) {
+    const fit = q("[data-sheet-fit]");
+    fit.className = `tag text-[12px] ${FIT_TAG[rv.fit]}`;
+    fit.textContent = fitText(rv);
+    q("[data-sheet-reason]").textContent = rv.reason;
+    q("[data-sheet-risk]").textContent = rv.risk ? `Risk: ${rv.risk}` : "";
+  }
   // One tab per pilot form step. Answers we don't know yet land in the last tab.
   const answers: Record<string, unknown> = { ...(a.answers ?? {}) };
   const take = (k: string): [string, string] | null => {
@@ -150,6 +165,13 @@ function row(a: Applicant) {
   // Narrow screens keep Name, Status and View; the email moves under the name.
   const name = el("td", "w-full max-w-0 px-3 py-2.5 @xl:px-4");
   add(name, el("p", "truncate font-semibold", a.name || a.email.split("@")[0]), el("p", "truncate text-[14px] text-muted @2xl:hidden", a.email));
+  const rv = reviews.get(a.email);
+  if (rv) {
+    const line = el("p", "mt-1 flex min-w-0 items-center gap-2 text-[13px]");
+    add(line, el("span", `tag flex-none text-[12px] ${FIT_TAG[rv.fit]}`, fitText(rv)), el("span", "truncate text-muted", rv.reason));
+    line.title = rv.reason;
+    add(name, line);
+  }
   const email = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @2xl:table-cell", a.email);
   const building = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @4xl:table-cell", a.building ?? "");
   const applied = el("td", "hidden whitespace-nowrap px-3 py-2.5 @xl:px-4 tabular-nums text-muted @xl:table-cell", day(a.appliedAt));
@@ -173,6 +195,7 @@ const sortValue: Record<SortKey, (a: Applicant) => string> = {
   building: (a) => (a.building ?? "").toLowerCase(),
   applied: (a) => a.appliedAt,
   status: (a) => a.acceptedAt ?? "", // waiting first, then by accept date
+  fit: (a) => String(1000 - (reviews.get(a.email)?.score ?? -1)).padStart(4, "0"), // best first, unranked last
 };
 // Everything a search can match: who they are and what they told us.
 const haystack = (a: Applicant) =>
@@ -242,6 +265,32 @@ for (const b of sortBtns) {
     draw();
   });
 }
+
+const rankBtn = document.querySelector<HTMLButtonElement>("[data-rank]")!;
+const rankNote = document.querySelector<HTMLElement>("[data-rank-note]")!;
+rankBtn.addEventListener("click", async () => {
+  rankBtn.disabled = true;
+  rankBtn.textContent = "Ranking…";
+  rankNote.className = "-mt-2 text-[13px] text-muted";
+  rankNote.textContent = "Claude is reading the applications. This takes up to a minute.";
+  const { ok, data } = await api<{ model: string; reviewed: number; reviews: Review[] }>("/api/admin/applicants/review", { method: "POST", body: {} });
+  rankBtn.disabled = false;
+  rankBtn.textContent = "Rank again";
+  if (!ok) {
+    rankNote.className = "-mt-2 text-[13px] text-bad";
+    rankNote.textContent = data.error ?? "Ranking didn't work. Try again.";
+    return;
+  }
+  reviews = new Map(data.reviews.map((r) => [r.email, r]));
+  const strong = data.reviews.filter((r) => r.fit === "strong").length;
+  rankNote.textContent = `Ranked ${data.reviews.length} of ${data.reviewed} waiting by ${data.model}: ${strong} strong fit. Sorted best first; a suggestion, not a decision.`;
+  filter = "waiting";
+  for (const x of tabs) x.setAttribute("aria-pressed", String(x.dataset.show === "waiting"));
+  sortKey = "fit";
+  sortDir = 1;
+  draw();
+  if (open && sheet.open) fillSheet(open);
+});
 
 (async () => {
   const { ok, data } = await api<{ seats: number; applicants: Applicant[] }>("/api/admin/applicants");

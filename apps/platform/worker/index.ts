@@ -1,10 +1,10 @@
 // platform.launchwright.app: GitHub sign-in in front of the static dashboard.
 import { SESSION_COOKIE, SESSION_DAYS, cookie, readCookie, sign, verify, type User } from "./session";
-import { handleApplicantsApi } from "./applicants";
+import { handleApplicantsApi, type ApplicantsEnv } from "./applicants";
 import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from "./messages";
 import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
 
-interface Env extends MessagesEnv, LearnerEnv {
+interface Env extends ApplicantsEnv, LearnerEnv {
   ASSETS: Fetcher;
   GITHUB_CLIENT_ID: string; // public, in wrangler.jsonc
   GITHUB_CLIENT_SECRET?: string; // secret

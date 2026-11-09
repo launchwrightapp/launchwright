@@ -34,8 +34,12 @@ const sections = [
         <p class="label">Operations</p>
         <h1 class="text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Pilot applicants</h1>
       </div>
-      <p data-seats class="tag tag-line text-[14px]" aria-live="polite">Loading seats…</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" data-rank class="btn btn-sm btn-outline">Rank with Claude</button>
+        <p data-seats class="tag tag-line text-[14px]" aria-live="polite">Loading seats…</p>
+      </div>
     </div>
+    <p data-rank-note role="status" class="-mt-2 text-[13px] text-muted">Ranks everyone waiting by how likely they are to finish the pilot. Claude gets only their answers and project text (contact details removed), never their name, email, GitHub or city. You still decide.</p>
 
     <!-- One card: toolbar (status, filters, search), then the table. -->
     <!-- No overflow-hidden here: it would clip the filter menus. The toolbar rounds its own top corners. -->
@@ -84,6 +88,11 @@ const sections = [
         </div>
         <span data-sheet-status class="tag flex-none text-[13px]"></span>
         <button type="button" data-sheet-close aria-label="Close" class="grid size-8 flex-none cursor-pointer place-items-center rounded-md border border-line text-xl leading-none hover:border-ink">&times;</button>
+      </div>
+      <div hidden data-sheet-review class="flex flex-col gap-1 rounded-lg bg-surface-2 p-3 text-[14px]">
+        <p class="flex items-center gap-2"><span data-sheet-fit class="tag text-[12px]"></span><span class="text-muted">Claude's read</span></p>
+        <p data-sheet-reason></p>
+        <p data-sheet-risk class="text-muted"></p>
       </div>
       <!-- Same steps as the pilot form (apps/site/src/pages/pilot/apply.astro). -->
       <div class="flex-1">
