@@ -1,25 +1,25 @@
 Hi {{name}},
 
-A small update to how we review applications.
+A small update to our privacy policy.
 
-Before we start reviewing, we want you to know about one change. An AI model (Anthropic's Claude) may help us see who is most likely to finish the pilot and ship their app. We've updated our privacy policy to say so.
+If you're in the pilot, the launchwright team can now see your activity log and lesson progress. It helps us spot when you're stuck and fix problems faster.
 
-WHAT THE AI GETS
-Your answers to the pilot questions and what you're building, under a random label. We remove anything in your project description that looks like contact details first.
+WHAT WE SEE
+What your AI tool did through launchwright (the tool, the repo, a short summary and whether it worked), and which lessons and practice exercises you've covered. You see the same log on your dashboard.
 
-WHAT IT NEVER GETS
-Your name, email, GitHub username or city.
+WHAT WE NEVER SEE
+Your code, your secret values, or your chats with your AI tool.
 
 WHAT STAYS THE SAME
-1. A person on our team reads every application and makes every decision.
-2. Anthropic doesn't use your data to train its models.
-3. You can still ask us to delete your application at any time.
+1. None of this is sent to an AI model.
+2. Activity log entries are deleted after 12 months.
+3. You can ask us to delete your data at any time.
 
-Prefer that only a person reviews yours? Just reply to this email with "no AI" and we will. You don't need to give a reason, and it won't affect your chances.
+We also corrected one line: we no longer match your GitHub account by the username in your application. The sign-in link in your "You're in" email, or your verified GitHub email, does that now.
 
 Read the privacy policy: https://launchwright.app/privacy
 
-Questions? Just reply to this email.
+Questions or concerns? Just reply to this email.
 The launchwright team
 
 --

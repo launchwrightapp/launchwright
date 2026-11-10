@@ -105,7 +105,7 @@ export function sendPolicyUpdate(mail: SendEmail, to: string, name: string | nul
     from: FROM,
     replyTo: FROM.email,
     to,
-    subject: "A small update to how we review pilot applications",
+    subject: "A small update to our privacy policy",
     html: render(policyHtml, v, true),
     text: render(policyText, v, false),
   });
