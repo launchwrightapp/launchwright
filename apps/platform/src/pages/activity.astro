@@ -1,0 +1,117 @@
+---
+// Learner activity (team only; the worker returns 404 for everyone else).
+// Data: GET /api/admin/activity and /api/admin/activity/learner?id= (worker/team-activity.ts),
+// drawn by scripts/team-activity.ts.
+import App from "../layouts/App.astro";
+import { control, toolbar, searchIcon } from "../data/ui";
+
+const views = [
+  { id: "learners", label: "Learners" },
+  { id: "tools", label: "Tools" },
+  { id: "recent", label: "Recent" },
+];
+const th = "px-3 py-2 @xl:px-4 font-semibold";
+const learnerCols = [
+  { label: "Learner", cls: "" },
+  { label: "AI tool", cls: "hidden @3xl:table-cell" },
+  { label: "AI calls", cls: "text-right" },
+  { label: "Errors", cls: "hidden @xl:table-cell text-right" },
+  { label: "Lessons", cls: "hidden @2xl:table-cell text-right" },
+  { label: "Exercises", cls: "hidden @2xl:table-cell text-right" },
+  { label: "Last active", cls: "text-right" },
+];
+const toolCols = [
+  { label: "Tool", cls: "" },
+  { label: "Calls", cls: "text-right" },
+  { label: "People", cls: "text-right" },
+  { label: "Errors", cls: "hidden @xl:table-cell text-right" },
+  { label: "Blocked", cls: "hidden @xl:table-cell text-right" },
+  { label: "Last used", cls: "hidden @2xl:table-cell text-right" },
+];
+const details = [
+  { id: "timeline", label: "Timeline" },
+  { id: "lessons", label: "Lessons" },
+];
+---
+<App title="Activity" page="activity">
+  <script src="../scripts/team-activity.ts"></script>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="label">Operations</p>
+        <h1 class="flex items-center gap-2 text-[clamp(1.5rem,2.2vw,1.875rem)] font-bold leading-tight tracking-[-0.02em]">Learner activity <span data-sample class="hidden tag tag-line text-[13px] font-medium tracking-normal">Sample</span></h1>
+      </div>
+      <p data-totals class="tag tag-line text-[14px]" aria-live="polite">Loading…</p>
+    </div>
+    <p data-status role="status" class="-mt-2 text-[13px] text-muted">What each learner's AI tool did through launchwright, and the lessons and exercises they've covered. Your own testing counts too.</p>
+
+    <div role="tablist" aria-label="Activity views" data-tabs class="tabs">
+      {views.map((v, i) => (
+        <button type="button" role="tab" id={`tab-${v.id}`} aria-controls={`panel-${v.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">{v.label} <span data-count={v.id} class="tabular-nums text-muted"></span></button>
+      ))}
+    </div>
+
+    <!-- Learners -->
+    <div id="panel-learners" role="tabpanel" aria-labelledby="tab-learners" class="rounded-md border border-line bg-surface dark:bg-surface-2">
+      <div class:list={[toolbar, "rounded-t-md"]}>
+        <p data-not-signed-in class="mr-auto text-[13px] text-muted"></p>
+        <div class="relative w-full @2xl:w-64">
+          <label class="sr-only" for="learner-search">Search learners</label>
+          <Fragment set:html={searchIcon} />
+          <input id="learner-search" type="search" data-search placeholder="Search name, email, repo…" autocomplete="off" class={`${control} w-full pl-8`} />
+        </div>
+      </div>
+      <div class="overflow-x-auto rounded-b-md">
+        <table class="w-full border-collapse text-left text-[14px]">
+          <thead class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
+            <tr class="border-b border-line">{learnerCols.map((c) => <th scope="col" class:list={[th, c.cls]}>{c.label}</th>)}</tr>
+          </thead>
+          <tbody data-learners aria-busy="true" aria-live="polite"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tools -->
+    <div id="panel-tools" role="tabpanel" aria-labelledby="tab-tools" class="overflow-x-auto rounded-md border border-line bg-surface dark:bg-surface-2">
+      <table class="w-full border-collapse text-left text-[14px]">
+        <thead class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
+          <tr class="border-b border-line">{toolCols.map((c) => <th scope="col" class:list={[th, c.cls]}>{c.label}</th>)}</tr>
+        </thead>
+        <tbody data-tools aria-busy="true"></tbody>
+      </table>
+    </div>
+
+    <!-- Recent, across everyone -->
+    <div id="panel-recent" role="tabpanel" aria-labelledby="tab-recent" class="rounded-md border border-line bg-surface dark:bg-surface-2">
+      <ol data-recent class="flex flex-col" aria-busy="true"></ol>
+    </div>
+  </div>
+
+  <dialog data-sheet aria-labelledby="sheet-title" class="sheet min-h-[60dvh]">
+    <div class="mx-auto flex min-h-[60dvh] w-full max-w-4xl flex-col gap-4 px-4 pb-8 pt-3 md:px-8">
+      <span class="mx-auto h-1.5 w-12 rounded-full bg-line" aria-hidden="true"></span>
+      <div class="flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <h2 id="sheet-title" data-sheet-name class="truncate text-2xl font-bold tracking-[-0.01em]"></h2>
+          <p data-sheet-meta class="break-words text-[14px] text-muted"></p>
+        </div>
+        <button type="button" data-sheet-close aria-label="Close" class="grid size-8 flex-none cursor-pointer place-items-center rounded-md border border-line text-xl leading-none hover:border-ink">&times;</button>
+      </div>
+      <p data-sheet-stats class="text-[14px]"></p>
+      <div class="flex-1">
+        <div role="tablist" aria-label="Learner details" data-tabs class="tabs">
+          {details.map((d, i) => (
+            <button type="button" role="tab" id={`sheet-tab-${d.id}`} aria-controls={`sheet-panel-${d.id}`} aria-selected={i === 0 ? "true" : "false"} class="tab">{d.label} <span data-sheet-count={d.id} class="tabular-nums text-muted"></span></button>
+          ))}
+        </div>
+        <div id="sheet-panel-timeline" role="tabpanel" aria-labelledby="sheet-tab-timeline" class="pt-2">
+          <p data-sheet-note role="status" class="py-2 text-[14px] text-muted"></p>
+          <ol data-sheet-timeline class="flex flex-col"></ol>
+        </div>
+        <div id="sheet-panel-lessons" role="tabpanel" aria-labelledby="sheet-tab-lessons" class="pt-2">
+          <ol data-sheet-lessons class="flex flex-col"></ol>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</App>

@@ -25,6 +25,8 @@ test.describe("learner", () => {
     expect((await page.goto("/inbox"))?.status()).toBe(404);
     expect((await page.goto("/applicants"))?.status()).toBe(404);
     expect((await page.goto("/funnel"))?.status()).toBe(404);
+    expect((await page.goto("/activity"))?.status()).toBe(404);
+    expect((await page.request.get("/api/admin/activity")).status()).toBe(404);
     expect((await page.request.get("/api/admin/funnel")).status()).toBe(404);
     expect((await page.request.get("/api/admin/applicants")).status()).toBe(404);
     expect((await page.request.get("/api/admin/threads")).status()).toBe(404);
@@ -149,6 +151,53 @@ test.describe("admin funnel", () => {
   test("the funnel API only answers GET", async ({ page }) => {
     await page.goto("/funnel");
     expect((await page.request.post("/api/admin/funnel", { data: {} })).status()).toBe(405);
+  });
+});
+
+test.describe("admin activity", () => {
+  test.beforeEach(async ({ context, baseURL }) => signIn(context, baseURL!, testAdmin));
+
+  const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+  const learner = { githubId: "1001", name: "Juan", email: "juan@example.com", login: "juandc", accepted: true, aiCalls: 3, actions: 1, errors: 1, blocked: 0, clients: ["Claude Code"], repos: ["juan/shop"], firstAt: ago(600), lastAt: ago(5), concepts: 2, exercises: 1 };
+  const call = { actor: "ai", client: "Claude Code", tool: "check_readiness", repo: "juan/shop", summary: "<b>5 of 8</b> checks passed", outcome: "error", at: ago(5) };
+  const report = { learners: [learner], tools: [{ tool: "check_readiness", calls: 3, people: 1, errors: 1, blocked: 0, lastAt: ago(5) }], recent: [{ ...call, githubId: "1001", name: "Juan", email: "juan@example.com" }], notSignedIn: 4, recentLimit: 200 };
+
+  test("the activity page is in the team nav and explains a missing database", async ({ page }) => {
+    await expect(async () => expect((await page.goto("/activity"))?.status()).toBe(200)).toPass();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Learner activity");
+    await expect(page.locator('a[href="/activity"]').first()).toBeAttached();
+    await expect(page.getByText("DATABASE_URL isn't set")).toBeVisible();
+  });
+
+  test("lists learners and tools, and opens one learner's timeline and lessons", async ({ page }) => {
+    await page.route("**/api/admin/activity", (r) => r.fulfill({ json: report }));
+    await page.route("**/api/admin/activity/learner?*", (r) => r.fulfill({ json: { githubId: "1001", limit: 300, timeline: [call], lessons: [
+      { key: "ci", title: "Continuous integration", module: "CI/CD", exercise: false, timesSeen: 2, firstSeen: ago(600), lastSeen: ago(5) },
+      { key: "exercise:backup_restore", title: "Backup and restore drill", module: "Database", exercise: true, timesSeen: 1, firstSeen: ago(60), lastSeen: ago(60) },
+    ] } }));
+    await page.goto("/activity");
+    await expect(page.locator('[data-learner="1001"]')).toContainText("Juan");
+    await expect(page.getByText("4 accepted people haven't signed in yet")).toBeVisible();
+
+    await page.getByRole("tab", { name: /Tools/ }).click();
+    await expect(page.locator('[data-tool="check_readiness"]')).toContainText("3");
+
+    await page.getByRole("tab", { name: /Learners/ }).click();
+    await page.locator('[data-learner="1001"] button').click();
+    const sheet = page.locator("dialog[data-sheet]");
+    await expect(sheet).toBeVisible();
+    // Text the AI tool wrote is shown as text, never as HTML.
+    await expect(sheet.getByText("<b>5 of 8</b> checks passed")).toBeVisible();
+    await expect(sheet.getByText("Error", { exact: true })).toBeVisible();
+    await sheet.getByRole("tab", { name: /Lessons/ }).click();
+    await expect(sheet.getByText("Continuous integration")).toBeVisible();
+    await expect(sheet.getByText("Exercise done")).toBeVisible();
+  });
+
+  test("the learner detail API checks the ID and only answers GET", async ({ page }) => {
+    await page.goto("/activity");
+    expect((await page.request.post("/api/admin/activity", { data: {} })).status()).toBe(405);
+    expect((await page.request.get("/api/admin/activity/learner?id=1;drop")).status()).toBe(400);
   });
 });
 

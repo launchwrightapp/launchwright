@@ -128,6 +128,28 @@ async function handle(req, res) {
       ["production_deploy", "First production deploy started", 4], ["all_checks_live", "All checks passing on a live URL", 2]];
     return send(res, 200, { days, sample: true, countingSince: "2026-11-09", steps: sample.map(([key, label, n]) => ({ key, label, n: Math.round(n * k) })) });
   }
+  // Same shape as worker/team-activity.ts. Sample people and calls.
+  if (p === "/api/admin/activity" && m === "GET") {
+    const learners = [
+      { githubId: "1001", name: "Juan Dela Cruz", email: "juan.delacruz@gmail.com", login: "juandc", accepted: true, aiCalls: 42, actions: 6, errors: 3, blocked: 1, clients: ["Claude Code", "Cursor"], repos: ["juan/barbershop-booking"], firstAt: ago(5 * DAY), lastAt: ago(4), concepts: 11, exercises: 2 },
+      { githubId: "1002", name: "Maria Santos", email: "maria.santos@up.edu.ph", login: "mariasantos", accepted: true, aiCalls: 9, actions: 1, errors: 1, blocked: 0, clients: ["Codex"], repos: ["msantos/thesis-tracker"], firstAt: ago(2 * DAY), lastAt: ago(3 * 60), concepts: 4, exercises: 0 },
+      { githubId: "1003", name: "Paolo Reyes", email: "paolo.reyes@outlook.com", login: "preyes", accepted: true, aiCalls: 0, actions: 0, errors: 0, blocked: 0, clients: [], repos: [], firstAt: null, lastAt: null, concepts: 0, exercises: 0 },
+    ];
+    const tools = [["project_status", 14, 2], ["check_readiness", 11, 2], ["explain_error", 8, 2], ["setup_ci", 6, 1], ["get_logs", 5, 1], ["deploy", 4, 1], ["set_secret", 3, 1]]
+      .map(([tool, calls, people], i) => ({ tool, calls, people, errors: i === 2 ? 2 : i === 5 ? 1 : 0, blocked: i === 5 ? 1 : 0, lastAt: ago(4 + i * 30) }));
+    const recent = me.audit.map((a) => ({ ...a, githubId: "1001", name: "Juan Dela Cruz", email: "juan.delacruz@gmail.com" }));
+    return send(res, 200, { sample: true, notSignedIn: 2, recentLimit: 200, learners, tools, recent });
+  }
+  if (p === "/api/admin/activity/learner" && m === "GET") {
+    const id = new URL(req.url, "http://localhost").searchParams.get("id");
+    const timeline = id === "1001" ? me.audit : [];
+    const lessons = id === "1001" ? [
+      { key: "know_your_stack", title: "Knowing your stack", module: "Git and GitHub", exercise: false, timesSeen: 6, firstSeen: ago(5 * DAY), lastSeen: ago(4) },
+      { key: "ci", title: "Continuous integration", module: "CI/CD", exercise: false, timesSeen: 2, firstSeen: ago(3 * DAY), lastSeen: ago(120) },
+      { key: "exercise:backup_restore", title: "Backup and restore drill", module: "Database", exercise: true, timesSeen: 1, firstSeen: ago(DAY), lastSeen: ago(DAY) },
+    ] : [];
+    return send(res, 200, { githubId: id, limit: 300, timeline, lessons });
+  }
   if (p === "/api/admin/applicants" && m === "GET") {
     return send(res, 200, { accepted: applicants.filter((a) => a.acceptedAt).length, applicants });
   }

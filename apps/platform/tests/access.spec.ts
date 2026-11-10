@@ -8,8 +8,8 @@ import { remote, signIn, testAdmin, testUser } from "./auth";
 test.skip(remote, "access tests sign in, which only works against the local test server");
 
 const LEARNER_API = ["/api/me", "/api/messages"];
-const ADMIN_API = ["/api/admin/applicants", "/api/admin/applicants/activity", "/api/admin/threads", "/api/admin/funnel"];
-const ADMIN_PAGES = ["/applicants", "/inbox", "/funnel"];
+const ADMIN_API = ["/api/admin/applicants", "/api/admin/applicants/activity", "/api/admin/threads", "/api/admin/funnel", "/api/admin/activity", "/api/admin/activity/learner?id=1"];
+const ADMIN_PAGES = ["/applicants", "/inbox", "/funnel", "/activity"];
 
 // Same-origin requests, so a refusal comes from the access rule and not the cross-site check.
 const ORIGIN = new URL(process.env.BASE_URL ?? "http://localhost:8792").origin;
