@@ -3,7 +3,9 @@
 // pull request (never a push to the default branch), Actions secrets, workflow dispatch.
 //
 // Needs these GitHub App permissions: Contents (read & write), Pull requests (read & write),
-// Workflows (read & write), Actions (read & write), Secrets (read & write), Metadata (read).
+// Workflows (read & write), Actions (read & write), Secrets (read & write), Variables (read & write),
+// Metadata (read), and the account permission Email addresses (read) for the dashboard sign-in.
+// Nothing else, Administration especially: it could change repo settings or delete the repo.
 import { workflowFiles, workspaceGlobs, workspacePackageFiles, type RepoSnapshot } from "./readiness";
 import { sealedBox, fromB64, toB64 } from "./sealedbox";
 
