@@ -3,7 +3,6 @@
 // the plugin only applies to the dev server. State lives in memory and resets on restart.
 // Same response shapes as worker/applicants.ts and worker/messages.ts.
 
-const SEATS = 10;
 const ago = (min) => new Date(Date.now() - min * 60_000).toISOString();
 const DAY = 24 * 60;
 
@@ -117,24 +116,22 @@ async function handle(req, res) {
     return send(res, 200, { days, sample: true, countingSince: "2026-11-09", steps: sample.map(([key, label, n]) => ({ key, label, n: Math.round(n * k) })) });
   }
   if (p === "/api/admin/applicants" && m === "GET") {
-    return send(res, 200, { seats: SEATS, accepted: applicants.filter((a) => a.acceptedAt).length, applicants });
+    return send(res, 200, { accepted: applicants.filter((a) => a.acceptedAt).length, applicants });
   }
   if (p === "/api/admin/applicants/accept" && m === "POST") {
     const { email, resend } = await body(req);
     const a = applicants.find((x) => x.email === email);
     if (!a) return send(res, 404, { error: `No application from ${email}.` });
     if (a.acceptedAt && !resend) return send(res, 409, { error: `${email} is already accepted.` });
-    const accepted = applicants.filter((x) => x.acceptedAt).length;
-    if (!a.acceptedAt && accepted >= SEATS) return send(res, 409, { error: `All ${SEATS} seats are taken.` });
     a.acceptedAt ??= ago(0);
-    return send(res, 200, { ok: true, email, acceptedAt: a.acceptedAt, accepted: applicants.filter((x) => x.acceptedAt).length, seats: SEATS });
+    return send(res, 200, { ok: true, email, acceptedAt: a.acceptedAt, accepted: applicants.filter((x) => x.acceptedAt).length });
   }
   if (p === "/api/admin/applicants/remove" && m === "POST") {
     const { email } = await body(req);
     const a = applicants.find((x) => x.email === email);
     if (!a?.acceptedAt) return send(res, 404, { error: `${email} isn't accepted.` });
     a.acceptedAt = null;
-    return send(res, 200, { ok: true, email, accepted: applicants.filter((x) => x.acceptedAt).length, seats: SEATS });
+    return send(res, 200, { ok: true, email, accepted: applicants.filter((x) => x.acceptedAt).length });
   }
 
   if (p === "/api/admin/threads" && m === "GET") {

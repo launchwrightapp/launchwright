@@ -11,7 +11,6 @@ export interface ApplicantsEnv extends MessagesEnv {
   ANTHROPIC_API_KEY?: string; // secret; enables "Rank with Claude" (unset = the button says how to turn it on)
 }
 
-const PILOT_SEATS = 10;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const json = (body: unknown, status = 200) =>
@@ -31,7 +30,6 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       // select * so the questionnaire's answers column shows up once it exists.
       const rows = (await sql`select * from waitlist order by created_at desc limit 500`) as Record<string, unknown>[];
       return json({
-        seats: PILOT_SEATS,
         accepted: rows.filter((r) => r.accepted_at).length,
         applicants: rows.map((r) => ({
           email: r.email,
@@ -56,10 +54,6 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       const [row] = (await sql`select email, name, building, accepted_at from waitlist where email = ${email}`) as Record<string, unknown>[];
       if (!row) return json({ error: `No application from ${email}.` }, 404);
       if (row.accepted_at && !resend) return json({ error: `${email} is already accepted.` }, 409);
-      if (!row.accepted_at) {
-        const [{ n }] = (await sql`select count(*)::int as n from waitlist where accepted_at is not null`) as { n: number }[];
-        if (n >= PILOT_SEATS) return json({ error: `All ${PILOT_SEATS} seats are taken.` }, 409);
-      }
       try {
         await sendAcceptance(env.EMAIL, row as unknown as Applicant);
       } catch (err) {
@@ -68,9 +62,9 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       }
       const [updated] = (await sql`update waitlist set accepted_at = coalesce(accepted_at, now()) where email = ${email} returning accepted_at`) as Record<string, unknown>[];
       const [{ n }] = (await sql`select count(*)::int as n from waitlist where accepted_at is not null`) as { n: number }[];
-      return json({ ok: true, email, acceptedAt: updated.accepted_at, accepted: n, seats: PILOT_SEATS });
+      return json({ ok: true, email, acceptedAt: updated.accepted_at, accepted: n });
     }
-    // Remove access: frees the seat and ends their dashboard and MCP access (within about 30 seconds
+    // Remove access: ends their dashboard and MCP access (within about 30 seconds
     // on other Worker instances). No email goes out. They go back to Waiting and can be accepted again.
     if (p === "/api/admin/applicants/remove" && req.method === "POST") {
       if (!(req.headers.get("content-type") ?? "").includes("application/json")) return json({ error: "Invalid request." }, 400);
@@ -84,7 +78,7 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       if (!row) return json({ error: `${email} isn't accepted.` }, 404);
       if (row.github_id != null) forgetAccess(Number(row.github_id));
       const [{ n }] = (await sql`select count(*)::int as n from waitlist where accepted_at is not null`) as { n: number }[];
-      return json({ ok: true, email, accepted: n, seats: PILOT_SEATS });
+      return json({ ok: true, email, accepted: n });
     }
     // Ask Claude to rank everyone still waiting (anonymised, see review.ts). Nothing is stored.
     if (p === "/api/admin/applicants/review" && req.method === "POST") {

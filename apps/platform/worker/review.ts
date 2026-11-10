@@ -44,7 +44,7 @@ export function anonymize(rows: ReviewRow[]) {
   });
 }
 
-const SYSTEM = `You help the launchwright team pick pilot learners. launchwright teaches beginners in the Philippines to ship their own app to production over a 6-week pilot, using their own AI coding tool (Claude Code, Cursor, Codex, etc.) plus their own free GitHub, Cloudflare and Neon/Supabase accounts. There are 10 seats.
+const SYSTEM = `You help the launchwright team pick pilot learners. launchwright teaches beginners in the Philippines to ship their own app to production over a 6-week pilot, using their own AI coding tool (Claude Code, Cursor, Codex, etc.) plus their own free GitHub, Cloudflare and Neon/Supabase accounts.
 
 Rank applicants by how likely they are to FINISH the pilot and ship their app to production. Weigh:
 - A concrete project they can describe (a real app with users or a clear purpose beats a vague idea).

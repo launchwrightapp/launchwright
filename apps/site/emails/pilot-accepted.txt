@@ -1,6 +1,6 @@
 {{headline}}
 
-You're one of the 10 learners in the free launchwright pilot. Over the next few weeks you'll take your own website or web app to production, and we'll explain each part as you go.
+You're in the free launchwright pilot. Over the next few weeks you'll take your own website or web app to production, and we'll explain each part as you go.
 
 YOUR NEXT STEP
 Sign in with GitHub and follow the setup steps on your dashboard: https://platform.launchwright.app

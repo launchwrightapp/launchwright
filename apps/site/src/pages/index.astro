@@ -200,7 +200,7 @@ const audit = [
 ];
 
 const faq = [
-  ["How does the pilot work?", "Apply with your email. The pilot has 10 seats, and we review every application. If you're in, we'll email you a link to get started."],
+  ["How does the pilot work?", "Apply with your email. We review every application. If you're in, we'll email you a link to get started."],
   ["Do I need to pay for an AI tool?", "You use the AI tool you already have (Claude Code, Codex, Cursor, and others) on your own subscription. It connects to Launchwright."],
   ["Where is my app hosted?", "On your own accounts: GitHub for code, Cloudflare for hosting, and Neon or Supabase for the database. We never host your app, so it stays yours."],
   ["Are my credentials safe?", "Tokens are encrypted and access is least-privilege. The AI never sees your raw credentials, and production deploys need your approval in the dashboard."],
@@ -233,8 +233,7 @@ const faq = [
       <h1 id="hero-title" class="mt-auto text-display font-bold text-balance">You built it with AI. <span class="block">Now learn to ship it.</span></h1>
       <p class="max-w-[36rem] text-[clamp(18px,2.9vh,22px)] leading-snug text-muted text-balance">For websites and web apps. From your first commit to a deployed app that passes the checks real teams run.</p>
       <div class="flex items-center gap-2.5 text-muted max-sm:order-1 sm:[@media(max-height:780px)]:hidden">
-        <span class="flex gap-1" aria-hidden="true">{Array.from({ length: 10 }, () => <i class="size-2.5 rounded-full bg-ink opacity-20"></i>)}</span>
-        <span>Free pilot for <b class="font-semibold text-ink">10 learners</b></span>
+        <span>Free pilot, <b class="font-semibold text-ink">applications open</b></span>
       </div>
       <div class="flex flex-wrap items-center justify-center gap-6" data-hero-cta>
         <a class="btn btn-cta" href="#pilot">{CTA}</a>
@@ -698,10 +697,10 @@ const faq = [
           <div class="flex flex-col gap-6 border-line bg-canvas/60 p-7 max-lg:border-b md:p-10 lg:border-r">
             <div class="flex flex-wrap items-center gap-3">
               <span class="tag bg-blue text-white">Applications open</span>
-              <span class="text-muted">10 seats</span>
+              <span class="text-muted">Free</span>
             </div>
             <h2 id="pilot-title" class="text-title font-bold text-balance">{CTA}.</h2>
-            <p class="text-[21px] leading-relaxed text-muted">Free for the first 10 learners. You ship your own website or web app, and we show you how each part works.</p>
+            <p class="text-[21px] leading-relaxed text-muted">Free while we run the pilot. You ship your own website or web app, and we show you how each part works.</p>
             <p class="text-base text-muted">You use your own AI tool and free-tier cloud accounts. If you go past a free tier, that provider bills you, not us.</p>
             <ul class="grid gap-3.5 text-[18px]" aria-label="What you get">
               {["One project, all the way to launch", "The full Level 1 learning path", "Readiness checks on your own repo", "Works with your own AI tool and cloud accounts"].map((t) => (
