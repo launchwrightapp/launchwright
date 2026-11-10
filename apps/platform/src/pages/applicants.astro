@@ -41,6 +41,23 @@ const sections = [
     </div>
     <p data-rank-note role="status" class="-mt-2 text-[13px] text-muted">Ranks everyone waiting by how likely they are to finish the pilot. Claude gets only their answers and project text (contact details removed), never their name, email, GitHub or city. You still decide.</p>
 
+    <!-- Accepted learners: activity, reminders and Claude's recommendations. Claude only recommends;
+         removing access is always your click (one person in the sheet, or several with the checkboxes). -->
+    <section data-activity hidden aria-label="Learner activity" class="flex flex-col gap-2 rounded-md border border-line bg-surface p-3 dark:bg-surface-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <p data-activity-summary class="mr-auto text-[14px]" aria-live="polite">Loading activity…</p>
+        <button type="button" data-recommend class="btn btn-sm btn-outline">Recommend with Claude</button>
+        <button type="button" data-remind class="btn btn-sm btn-outline">Send reminders</button>
+      </div>
+      <p data-activity-note role="status" class="text-[13px] text-muted">Reminders go only to people stuck before their first readiness check: 2+ days after you accepted them, quiet for 3+ days, at most 3 each and 3 days apart. Claude sees activity counts and their hours and project stage, never names, emails, repos or code.</p>
+      <div data-bulk hidden class="flex flex-wrap items-center gap-2 border-t border-line pt-2">
+        <p data-bulk-count class="mr-auto text-[14px] font-semibold" aria-live="polite"></p>
+        <button type="button" data-select-suggested hidden class="btn btn-sm btn-outline">Select Claude's "consider removing"</button>
+        <button type="button" data-bulk-clear class="btn btn-sm btn-outline">Clear</button>
+        <button type="button" data-bulk-remove class="btn btn-sm btn-outline">Remove access</button>
+      </div>
+    </section>
+
     <!-- One card: toolbar (status, filters, search), then the table. -->
     <!-- No overflow-hidden here: it would clip the filter menus. The toolbar rounds its own top corners. -->
     <div class="rounded-md border border-line bg-surface dark:bg-surface-2">
@@ -62,6 +79,7 @@ const sections = [
       <table class="w-full border-collapse text-left text-[14px]">
         <thead class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
           <tr class="border-b border-line">
+            <th scope="col" data-select-col hidden class="w-0 py-2 pl-3 @xl:pl-4"><input type="checkbox" data-select-all aria-label="Select everyone shown" class="size-4 accent-ink" /></th>
             {columns.map((c) => (
               <th scope="col" data-col={c.id} aria-sort={c.id === "applied" ? "descending" : undefined} class:list={["px-3 py-2 @xl:px-4 font-semibold", c.hide]}>
                 <button type="button" data-sort={c.id} class="group inline-flex items-center gap-1 uppercase tracking-[0.06em] hover:text-ink">
@@ -88,6 +106,11 @@ const sections = [
         </div>
         <span data-sheet-status class="tag flex-none text-[13px]"></span>
         <button type="button" data-sheet-close aria-label="Close" class="grid size-8 flex-none cursor-pointer place-items-center rounded-md border border-line text-xl leading-none hover:border-ink">&times;</button>
+      </div>
+      <div hidden data-sheet-activity class="flex flex-col gap-1 rounded-lg bg-surface-2 p-3 text-[14px]">
+        <p class="flex flex-wrap items-center gap-2"><span data-sheet-stage class="tag text-[12px]"></span><span data-sheet-verdict hidden class="tag text-[12px]"></span></p>
+        <p data-sheet-activity-text class="text-muted"></p>
+        <p data-sheet-verdict-reason></p>
       </div>
       <div hidden data-sheet-review class="flex flex-col gap-1 rounded-lg bg-surface-2 p-3 text-[14px]">
         <p class="flex items-center gap-2"><span data-sheet-fit class="tag text-[12px]"></span><span class="text-muted">Claude's read</span></p>

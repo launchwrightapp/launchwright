@@ -8,7 +8,7 @@ import { remote, signIn, testAdmin, testUser } from "./auth";
 test.skip(remote, "access tests sign in, which only works against the local test server");
 
 const LEARNER_API = ["/api/me", "/api/messages"];
-const ADMIN_API = ["/api/admin/applicants", "/api/admin/threads", "/api/admin/funnel"];
+const ADMIN_API = ["/api/admin/applicants", "/api/admin/applicants/activity", "/api/admin/threads", "/api/admin/funnel"];
 const ADMIN_PAGES = ["/applicants", "/inbox", "/funnel"];
 
 // Same-origin requests, so a refusal comes from the access rule and not the cross-site check.
@@ -43,7 +43,7 @@ test("an expired session counts as nobody", async ({ context, baseURL }) => {
 test("a learner can't see team pages or team APIs: they don't exist for them (404)", async ({ context, baseURL }) => {
   await signIn(context, baseURL!, testUser);
   for (const path of [...ADMIN_API, ...ADMIN_PAGES]) expect(await status(context.request, path), path).toBe(404);
-  expect(await status(context.request, "/api/admin/applicants/accept", "POST")).toBe(404);
+  for (const path of ["accept", "remove", "recommend", "remind"]) expect(await status(context.request, `/api/admin/applicants/${path}`, "POST"), path).toBe(404);
 });
 
 test("an admin can open the team pages", async ({ context, baseURL }) => {

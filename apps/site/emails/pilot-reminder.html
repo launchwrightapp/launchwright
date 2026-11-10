@@ -1,0 +1,60 @@
+<!doctype html>
+<!--
+  Reminder: sent from the Applicants page ("Send reminders") to accepted learners who are stuck
+  before their first readiness check. At most 3 per person, 3+ days apart (worker/activity.ts).
+  Subject:  {{subject}}
+  From:     launchwright <hello@launchwright.app>   Reply-To: hello@launchwright.app
+  Fields:   {{name}}, {{headline}}, {{step}} (what to do next), {{why}} (why it matters), {{subject}}
+  Plain text: pilot-reminder.txt
+  Email clients ignore <style> and external CSS, so styles are inline and layout is tables.
+  Keep the .html and .txt versions in sync. Only this first comment is stripped before sending.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>{{subject}}</title>
+</head>
+<body style="margin:0; padding:0; background:#ffffff;">
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">{{headline}}&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;">
+    <tr>
+      <td align="center" style="padding:48px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; font-family:'Inter Tight', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0b0b0b; text-align:left;">
+          <tr>
+            <td style="padding:0 0 56px;"><a href="https://launchwright.app" style="text-decoration:none;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right:7px; line-height:0;"><img src="https://launchwright.app/email/logo-mark.png" width="21" height="17" alt="" style="display:block; border:0;"></td><td style="color:#2a17ff; font-size:18px; line-height:20px; font-weight:700; letter-spacing:-0.02em;">launchwright</td></tr></table></a></td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 14px; font-size:13px; line-height:20px; color:#8a8a84;"><span style="display:inline-block; width:8px; height:8px; border-radius:4px; background:#2a17ff; vertical-align:middle;"></span>&nbsp; Your pilot place</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 20px;"><h1 style="margin:0; font-size:30px; line-height:1.2; font-weight:700; letter-spacing:-0.03em; color:#0b0b0b;">{{headline}}</h1></td>
+          </tr>
+          <tr>
+            <td style="padding:28px 0 0; border-top:1px solid #ececea; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:#8a8a84;">Your next step</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0 12px; font-size:16px; line-height:1.65; color:#0b0b0b;">{{step}}</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 20px; font-size:15px; line-height:1.65; color:#3d3d3a;">{{why}}</td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 40px;"><a href="https://platform.launchwright.app" style="display:inline-block; background:#2a17ff; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none; border-radius:999px; padding:12px 24px;">Open your dashboard</a></td>
+          </tr>
+          <tr>
+            <td style="padding:0 0 40px; font-size:16px; line-height:1.65; color:#0b0b0b;">Stuck, or busy this week? Just reply. We read every message, and it's fine to go at your own pace.<br><span style="color:#8a8a84;">The launchwright team</span></td>
+          </tr>
+          <tr>
+            <td style="padding:20px 0 0; border-top:1px solid #ececea; font-size:12px; line-height:1.6; color:#8a8a84;">
+              You're getting this because you're in the launchwright pilot. Don't want reminders, or changed your mind about the pilot? Reply and tell us. To have your data deleted, write to <a href="mailto:privacy@launchwright.app" style="color:#8a8a84;">privacy@launchwright.app</a>.<br><a href="https://launchwright.app/privacy" style="color:#8a8a84;">Privacy policy</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
