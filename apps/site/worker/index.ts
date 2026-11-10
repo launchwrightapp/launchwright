@@ -6,6 +6,7 @@ import { clean, EMAIL_RE, json, readBody, seeOther } from "./http";
 import { report as funnelReport, track, type FunnelEnv } from "./funnel";
 import { checkCode, clearSession, endSession, hasSessionCookie, requestCode, sessionEmail, type VerifyEnv } from "./verify";
 import { secure } from "../../../packages/core/security-headers";
+import { claimUrl, issueClaim } from "../../../packages/core/pilot-claim";
 
 interface Env extends VerifyEnv, FunnelEnv {
   ASSETS: Fetcher;
@@ -16,6 +17,8 @@ interface Env extends VerifyEnv, FunnelEnv {
 // At most this many acknowledgement emails per hour. Applicants have verified their
 // email by now, so this is a backstop. Applications are still saved past the cap.
 const ACKS_PER_HOUR = 30;
+// Where the sign-in link in the "You're in" email points (the dashboard).
+const PLATFORM_ORIGIN = "https://platform.launchwright.app";
 
 // The questionnaire. Needs a verified email (worker/verify.ts); the email comes from
 // the session, not the form.
@@ -111,7 +114,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
   // List applicants, newest first.
   if (url.pathname === "/api/admin/applicants" && req.method === "GET") {
     const rows = await sql`
-      select email, name, building, answers, created_at, acknowledged_at, accepted_at
+      select email, name, building, answers, created_at, acknowledged_at, accepted_at, github_id is not null as linked
       from waitlist order by created_at desc limit 500
     `;
     return json({ accepted: rows.filter((r) => r.accepted_at).length, applicants: rows });
@@ -134,8 +137,10 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     if (!row) return json({ error: `No application from ${email}.` }, 404);
     if (row.accepted_at && !resend) return json({ error: `${email} was already accepted. Pass resend to send it again.` }, 409);
 
+    // A new sign-in link each time; resending replaces the old one.
+    const claim = claimUrl(PLATFORM_ORIGIN, await issueClaim(sql, email));
     try {
-      await sendAcceptance(env.EMAIL, row as Applicant);
+      await sendAcceptance(env.EMAIL, row as Applicant, claim);
     } catch (err) {
       console.error("acceptance email failed", err);
       return json({ error: `The email didn't send: ${(err as Error).message}` }, 502);

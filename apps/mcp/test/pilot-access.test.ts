@@ -28,7 +28,13 @@ describe("pilot access", () => {
     const { sql, calls } = fakeSql([[]]);
     expect(await hasPilotAccess(learner, env, sql)).toBe(false);
     expect(calls[0].text).toContain("accepted_at is not null");
-    expect(calls[0].values).toEqual([7, "juandc", "juan@example.com", "juan@example.com"]);
+    expect(calls[0].values).toEqual([7, "juan@example.com", "juan@example.com"]);
+  });
+  it("never matches on the GitHub username typed on the form (nobody checked it)", async () => {
+    const { sql, calls } = fakeSql([[]]);
+    await hasPilotAccess({ id: 8, login: "JuanDC" }, env, sql);
+    expect(calls[0].text).not.toContain("answers");
+    expect(calls[0].values).not.toContain("juandc");
   });
   it("lets an accepted applicant in and saves their GitHub ID the first time", async () => {
     const { sql, calls } = fakeSql([[{ id: 42, github_id: null }], []]);

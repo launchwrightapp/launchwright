@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Pilot admin from your terminal.
 //   npm run pilot -- list                      applicants, newest first
-//   npm run pilot -- accept juan@example.com   send "You're in" and take a seat
-//   npm run pilot -- accept juan@example.com --resend
+//   npm run pilot -- accept juan@example.com   send "You're in" with a sign-in link
+//   npm run pilot -- accept juan@example.com --resend   new sign-in link (replaces the old one)
+//   npm run pilot -- resend-links               who's accepted but hasn't signed in yet (dry run)
+//   npm run pilot -- resend-links --send        resend "You're in" with a fresh link to each of them
 //   npm run pilot -- funnel [days]              how far people get, step by step
 //   npm run pilot -- notify-policy --test      privacy update email, one copy to NOTIFY_EMAIL
 //   npm run pilot -- notify-policy --all       privacy update email to every applicant
@@ -41,13 +43,32 @@ if (cmd === "list") {
   const { applicants, accepted } = await call("/api/admin/applicants");
   console.log(`${accepted} accepted · ${applicants.length} applicants\n`);
   for (const a of applicants) {
-    const status = a.accepted_at ? "ACCEPTED" : a.acknowledged_at ? "applied" : "applied (no ack)";
-    console.log(`${day(a.created_at)}  ${status.padEnd(16)}  ${a.email}${a.name ? `  (${a.name})` : ""}`);
+    const status = a.accepted_at ? (a.linked ? "ACCEPTED" : "ACCEPTED (unlinked)") : a.acknowledged_at ? "applied" : "applied (no ack)";
+    console.log(`${day(a.created_at)}  ${status.padEnd(19)}  ${a.email}${a.name ? `  (${a.name})` : ""}`);
     if (a.building) console.log(`            ${a.building}`);
   }
 } else if (cmd === "accept" && email) {
   const r = await call("/api/admin/accept", { method: "POST", body: JSON.stringify({ email, resend: flag === "--resend" }) });
   console.log(`Sent "You're in" to ${r.email}. Accepted so far: ${r.accepted}.`);
+} else if (cmd === "resend-links") {
+  const send = email === "--send";
+  const { applicants } = await call("/api/admin/applicants");
+  const due = applicants.filter((a) => a.accepted_at && !a.linked);
+  console.log(`${due.length} accepted but not signed in yet.${send ? "" : " Dry run: add --send to email them."}\n`);
+  let sent = 0;
+  for (const a of due) {
+    if (!send) {
+      console.log(`  ${a.email}`);
+      continue;
+    }
+    const res = await fetch(SITE + "/api/admin/accept", { method: "POST", headers: { authorization: `Bearer ${token()}`, "content-type": "application/json" }, body: JSON.stringify({ email: a.email, resend: true }) });
+    const body = await res.json().catch(() => ({}));
+    console.log(`${res.ok ? "sent  " : "FAILED"}  ${a.email}${res.ok ? "" : `  (${body.error ?? res.status})`}`);
+    if (res.ok) sent++;
+    await new Promise((r) => setTimeout(r, 400)); // gentle on the email sender
+  }
+  if (send) console.log(`\n${sent} of ${due.length} sent.`);
+  if (send && sent < due.length) process.exit(1);
 } else if (cmd === "funnel") {
   const days = email && /^\d+$/.test(email) ? email : "";
   const { steps, countingSince } = await call(`/api/admin/funnel${days ? `?days=${days}` : ""}`);
@@ -79,6 +100,6 @@ if (cmd === "list") {
   console.log(`\n${sent} of ${applicants.length} sent.`);
   if (sent < applicants.length) process.exit(1);
 } else {
-  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- funnel [days]\n  npm run pilot -- accept <email> [--resend]\n  npm run pilot -- notify-policy --test | --all");
+  console.log("Usage:\n  npm run pilot -- list\n  npm run pilot -- funnel [days]\n  npm run pilot -- accept <email> [--resend]\n  npm run pilot -- resend-links [--send]\n  npm run pilot -- notify-policy --test | --all");
   process.exit(cmd ? 1 : 0);
 }

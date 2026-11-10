@@ -3,8 +3,11 @@
 You're in the free launchwright pilot. Over the next few weeks you'll take your own website or web app to production, and we'll explain each part as you go.
 
 YOUR NEXT STEP
-Sign in with GitHub and follow the setup steps on your dashboard: https://platform.launchwright.app
-Connect the AI tool you already use, give launchwright access to your repo, and connect your Cloudflare account and a free database. Then ask your AI tool to check your project. About 10 minutes. After that, launchwright explains what each tool did and why.
+Sign in with GitHub using this link. It links your GitHub account to your place in the pilot, so use the account your project is on:
+{{claim_url}}
+The link works once and expires in 30 days. After that, sign in at https://platform.launchwright.app
+
+Then follow the setup steps on your dashboard. Connect the AI tool you already use, give launchwright access to your repo, and connect your Cloudflare account and a free database. Then ask your AI tool to check your project. About 10 minutes. After that, launchwright explains what each tool did and why.
 
 WHAT YOU'LL NEED
 - A GitHub account

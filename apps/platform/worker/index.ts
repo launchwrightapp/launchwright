@@ -6,6 +6,7 @@ import { handleMessagesApi, handleInboundEmail, isAdmin, type MessagesEnv } from
 import { handleLearnerApi, handleLearnerAuth, type LearnerEnv } from "./learner";
 import { secure } from "../../../packages/core/security-headers";
 import { hasPilotAccess, NOT_IN_PILOT } from "../../../packages/core/pilot-access";
+import { CLAIM_COOKIE, CLAIM_RE, redeemClaim, type ClaimResult } from "../../../packages/core/pilot-claim";
 import { neon } from "@neondatabase/serverless";
 
 interface Env extends ApplicantsEnv, LearnerEnv {
@@ -24,7 +25,7 @@ const redirect = (to: string, headers: Record<string, string> = {}, cookies: str
   for (const c of cookies) h.append("set-cookie", c);
   return new Response(null, { status: 302, headers: h });
 };
-const fail = (_url: URL, code: string) => redirect(`/signin?error=${code}`, {}, [cookie(STATE_COOKIE, "", 0)]);
+const fail = (_url: URL, code: string) => redirect(`/signin?error=${code}`, {}, [cookie(STATE_COOKIE, "", 0), cookie(CLAIM_COOKIE, "", 0)]);
 // Private pilot: true = in, false = not in, null = couldn't check (database unreachable).
 async function inPilot(user: User, env: Env): Promise<boolean | null> {
   try {
@@ -70,13 +71,27 @@ async function finishLogin(req: Request, url: URL, env: Env) {
   const gh = (await userRes.json()) as { id: number; login: string; name: string | null; avatar_url: string; email: string | null };
   const user: User = { id: gh.id, login: gh.login, name: gh.name || gh.login, avatar: gh.avatar_url, email: await primaryEmail(token.access_token, gh.email) };
 
+  // Came from the sign-in link in the "You're in" email: link this GitHub account to the
+  // application first. A link that didn't work only matters if they turn out not to be in.
+  let claim: ClaimResult | null = null;
+  const claimToken = readCookie(req, CLAIM_COOKIE);
+  if (claimToken) {
+    if (!env.DATABASE_URL) return fail(url, "unavailable");
+    try {
+      claim = await redeemClaim(neon(env.DATABASE_URL), claimToken, user.id);
+    } catch (e) {
+      console.error("pilot sign-in link failed", e);
+      return fail(url, "unavailable");
+    }
+  }
+
   // No session for accounts outside the pilot.
   const access = await inPilot(user, env);
-  if (access === false) return fail(url, "not_in_pilot");
+  if (access === false) return fail(url, claim === "invalid" ? "claim_invalid" : claim === "taken" ? "claim_taken" : "not_in_pilot");
   if (access === null) return fail(url, "unavailable");
 
   const session = await sign(user, env.SESSION_SECRET!);
-  return redirect(safeNext(next ? decodeURIComponent(next) : null), {}, [cookie(SESSION_COOKIE, session, SESSION_DAYS * 86400), cookie(STATE_COOKIE, "", 0)]);
+  return redirect(safeNext(next ? decodeURIComponent(next) : null), {}, [cookie(SESSION_COOKIE, session, SESSION_DAYS * 86400), cookie(STATE_COOKIE, "", 0), cookie(CLAIM_COOKIE, "", 0)]);
 }
 
 // The verified primary email, so team replies reach the learner. Needs the GitHub App's
@@ -132,6 +147,13 @@ const app = {
 
     if (url.pathname === "/auth/github") return startLogin(url, env);
     if (url.pathname === "/auth/github/callback") return finishLogin(req, url, env);
+    // The sign-in link from the "You're in" email: keep the token for the GitHub callback, then
+    // sign in. The token leaves the URL right away (no-referrer, and it isn't in the next page).
+    if (url.pathname === "/claim") {
+      const t = url.searchParams.get("t") ?? "";
+      if (!CLAIM_RE.test(t)) return redirect("/signin?error=claim_invalid", { "referrer-policy": "no-referrer" });
+      return redirect("/auth/github", { "referrer-policy": "no-referrer" }, [cookie(CLAIM_COOKIE, t, 900)]);
+    }
     if (url.pathname === "/auth/logout") {
       if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
       return redirect("/signin?signed_out=1", {}, [cookie(SESSION_COOKIE, "", 0)]);

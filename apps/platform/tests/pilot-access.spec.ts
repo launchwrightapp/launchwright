@@ -25,3 +25,19 @@ test("a listed learner still gets in", async ({ page, context, baseURL }) => {
   await page.goto("/lessons");
   await expect(page).toHaveURL(/\/lessons$/);
 });
+
+test("the sign-in link from the acceptance email keeps its token for the GitHub callback", async ({ request }) => {
+  const token = "a".repeat(43);
+  const res = await request.get(`/claim?t=${token}`, { maxRedirects: 0 });
+  expect(res.status()).toBe(302);
+  expect(res.headers()["location"]).toBe("/auth/github");
+  expect(res.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(res.headers()["set-cookie"]).toContain(`__Host-lw_claim=${token};`);
+  expect(res.headers()["set-cookie"]).toContain("HttpOnly");
+});
+
+test("a broken sign-in link explains what to do", async ({ page }) => {
+  await page.goto("/claim?t=not-a-token");
+  await expect(page).toHaveURL(/\/signin\?error=claim_invalid$/);
+  await expect(page.getByText("That sign-in link has expired or was already used.")).toBeVisible();
+});
