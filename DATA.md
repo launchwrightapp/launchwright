@@ -16,7 +16,7 @@ Everything below lives in one Neon Postgres database, unless the row says otherw
 | Messages | `threads`, `messages` (apps/platform) | Name, email or GitHub ID, message text | Support and pilot contact | 2 years after the last message (`purgeRetention`) |
 | Lesson progress | `lesson_progress` (apps/mcp) | GitHub ID, concepts and exercises done | Adapt lessons, show progress | Until 12 months without activity, then deleted (`purgeRetention`) |
 | Projects | `projects` (apps/mcp) | GitHub ID, repo name, production URL, readiness results | Project status and the dashboard | Until 12 months without activity |
-| Audit log | `audit_log` (apps/mcp) | GitHub ID, AI tool name, repo, what each tool call did | Show the learner what their AI did; investigate problems | 12 months per entry |
+| Audit log | `audit_log` (apps/mcp) | GitHub ID, AI tool name, repo, what each tool call did | Show the learner what their AI did; let the team help stuck learners (platform `/activity`); investigate problems | 12 months per entry |
 | Approvals | `approvals` (apps/mcp) | GitHub ID, action details | Learner approves production and destructive actions | Expire after 1 day; rows deleted 30 days after expiry |
 | Connected accounts | `connections` (apps/mcp) | GitHub ID, sealed Cloudflare, Neon and Supabase tokens | Act on the learner's own cloud accounts | Until the learner disconnects (deleted right away), or 12 months without activity |
 | Secret requests | `secret_requests` (apps/mcp) | GitHub ID, secret name, sealed value | Pass a secret from the learner to GitHub or Cloudflare | Value wiped after use, or within 1 hour by the cron (`purgeExpired`); rows deleted 30 days after expiry |

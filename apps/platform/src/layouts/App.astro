@@ -11,7 +11,7 @@ import Check from "../../../../packages/ui/Check.astro";
 import Explain from "../components/Explain.astro";
 import ChatBox from "../components/ChatBox.astro";
 
-type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox" | "applicants" | "funnel";
+type PageId = "overview" | "lessons" | "readiness" | "security" | "connect" | "messages" | "inbox" | "applicants" | "funnel" | "activity";
 interface Props { title: string; page: PageId }
 const { title, page } = Astro.props;
 
@@ -24,6 +24,7 @@ const icons: Record<PageId, string> = {
   messages: "M4 5h16v11H9l-5 4z",
   inbox: "M3 13h5l1.5 3h5l1.5-3h5M5.5 5h13L21 13v6H3v-6z",
   funnel: "M3 4h18l-7 8v6l-4 2v-8z",
+  activity: "M3 12h4l3-8 4 16 3-8h4",
   applicants: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M22 20v-1a4 4 0 0 0-3-3.9M16 4.1a3.5 3.5 0 0 1 0 6.8",
 };
 // The worker removes [data-admin-only] for learners and [data-learner-only] for the team,
@@ -31,6 +32,7 @@ const icons: Record<PageId, string> = {
 type NavItem = { id: PageId; href: string; label: string; badge?: string; admin?: boolean; learner?: boolean };
 const ops: NavItem[] = [
   { id: "applicants", href: "/applicants", label: "Applicants", admin: true },
+  { id: "activity", href: "/activity", label: "Activity", admin: true },
   { id: "funnel", href: "/funnel", label: "Funnel", admin: true },
   { id: "inbox", href: "/inbox", label: "Team inbox", admin: true },
 ];
@@ -74,6 +76,7 @@ const focus: Record<PageId, string[]> = {
   inbox: ["ops"],
   applicants: ["ops"],
   funnel: ["ops"],
+  activity: ["ops"],
 };
 const sections = allSections
   .filter((s) => focus[page].includes(s.id))
