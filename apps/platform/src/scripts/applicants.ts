@@ -20,6 +20,37 @@ let reviews = new Map<string, Review>();
 const FIT_TAG: Record<Review["fit"], string> = { strong: "tag-ok", maybe: "tag-warn", weak: "tag-bad" };
 const fitText = (r: Review) => `${r.fit[0].toUpperCase()}${r.fit.slice(1)} fit · ${r.score}`;
 
+// Accepted learners' activity (worker/activity.ts) and Claude's recommendations, for this page view.
+type Stage = "not_signed_in" | "signed_in" | "ai_connected" | "checked" | "deployed" | "live";
+interface Activity {
+  email: string; acceptedAt: string; stage: Stage; lastActiveAt: string | null; aiCalls: number; checks: number;
+  connections: number; concepts: number; readiness: { passed: number; total: number } | null;
+  remindersSent: number; lastRemindedAt: string | null; reminderDue: boolean;
+}
+type Verdict = "keep" | "nudge" | "consider_removing";
+interface Recommendation { email: string; verdict: Verdict; reason: string }
+const STAGE_LABEL: Record<Stage, string> = {
+  not_signed_in: "Not signed in", signed_in: "Signed in", ai_connected: "AI tool connected",
+  checked: "Ran a check", deployed: "Deployed", live: "Live, all checks pass",
+};
+const STAGE_TAG: Record<Stage, string> = { not_signed_in: "tag-bad", signed_in: "tag-warn", ai_connected: "tag-warn", checked: "tag-ok", deployed: "tag-ok", live: "tag-ok" };
+const VERDICT_LABEL: Record<Verdict, string> = { keep: "Keep", nudge: "Nudge", consider_removing: "Consider removing" };
+const VERDICT_TAG: Record<Verdict, string> = { keep: "tag-ok", nudge: "tag-warn", consider_removing: "tag-bad" };
+let activity = new Map<string, Activity>();
+let activityError = "";
+let recs = new Map<string, Recommendation>();
+const selected = new Set<string>();
+const ago = (iso: string | null) => {
+  if (!iso) return "never";
+  const d = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000);
+  return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
+};
+const activityText = (a: Activity) =>
+  [`Active ${ago(a.lastActiveAt)}`, `${a.aiCalls} AI tool call${a.aiCalls === 1 ? "" : "s"}`,
+    a.readiness ? `best check ${a.readiness.passed}/${a.readiness.total}` : "",
+    `${a.remindersSent} reminder${a.remindersSent === 1 ? "" : "s"}${a.lastRemindedAt ? ` (last ${ago(a.lastRemindedAt)})` : ""}`,
+    a.reminderDue ? "reminder due" : ""].filter(Boolean).join(" · ");
+
 let people: Applicant[] = [];
 let filter: Filter = "waiting";
 let sortKey: SortKey = "applied";
@@ -80,6 +111,23 @@ function fillSheet(a: Applicant) {
     fit.textContent = fitText(rv);
     q("[data-sheet-reason]").textContent = rv.reason;
     q("[data-sheet-risk]").textContent = rv.risk ? `Risk: ${rv.risk}` : "";
+  }
+  const act = a.acceptedAt ? activity.get(a.email) : undefined;
+  const actBox = q("[data-sheet-activity]");
+  actBox.hidden = !act;
+  if (act) {
+    const stage = q("[data-sheet-stage]");
+    stage.className = `tag text-[12px] ${STAGE_TAG[act.stage]}`;
+    stage.textContent = STAGE_LABEL[act.stage];
+    q("[data-sheet-activity-text]").textContent = `${activityText(act)} · ${act.connections} account${act.connections === 1 ? "" : "s"} connected · ${act.concepts} lesson${act.concepts === 1 ? "" : "s"} seen`;
+    const rec = recs.get(a.email);
+    const v = q("[data-sheet-verdict]");
+    v.hidden = !rec;
+    q("[data-sheet-verdict-reason]").textContent = rec ? `Claude: ${rec.reason}` : "";
+    if (rec) {
+      v.className = `tag text-[12px] ${VERDICT_TAG[rec.verdict]}`;
+      v.textContent = VERDICT_LABEL[rec.verdict];
+    }
   }
   // One tab per pilot form step. Answers we don't know yet land in the last tab.
   const answers: Record<string, unknown> = { ...(a.answers ?? {}) };
@@ -193,6 +241,9 @@ removeBtn.addEventListener("click", async () => {
     return;
   }
   a.acceptedAt = null;
+  selected.delete(a.email);
+  activity.delete(a.email);
+  recs.delete(a.email);
   draw();
   if (open === a) {
     fillSheet(a);
@@ -205,6 +256,22 @@ function row(a: Applicant) {
   // (its click bubbles up to the row, so there's one handler).
   const tr = el("tr", "cursor-pointer border-t border-line first:border-t-0 hover:bg-surface-2");
   tr.addEventListener("click", () => { if (!sheet.open) openSheet(a); });
+  // Checkbox for bulk remove, on the Accepted tab only. Its clicks don't open the sheet.
+  const pick = el("td", `w-0 py-2.5 pl-3 @xl:pl-4 ${filter === "accepted" ? "" : "hidden"}`);
+  if (a.acceptedAt) {
+    const box = el("input", "size-4 accent-ink") as HTMLInputElement;
+    box.type = "checkbox";
+    box.checked = selected.has(a.email);
+    box.setAttribute("aria-label", `Select ${a.name || a.email}`);
+    box.addEventListener("click", (e) => e.stopPropagation());
+    box.addEventListener("change", () => {
+      if (box.checked) selected.add(a.email);
+      else selected.delete(a.email);
+      drawBulk();
+    });
+    add(pick, box);
+  }
+  pick.addEventListener("click", (e) => e.stopPropagation());
   // Narrow screens keep Name, Status and View; the email moves under the name.
   const name = el("td", "w-full max-w-0 px-3 py-2.5 @xl:px-4");
   add(name, el("p", "truncate font-semibold", a.name || a.email.split("@")[0]), el("p", "truncate text-[14px] text-muted @2xl:hidden", a.email));
@@ -215,19 +282,35 @@ function row(a: Applicant) {
     line.title = rv.reason;
     add(name, line);
   }
+  const acty = a.acceptedAt ? activity.get(a.email) : undefined;
+  const rec = acty ? recs.get(a.email) : undefined;
+  if (acty) {
+    const line = el("p", "mt-1 truncate text-[13px] text-muted", rec ? rec.reason : activityText(acty));
+    line.title = rec ? `${rec.reason}\n${activityText(acty)}` : activityText(acty);
+    add(name, line);
+  }
   const email = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @2xl:table-cell", a.email);
-  const building = el("td", "hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted @4xl:table-cell", a.building ?? "");
+  // On the Accepted tab the activity needs the room; the sheet still shows what they're building.
+  const building = el("td", `hidden max-w-[18rem] truncate px-3 py-2.5 @xl:px-4 text-muted ${filter === "accepted" ? "" : "@4xl:table-cell"}`, a.building ?? "");
   const applied = el("td", "hidden whitespace-nowrap px-3 py-2.5 @xl:px-4 tabular-nums text-muted @xl:table-cell", day(a.appliedAt));
   const st = el("td", "px-3 py-2.5 @xl:px-4");
-  const tag = el("span", "");
-  status(tag, a);
-  add(st, tag);
+  if (acty) {
+    // Accepted learners: where they are, and Claude's recommendation once there is one.
+    const tags = el("div", "flex flex-col items-start gap-1");
+    add(tags, el("span", `tag whitespace-nowrap text-[12px] ${STAGE_TAG[acty.stage]}`, STAGE_LABEL[acty.stage]));
+    if (rec) add(tags, el("span", `tag whitespace-nowrap text-[12px] ${VERDICT_TAG[rec.verdict]}`, VERDICT_LABEL[rec.verdict]));
+    add(st, tags);
+  } else {
+    const tag = el("span", "");
+    status(tag, a);
+    add(st, tag);
+  }
   const act = el("td", "px-3 py-2.5 @xl:px-4 text-right");
   const view = el("button", "btn btn-sm btn-outline", "View") as HTMLButtonElement;
   view.type = "button";
   view.setAttribute("aria-label", `View ${a.name || a.email}`);
   add(act, view);
-  add(tr, name, email, building, applied, st, act);
+  add(tr, pick, name, email, building, applied, st, act);
   return tr;
 }
 
@@ -248,7 +331,7 @@ const haystack = (a: Applicant) =>
 function emptyRow(text: string) {
   const tr = el("tr", "");
   const td = el("td", "px-4 py-8 text-center text-muted", text);
-  td.colSpan = 6;
+  td.colSpan = 7;
   add(tr, td);
   return tr;
 }
@@ -279,6 +362,12 @@ function draw() {
     b.classList.toggle("text-ink", on);
   }
 
+  shownNow = shown;
+  activitySection.hidden = filter !== "accepted";
+  selectCol.hidden = filter !== "accepted";
+  document.querySelector('th[data-col="building"]')?.classList.toggle("@4xl:table-cell", filter !== "accepted");
+  drawActivity();
+  drawBulk();
   const filtered = q || Object.values(picked).some(Boolean);
   listEl.replaceChildren(
     ...(shown.length
@@ -308,6 +397,132 @@ for (const b of sortBtns) {
     draw();
   });
 }
+
+// ---- Activity, reminders, recommendations, bulk remove (Accepted tab) ----
+let shownNow: Applicant[] = [];
+const activitySection = document.querySelector<HTMLElement>("[data-activity]")!;
+const selectCol = document.querySelector<HTMLElement>("[data-select-col]")!;
+const selectAll = document.querySelector<HTMLInputElement>("[data-select-all]")!;
+const summaryEl = document.querySelector<HTMLElement>("[data-activity-summary]")!;
+const activityNote = document.querySelector<HTMLElement>("[data-activity-note]")!;
+const recommendBtn = document.querySelector<HTMLButtonElement>("[data-recommend]")!;
+const remindBtn = document.querySelector<HTMLButtonElement>("[data-remind]")!;
+const bulk = document.querySelector<HTMLElement>("[data-bulk]")!;
+const bulkCount = document.querySelector<HTMLElement>("[data-bulk-count]")!;
+const bulkRemove = document.querySelector<HTMLButtonElement>("[data-bulk-remove]")!;
+const selectSuggested = document.querySelector<HTMLButtonElement>("[data-select-suggested]")!;
+let remindArmed = false;
+let bulkArmed = false;
+const setNote = (text: string, bad = false) => {
+  activityNote.className = `text-[13px] ${bad ? "text-bad" : "text-muted"}`;
+  activityNote.textContent = text;
+};
+
+function drawActivity() {
+  if (activityError) { summaryEl.textContent = activityError; remindBtn.disabled = recommendBtn.disabled = true; return; }
+  const list = [...activity.values()];
+  const by = (s: Stage[]) => list.filter((a) => s.includes(a.stage)).length;
+  const due = list.filter((a) => a.reminderDue).length;
+  summaryEl.textContent = list.length
+    ? `${list.length} accepted · ${by(["not_signed_in"])} not signed in · ${by(["signed_in"])} signed in · ${by(["ai_connected"])} AI connected · ${by(["checked", "deployed", "live"])} past their first check`
+    : "No accepted learners yet.";
+  if (!remindArmed) remindBtn.textContent = due ? `Send reminders (${due} due)` : "No reminders due";
+  remindBtn.disabled = !due;
+  const suggested = [...recs.values()].filter((r) => r.verdict === "consider_removing").length;
+  selectSuggested.hidden = !suggested;
+  selectSuggested.textContent = `Select Claude's "consider removing" (${suggested})`;
+}
+
+function drawBulk() {
+  for (const e of [...selected]) if (!people.find((p) => p.email === e && p.acceptedAt)) selected.delete(e);
+  const n = selected.size;
+  bulk.hidden = filter !== "accepted" || (!n && !recs.size);
+  bulkCount.textContent = n ? `${n} selected` : "Tick people to remove several at once.";
+  bulkRemove.disabled = !n;
+  if (!bulkArmed) bulkRemove.textContent = n ? `Remove access (${n})` : "Remove access";
+  const pickable = shownNow.filter((p) => p.acceptedAt);
+  selectAll.checked = pickable.length > 0 && pickable.every((p) => selected.has(p.email));
+  selectAll.indeterminate = !selectAll.checked && pickable.some((p) => selected.has(p.email));
+}
+
+selectAll.addEventListener("change", () => {
+  for (const p of shownNow) if (p.acceptedAt) selectAll.checked ? selected.add(p.email) : selected.delete(p.email);
+  draw();
+});
+document.querySelector("[data-bulk-clear]")!.addEventListener("click", () => { selected.clear(); draw(); });
+selectSuggested.addEventListener("click", () => {
+  for (const r of recs.values()) if (r.verdict === "consider_removing") selected.add(r.email);
+  draw();
+});
+
+async function loadActivity() {
+  const { ok, data } = await api<{ activity: Activity[] }>("/api/admin/applicants/activity");
+  activityError = ok ? "" : data.error ?? "Couldn't load activity.";
+  if (ok) activity = new Map(data.activity.map((a) => [a.email, a]));
+  draw();
+}
+
+// Reminders: two clicks. The server re-checks who is due, so nobody gets one twice.
+remindBtn.addEventListener("click", async () => {
+  const due = [...activity.values()].filter((a) => a.reminderDue).length;
+  if (!due) return;
+  if (!remindArmed) {
+    remindArmed = true;
+    remindBtn.textContent = `Confirm: email ${due}`;
+    setNote(`Sends a reminder for the step each of them is on to ${due} ${due === 1 ? "person" : "people"}.`);
+    setTimeout(() => { if (remindArmed && !remindBtn.disabled) { remindArmed = false; drawActivity(); } }, 6000);
+    return;
+  }
+  remindArmed = false;
+  remindBtn.disabled = true;
+  remindBtn.textContent = "Sending…";
+  const { ok, data } = await api<{ sent: string[]; failed: string[] }>("/api/admin/applicants/remind", { method: "POST", body: {} });
+  if (!ok) setNote(data.error ?? "Reminders didn't send. Try again.", true);
+  else setNote(`Sent ${data.sent.length} reminder${data.sent.length === 1 ? "" : "s"}.${data.failed.length ? ` ${data.failed.length} failed: ${data.failed.join(", ")}.` : ""}`, data.failed.length > 0);
+  await loadActivity();
+});
+
+recommendBtn.addEventListener("click", async () => {
+  recommendBtn.disabled = true;
+  recommendBtn.textContent = "Reviewing…";
+  setNote("Claude is reading everyone's activity. This takes up to a minute.");
+  const { ok, data } = await api<{ model: string; reviewed: number; recommendations: Recommendation[] }>("/api/admin/applicants/recommend", { method: "POST", body: {} });
+  recommendBtn.disabled = false;
+  recommendBtn.textContent = "Recommend again";
+  if (!ok) { setNote(data.error ?? "That didn't work. Try again.", true); return; }
+  recs = new Map(data.recommendations.map((r) => [r.email, r]));
+  const n = (v: Verdict) => data.recommendations.filter((r) => r.verdict === v).length;
+  setNote(`${data.model} reviewed ${data.reviewed}: ${n("keep")} keep, ${n("nudge")} nudge, ${n("consider_removing")} consider removing. Recommendations only: nothing changes until you remove someone.`);
+  draw();
+  if (open && sheet.open) fillSheet(open);
+});
+
+// Bulk remove: two clicks, names listed before the second.
+bulkRemove.addEventListener("click", async () => {
+  const emails = [...selected];
+  if (!emails.length) return;
+  if (!bulkArmed) {
+    bulkArmed = true;
+    bulkRemove.textContent = `Confirm: remove ${emails.length}`;
+    setNote(`${emails.join(", ")} will lose access to the dashboard and their AI tool connection. No email is sent; they go back to Waiting.`);
+    setTimeout(() => { if (bulkArmed && !bulkRemove.disabled) { bulkArmed = false; drawBulk(); } }, 8000);
+    return;
+  }
+  bulkArmed = false;
+  bulkRemove.disabled = true;
+  bulkRemove.textContent = "Removing…";
+  const { ok, data } = await api<{ removed: string[]; accepted: number }>("/api/admin/applicants/remove", { method: "POST", body: { emails } });
+  if (!ok) { setNote(data.error ?? "That didn't work. Try again.", true); drawBulk(); return; }
+  for (const e of data.removed) {
+    const p = people.find((x) => x.email === e);
+    if (p) p.acceptedAt = null;
+    selected.delete(e);
+    activity.delete(e);
+    recs.delete(e);
+  }
+  setNote(`Removed access for ${data.removed.length}. ${data.accepted} still accepted.`);
+  draw();
+});
 
 const rankBtn = document.querySelector<HTMLButtonElement>("[data-rank]")!;
 const rankNote = document.querySelector<HTMLElement>("[data-rank-note]")!;
@@ -345,4 +560,5 @@ rankBtn.addEventListener("click", async () => {
   }
   people = data.applicants;
   draw();
+  await loadActivity();
 })();

@@ -7,6 +7,8 @@ import codeHtmlModule from "../emails/pilot-code.html";
 import codeText from "../emails/pilot-code.txt";
 import policyHtmlModule from "../emails/policy-update.html";
 import policyText from "../emails/policy-update.txt";
+import reminderHtmlModule from "../emails/pilot-reminder.html";
+import reminderText from "../emails/pilot-reminder.txt";
 
 // Wrangler bundles .html as a plain string. Astro's types describe .html imports
 // differently (as components), so tell TypeScript what we actually get.
@@ -14,6 +16,7 @@ const ackHtml = ackHtmlModule as unknown as string;
 const acceptHtml = acceptHtmlModule as unknown as string;
 const codeHtml = codeHtmlModule as unknown as string;
 const policyHtml = policyHtmlModule as unknown as string;
+const reminderHtml = reminderHtmlModule as unknown as string;
 
 const FROM = { email: "hello@launchwright.app", name: "launchwright" };
 
@@ -104,5 +107,43 @@ export function sendPolicyUpdate(mail: SendEmail, to: string, name: string | nul
     subject: "A small update to how we review pilot applications",
     html: render(policyHtml, v, true),
     text: render(policyText, v, false),
+  });
+}
+
+// A nudge for an accepted learner who hasn't run their first readiness check yet
+// (platform worker/activity.ts decides who is due). Worded for the step they're on.
+export type ReminderStage = "not_signed_in" | "signed_in" | "ai_connected";
+const REMINDER_COPY: Record<ReminderStage, { subject: string; headline: (n: string) => string; step: string; why: string }> = {
+  not_signed_in: {
+    subject: "Your launchwright pilot place is waiting",
+    headline: (n) => (n ? `${n}, your pilot place is waiting.` : "Your pilot place is waiting."),
+    step: "Sign in with GitHub on your dashboard. The setup steps there take about 10 minutes.",
+    why: "You don't need a working app yet. An idea and a GitHub account are enough to start, and each step comes with a short lesson.",
+  },
+  signed_in: {
+    subject: "One step left: connect your AI tool to launchwright",
+    headline: (n) => (n ? `Nice start, ${n}. One step left.` : "Nice start. One step left."),
+    step: "Connect the AI tool you already use (Claude Code, Cursor or Codex). Your dashboard shows the exact command to copy, under \"Connect AI tool\".",
+    why: "Everything in the pilot runs through your AI tool. Once it's connected, it can check your project and explain what it finds.",
+  },
+  ai_connected: {
+    subject: "Run your first readiness check",
+    headline: (n) => (n ? `${n}, your AI tool is connected.` : "Your AI tool is connected."),
+    step: "Ask your AI tool: \"Use launchwright to check my project.\" It runs 8 readiness checks and tells you what to fix first.",
+    why: "That check is your map for the rest of the pilot: what's already production-grade and what to learn next.",
+  },
+};
+
+export function sendReminder(mail: SendEmail, a: { email: string; name: string | null }, stage: ReminderStage) {
+  const c = REMINDER_COPY[stage];
+  const n = firstName(a.name);
+  const v = { name: n || "there", headline: c.headline(n), step: c.step, why: c.why, subject: c.subject };
+  return mail.send({
+    from: FROM,
+    replyTo: FROM.email,
+    to: a.email,
+    subject: c.subject,
+    html: render(reminderHtml, v, true),
+    text: render(reminderText, v, false),
   });
 }

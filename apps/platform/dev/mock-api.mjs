@@ -17,6 +17,19 @@ const applicants = [
   { email: "rica.bautista@gmail.com", name: "Rica Bautista", building: "Food delivery for our carinderia", answers: { role: "other", experience: "new", tools: ["none"], stage: "idea", learn: ["deploy"], hours: "lt2" }, appliedAt: ago(45), acknowledgedAt: null, acceptedAt: null },
 ];
 
+// Sample activity for accepted applicants (worker/activity.ts shape).
+const activitySample = {
+  "juan.delacruz@gmail.com": { stage: "checked", lastActiveAt: ago(30), aiCalls: 42, checks: 3, connections: 2, concepts: 14, readiness: { passed: 5, total: 8 }, remindersSent: 0, lastRemindedAt: null },
+  "maria.santos@up.edu.ph": { stage: "signed_in", lastActiveAt: null, aiCalls: 0, checks: 0, connections: 0, concepts: 0, readiness: null, remindersSent: 1, lastRemindedAt: ago(4 * DAY) },
+  "paolo.reyes@outlook.com": { stage: "not_signed_in", lastActiveAt: null, aiCalls: 0, checks: 0, connections: 0, concepts: 0, readiness: null, remindersSent: 2, lastRemindedAt: ago(3 * DAY) },
+};
+const activityFor = () => applicants.filter((a) => a.acceptedAt).map((a) => {
+  const x = activitySample[a.email] ?? (activitySample[a.email] = { stage: "not_signed_in", lastActiveAt: null, aiCalls: 0, checks: 0, connections: 0, concepts: 0, readiness: null, remindersSent: 0, lastRemindedAt: null });
+  const early = ["not_signed_in", "signed_in", "ai_connected"].includes(x.stage);
+  const due = early && x.remindersSent < 3 && (!x.lastRemindedAt || Date.now() - Date.parse(x.lastRemindedAt) >= 3 * DAY * 60_000);
+  return { email: a.email, acceptedAt: a.acceptedAt, ...x, reminderDue: due };
+});
+
 let nextId = 100;
 const msg = (direction, author, body, min, via = "platform") => ({ id: nextId++, direction, via, author, body, at: ago(min) });
 const threads = [
@@ -127,11 +140,24 @@ async function handle(req, res) {
     return send(res, 200, { ok: true, email, acceptedAt: a.acceptedAt, accepted: applicants.filter((x) => x.acceptedAt).length });
   }
   if (p === "/api/admin/applicants/remove" && m === "POST") {
-    const { email } = await body(req);
-    const a = applicants.find((x) => x.email === email);
-    if (!a?.acceptedAt) return send(res, 404, { error: `${email} isn't accepted.` });
-    a.acceptedAt = null;
-    return send(res, 200, { ok: true, email, accepted: applicants.filter((x) => x.acceptedAt).length });
+    const { email, emails } = await body(req);
+    const removed = (emails ?? [email]).filter((e) => applicants.find((x) => x.email === e)?.acceptedAt);
+    if (!removed.length) return send(res, 404, { error: `${email ?? "None of them"} isn't accepted.` });
+    for (const e of removed) applicants.find((x) => x.email === e).acceptedAt = null;
+    return send(res, 200, { ok: true, email: removed[0], removed, accepted: applicants.filter((x) => x.acceptedAt).length });
+  }
+  if (p === "/api/admin/applicants/activity" && m === "GET") {
+    return send(res, 200, { activity: activityFor() });
+  }
+  if (p === "/api/admin/applicants/remind" && m === "POST") {
+    const sent = activityFor().filter((a) => a.reminderDue).map((a) => a.email);
+    for (const e of sent) { const x = activitySample[e]; x.remindersSent++; x.lastRemindedAt = ago(0); }
+    return send(res, 200, { ok: true, sent, failed: [] });
+  }
+  if (p === "/api/admin/applicants/recommend" && m === "POST") {
+    const verdicts = { "juan.delacruz@gmail.com": ["keep", "Ran 3 readiness checks this week and is at 5/8."], "maria.santos@up.edu.ph": ["nudge", "Signed in 6 days ago but never connected an AI tool; a reminder about the connect step should help."], "paolo.reyes@outlook.com": ["consider_removing", "No activity in the 5 days since acceptance after 2 reminders."] };
+    const recommendations = activityFor().map((a) => ({ email: a.email, verdict: verdicts[a.email]?.[0] ?? "keep", reason: verdicts[a.email]?.[1] ?? "Accepted recently." }));
+    return send(res, 200, { model: "claude-opus-5-5", reviewed: recommendations.length, recommendations });
   }
 
   if (p === "/api/admin/threads" && m === "GET") {

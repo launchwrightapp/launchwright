@@ -1,0 +1,15 @@
+{{headline}}
+
+YOUR NEXT STEP
+{{step}}
+
+{{why}}
+
+Open your dashboard: https://platform.launchwright.app
+
+Stuck, or busy this week? Just reply. We read every message, and it's fine to go at your own pace.
+The launchwright team
+
+--
+You're getting this because you're in the launchwright pilot. Don't want reminders, or changed your mind about the pilot? Reply and tell us. To have your data deleted, write to privacy@launchwright.app.
+Privacy policy: https://launchwright.app/privacy
