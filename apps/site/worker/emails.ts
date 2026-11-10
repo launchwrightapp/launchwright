@@ -53,8 +53,9 @@ export function sendAcknowledgement(mail: SendEmail, a: Applicant) {
   });
 }
 
-export function sendAcceptance(mail: SendEmail, a: Applicant) {
-  const v = vars(a);
+// claimUrl: their one-time sign-in link (packages/core/pilot-claim.ts).
+export function sendAcceptance(mail: SendEmail, a: Applicant, claimUrl: string) {
+  const v = { ...vars(a), claim_url: claimUrl };
   return mail.send({
     from: FROM,
     replyTo: FROM.email,

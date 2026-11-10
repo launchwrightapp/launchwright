@@ -4,7 +4,9 @@ const messages: Record<string, string> = {
   cancelled: "Sign-in was cancelled on GitHub. You can try again.",
   expired: "That sign-in link expired. Please try again.",
   github: "GitHub didn't answer as expected. Please try again in a minute.",
-  not_in_pilot: "launchwright is in a private pilot, and this GitHub account isn't in it. If you were accepted, sign in with the GitHub account from your application. Not in yet? Apply at launchwright.app/pilot.",
+  not_in_pilot: "launchwright is in a private pilot, and this GitHub account isn't in it. If you were accepted, open the sign-in link in your \"You're in\" email. Not in yet? Apply at launchwright.app/pilot.",
+  claim_invalid: "That sign-in link has expired or was already used. Reply to your \"You're in\" email and we'll send you a new one.",
+  claim_taken: "This GitHub account is already linked to another application. To use another one, sign out of GitHub, open the link again and sign in with it. Or reply to your \"You're in\" email.",
   unavailable: "We couldn't check your access just now. Please try again in a minute.",
 };
 const box = document.getElementById("signin-message");

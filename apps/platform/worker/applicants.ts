@@ -5,6 +5,7 @@ import { sendAcceptance, sendReminder, type Applicant, type ReminderStage } from
 import { isAdmin, type MessagesEnv } from "./messages";
 import type { User } from "./session";
 import { forgetAccess } from "../../../packages/core/pilot-access";
+import { claimUrl, issueClaim } from "../../../packages/core/pilot-claim";
 import { rankApplicants, ReviewError, REVIEW_MODEL, type ReviewRow } from "./review";
 import { loadActivity, recommend } from "./activity";
 
@@ -57,8 +58,10 @@ export async function handleApplicantsApi(req: Request, url: URL, env: Applicant
       const [row] = (await sql`select email, name, building, accepted_at from waitlist where email = ${email}`) as Record<string, unknown>[];
       if (!row) return json({ error: `No application from ${email}.` }, 404);
       if (row.accepted_at && !resend) return json({ error: `${email} is already accepted.` }, 409);
+      // A new sign-in link each time; resending replaces the old one.
+      const claim = claimUrl(env.PUBLIC_ORIGIN ?? url.origin, await issueClaim(sql, email));
       try {
-        await sendAcceptance(env.EMAIL, row as unknown as Applicant);
+        await sendAcceptance(env.EMAIL, row as unknown as Applicant, claim);
       } catch (err) {
         console.error("acceptance email failed", err);
         return json({ error: "The email didn't send, so nothing changed. Try again." }, 502);

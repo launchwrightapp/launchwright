@@ -8,7 +8,7 @@ Everything below lives in one Neon Postgres database, unless the row says otherw
 
 | Data | Where | Personal data in it | Why | Retention |
 |---|---|---|---|---|
-| Pilot applications | `waitlist` + answers (apps/site) | Email, answers, optional city, GitHub username, consent time | Review applications, contact applicants | Until the pilot ends; if they don't join, deleted within 30 days after it ends; sooner on request (privacy policy) |
+| Pilot applications | `waitlist` + answers (apps/site) | Email, answers, optional city, GitHub username, consent time, linked GitHub ID, a hash of their one-time sign-in link | Review applications, contact applicants | Until the pilot ends; if they don't join, deleted within 30 days after it ends; sooner on request (privacy policy) |
 | Email confirmation codes | `pilot_codes` (apps/site) | Email, hashed code | Confirm the email is theirs | Up to 1 day, or until the application is sent (`apps/site/worker/verify.ts` deletes older rows) |
 | Pilot funnel | `funnel_daily` (apps/site) | None: daily counts only | See where applicants drop off | No limit needed (no personal data) |
 | AI tool sign-in (OAuth grant) | Cloudflare KV `OAUTH_KV` (apps/mcp) | GitHub ID and username, encrypted GitHub token | Let the MCP server act for the learner | Expires 30 days after sign-in (library default `refreshTokenTTL`) |
