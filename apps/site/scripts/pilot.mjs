@@ -38,8 +38,8 @@ const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const [cmd, email, flag] = process.argv.slice(2);
 
 if (cmd === "list") {
-  const { applicants, accepted, seats } = await call("/api/admin/applicants");
-  console.log(`${accepted}/${seats} seats taken · ${applicants.length} applicants\n`);
+  const { applicants, accepted } = await call("/api/admin/applicants");
+  console.log(`${accepted} accepted · ${applicants.length} applicants\n`);
   for (const a of applicants) {
     const status = a.accepted_at ? "ACCEPTED" : a.acknowledged_at ? "applied" : "applied (no ack)";
     console.log(`${day(a.created_at)}  ${status.padEnd(16)}  ${a.email}${a.name ? `  (${a.name})` : ""}`);
@@ -47,7 +47,7 @@ if (cmd === "list") {
   }
 } else if (cmd === "accept" && email) {
   const r = await call("/api/admin/accept", { method: "POST", body: JSON.stringify({ email, resend: flag === "--resend" }) });
-  console.log(`Sent "You're in" to ${r.email}. Seats used: ${r.seatsUsed}/${r.seats}.`);
+  console.log(`Sent "You're in" to ${r.email}. Accepted so far: ${r.accepted}.`);
 } else if (cmd === "funnel") {
   const days = email && /^\d+$/.test(email) ? email : "";
   const { steps, countingSince } = await call(`/api/admin/funnel${days ? `?days=${days}` : ""}`);

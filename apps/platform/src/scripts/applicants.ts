@@ -7,7 +7,7 @@ interface Applicant { email: string; name: string | null; building: string | nul
 type Filter = "waiting" | "accepted" | "all";
 
 const listEl = document.querySelector<HTMLTableSectionElement>("[data-applicants]")!;
-const seatsEl = document.querySelector<HTMLElement>("[data-seats]")!;
+const acceptedEl = document.querySelector<HTMLElement>("[data-accepted]")!;
 const tabs = [...document.querySelectorAll<HTMLButtonElement>("[data-filter] [data-show]")];
 // Role and stage filters are design-system Dropdowns; picking one fires lw:dropdown-change.
 const picked: Record<string, string> = { role: "", stage: "" };
@@ -21,7 +21,6 @@ const FIT_TAG: Record<Review["fit"], string> = { strong: "tag-ok", maybe: "tag-w
 const fitText = (r: Review) => `${r.fit[0].toUpperCase()}${r.fit.slice(1)} fit · ${r.score}`;
 
 let people: Applicant[] = [];
-let seats = 10;
 let filter: Filter = "waiting";
 let sortKey: SortKey = "applied";
 let sortDir: 1 | -1 = -1; // newest first
@@ -256,7 +255,7 @@ function emptyRow(text: string) {
 
 function draw() {
   const accepted = people.filter((p) => p.acceptedAt).length;
-  seatsEl.textContent = `${accepted} of ${seats} seats taken`;
+  acceptedEl.textContent = `${accepted} accepted`;
   const counts: Record<Filter, number> = { waiting: people.length - accepted, accepted, all: people.length };
   for (const [k, n] of Object.entries(counts)) {
     const c = document.querySelector(`[data-count="${k}"]`);
@@ -337,14 +336,13 @@ rankBtn.addEventListener("click", async () => {
 });
 
 (async () => {
-  const { ok, data } = await api<{ seats: number; applicants: Applicant[] }>("/api/admin/applicants");
+  const { ok, data } = await api<{ applicants: Applicant[] }>("/api/admin/applicants");
   listEl.setAttribute("aria-busy", "false");
   if (!ok) {
-    seatsEl.textContent = "Seats unavailable";
+    acceptedEl.textContent = "Count unavailable";
     listEl.replaceChildren(emptyRow(data.error ?? "Couldn't load applicants."));
     return;
   }
   people = data.applicants;
-  seats = data.seats;
   draw();
 })();

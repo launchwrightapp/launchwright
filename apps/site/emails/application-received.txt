@@ -2,7 +2,7 @@ Hi {{name}},
 
 Thanks for applying. You're on the list.
 
-The free pilot is for 10 learners. We read every application ourselves, so there's nothing else you need to do right now.
+We read every application ourselves, so there's nothing else you need to do right now.
 
 What you're building:
 {{building}}

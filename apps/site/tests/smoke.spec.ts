@@ -220,7 +220,7 @@ test("consent text links to the privacy policy", async ({ page }) => {
 test("the offer and the signup form are in one section, before the FAQ", async ({ page }) => {
   await page.goto("/");
   const pilot = page.locator("#pilot");
-  await expect(pilot.getByText("Free for the first 10 learners")).toBeVisible();
+  await expect(pilot.getByText("Free while we run the pilot")).toBeVisible();
   await expect(pilot.getByText("that provider bills you, not us")).toBeVisible();
   await expect(pilot.locator("#waitlist")).toBeVisible();
   const order = await page.evaluate(() => [...document.querySelectorAll("main > section[id]")].map((s) => s.id));

@@ -13,7 +13,6 @@ interface Env extends VerifyEnv, FunnelEnv {
   NOTIFY_EMAIL?: string; // secret; where "new application" alerts go (unset = no alerts)
 }
 
-const PILOT_SEATS = 10;
 // At most this many acknowledgement emails per hour. Applicants have verified their
 // email by now, so this is a backstop. Applications are still saved past the cap.
 const ACKS_PER_HOUR = 30;
@@ -115,7 +114,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
       select email, name, building, answers, created_at, acknowledged_at, accepted_at
       from waitlist order by created_at desc limit 500
     `;
-    return json({ seats: PILOT_SEATS, accepted: rows.filter((r) => r.accepted_at).length, applicants: rows });
+    return json({ accepted: rows.filter((r) => r.accepted_at).length, applicants: rows });
   }
 
   // The pilot funnel: anonymous totals per step. ?days=N for the last N days.
@@ -123,7 +122,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     return json(await funnelReport(sql, url));
   }
 
-  // Accept one applicant: sends the "You're in" email and records the seat.
+  // Accept one applicant: sends the "You're in" email and marks them accepted.
   if (url.pathname === "/api/admin/accept" && req.method === "POST") {
     if (!env.EMAIL) return json({ error: "Email sending isn't set up yet." }, 503);
     const parsed = await readBody(req);
@@ -134,10 +133,6 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     const [row] = await sql`select email, name, building, accepted_at from waitlist where email = ${email}`;
     if (!row) return json({ error: `No application from ${email}.` }, 404);
     if (row.accepted_at && !resend) return json({ error: `${email} was already accepted. Pass resend to send it again.` }, 409);
-    if (!row.accepted_at) {
-      const [{ n }] = await sql`select count(*)::int as n from waitlist where accepted_at is not null`;
-      if (n >= PILOT_SEATS) return json({ error: `All ${PILOT_SEATS} seats are taken.` }, 409);
-    }
 
     try {
       await sendAcceptance(env.EMAIL, row as Applicant);
@@ -147,7 +142,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     }
     await sql`update waitlist set accepted_at = coalesce(accepted_at, now()) where email = ${email}`;
     const [{ n }] = await sql`select count(*)::int as n from waitlist where accepted_at is not null`;
-    return json({ ok: true, email, seatsUsed: n, seats: PILOT_SEATS });
+    return json({ ok: true, email, accepted: n });
   }
 
   // Privacy policy update email to one applicant, or { test: true } for a copy to NOTIFY_EMAIL
