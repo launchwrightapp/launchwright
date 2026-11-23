@@ -12,11 +12,11 @@
     "typecheck": "astro sync && tsc --noEmit -p ."
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.6.0",
-    "@neondatabase/serverless": "^1.2.0",
+    "@anthropic-ai/sdk": "^1.11.0",
+    "@neondatabase/serverless": "^1.2.1",
     "@tailwindcss/vite": "^4.3.5",
-    "astro": "^7.4.7",
-    "postal-mime": "^4.2.0",
+    "astro": "^7.4.13",
+    "postal-mime": "^4.2.1",
     "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
